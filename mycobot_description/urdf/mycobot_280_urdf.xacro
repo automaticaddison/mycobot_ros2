@@ -19,6 +19,12 @@
 		or visualization (RViz) environments
 	-->
 	<link name="world"/>
+
+	<!-- ****************** ROBOT CONSTANTS *******************************  -->
+	<!-- Source: https://www.elephantrobotics.com/en/mycobot280-for-arduino-specifications-en/ -->
+	<!-- Numbers are estimated when necessary -->
+	<xacro:property name="effort" value="5.0"/>
+	<xacro:property name="velocity" value="2.792527"/>
 	
 	<!-- ********** LINKS ********** -->
 
@@ -27,12 +33,12 @@
 		<!-- The inertial values below were taken from link1 (with slight modification. 
 		They are just placeholder values. -->
 		<inertial>
-			<origin xyz="0 0 0.1" rpy="0 0 0"/>
-			<mass value="12"/>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<mass value="0.33"/>
 			<inertia
-				ixx="0.0" ixy="0.0" ixz="0.0"
-				iyy="0.5" iyz="0.0"
-				izz="0.0"/>
+				ixx="0.000784" ixy="0.0" ixz="0.0"
+				iyy="0.000867" iyz="0.0"
+				izz="0.001598"/>
 		</inertial>
 		<visual>
 			<geometry>
@@ -55,16 +61,16 @@
 		<inertial>
 			<!--Specify the pose of the center of mass of the link relative 
 			to this link's coordinate frame.-->
-			<origin xyz="0 0 0.1" rpy="0 0 0"/>
-			<!--The mass of the link is 10 kilograms-->
-			<mass value="10"/>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<!--The mass of the link in kilograms-->
+			<mass value="0.12"/>
 			<!--The rotational inertia values, which reflect how easily the link can rotate around
 			different axes given the distribution of mass within the link. Here we see rotation is
 			most difficult around the y axis.-->
 			<inertia
-				ixx="0.0" ixy="0.0" ixz="0.0"
-				iyy="0.5" iyz="0.0"
-				izz="0.0"/>
+				ixx="0.000148" ixy="0.0" ixz="0.0"
+				iyy="0.000148" iyz="0.0"
+				izz="0.000096"/>
 		</inertial>
 		<!--Define the visual representation of the link in simulation.-->
 		<visual>
@@ -91,12 +97,12 @@
 	<!-- Define the second link of the robotic arm, and so on.-->
 	<link name="link2">
 		<inertial>
-			<origin xyz="0 0 0.1" rpy="0 0 0"/>
-			<mass value="0.2"/>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<mass value="0.19"/>
 			<inertia
-				ixx="0.0" ixy="0.0" ixz="0.0"
-				iyy="0.5" iyz="0.0"
-				izz="0.0"/>
+				ixx="0.000148" ixy="0.0" ixz="0.0"
+				iyy="0.000148" iyz="0.0"
+				izz="0.000096"/>
 		</inertial>
 		<visual>
 			<geometry>
@@ -114,12 +120,12 @@
 
 	<link name="link3">
 		<inertial>
-			<origin xyz="0 0 0.1" rpy="0 0 0"/>
-		  	<mass value="0.2"/>
-		  	<inertia
-				ixx="0.0" ixy="0.0" ixz="0.0"
-				iyy="0.5" iyz="0.0"
-				izz="0.0"/>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.16"/>
+			<inertia
+			  ixx="0.000148" ixy="0.0" ixz="0.0"
+			  iyy="0.000148" iyz="0.0"
+			  izz="0.000096"/>
 		</inertial>
 		<visual>
 		  	<geometry>
@@ -137,12 +143,12 @@
 
 	<link name="link4">
 		<inertial>
-		  	<origin xyz="0 0 0.1" rpy="0 0 0"/>
-			<mass value="0.2"/>
+		  	<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<mass value="0.124"/>
 			<inertia
-			  	ixx="0.0" ixy="0.0" ixz="0.0"
-			  	iyy="0.5" iyz="0.0"
-			  	izz="0.0"/>
+			  	ixx="0.000103" ixy="0.0" ixz="0.0"
+			  	iyy="0.000103" iyz="0.0"
+			  	izz="0.000096"/>
 		</inertial>
 		<visual>
 			<geometry>
@@ -154,18 +160,18 @@
 			<geometry>
 				<mesh filename="package://mycobot_description/meshes/mycobot_280/link4.dae"/>
 			</geometry>
-			<origin xyz = "-0.0 0 0.03056 " rpy = " 0 ${-pi/2} 0"/>
+			<origin xyz = "0.0 0 0.03056 " rpy = " 0 ${-pi/2} 0"/>
 		</collision>
 	</link>
 
 	<link name="link5">
 		<inertial>
-			<origin xyz="0 0 0.1" rpy="0 0 0"/>
-		  	<mass value="0.2"/>
-		  	<inertia
-				ixx="0.0" ixy="0.0" ixz="0.0"
-				iyy="0.5" iyz="0.0"
-				izz="0.0"/>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.11"/>
+			<inertia
+			  ixx="0.000103" ixy="0.0" ixz="0.0"
+			  iyy="0.000103" iyz="0.0"
+			  izz="0.000096"/>
 		</inertial>
 		<visual>
 		  	<geometry>
@@ -183,12 +189,12 @@
 
 	<link name="link6">
 		<inertial>
-			<origin xyz="0 0 0.1" rpy="0 0 0"/>
-		  	<mass value="0.2"/>
-		  	<inertia
-				ixx="0.0" ixy="0.0" ixz="0.0"
-				iyy="0.5" iyz="0.0"
-				izz="0.0"/>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.0739"/>
+			<inertia
+			  ixx="0.00006649" ixy="0.0" ixz="0.0"
+			  iyy="0.00006649" iyz="0.0"
+			  izz="0.000096"/>
 		</inertial>
 		<visual>
 		  	<geometry>
@@ -206,12 +212,12 @@
 
 	<link name="link6_flange">
 		<inertial>
-			<origin xyz="0 0 0.1" rpy="0 0 0"/>
-		  	<mass value="0.1"/>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.035"/>
 		  	<inertia
-				ixx="0.0" ixy="0.0" ixz="0.0"
-				iyy="0.0" iyz="0.0"
-				izz="0.0"/>
+				ixx="0.0000149" ixy="0.0" ixz="0.0"
+				iyy="0.0000149" iyz="0.0"
+				izz="0.0000196"/>
 		</inertial>
 		<visual>
 		  	<geometry>
@@ -229,12 +235,12 @@
 
 	<link name="gripper_base">
 		<inertial>
-			<origin xyz="0 0 0.1" rpy="0 0 0"/>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
 		  	<mass value="0.07"/>
 		  	<inertia
-				ixx="0.0" ixy="0.0" ixz="0.0"
-				iyy="0.0" iyz="0.0"
-				izz="0.0"/>
+				ixx="0.000010725" ixy="0.0" ixz="0.0"
+				iyy="0.000014392" iyz="0.0"
+				izz="0.000018517"/>
 		</inertial>
 		<visual>
 		  	<geometry>
@@ -252,12 +258,12 @@
 
 	<link name="gripper_left1">
 		<inertial>
-			<origin xyz="0 0 0.1" rpy="0 0 0"/>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
 		  	<mass value="0.007"/>
 		  	<inertia
-				ixx="0.0" ixy="0.0" ixz="0.0"
-				iyy="0.0" iyz="0.0"
-				izz="0.0"/>
+				ixx="1e-6" ixy="0.0" ixz="0.0"
+				iyy="1e-6" iyz="0.0"
+				izz="1e-6"/>
 		</inertial>
 		<visual>
 		  	<geometry>
@@ -269,18 +275,18 @@
 		  	<geometry>
 		   		<mesh filename="package://mycobot_description/meshes/mycobot_280/gripper_left1.dae"/>
 		  	</geometry>
-			<origin xyz = "-0.039 -0.0133 -0.012 " rpy = " 0 0 0"/>
+			<origin xyz = "0.039 -0.0133 -0.012 " rpy = " 0 0 0"/>
 		</collision>
 	</link>
 	
 	<link name="gripper_left2">
 		<inertial>
-			<origin xyz="0 0 0.1" rpy="0 0 0"/>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
 		  	<mass value="0.007"/>
 		  	<inertia
-				ixx="0.0" ixy="0.0" ixz="0.0"
-				iyy="0.0" iyz="0.0"
-				izz="0.0"/>
+				ixx="1e-6" ixy="0.0" ixz="0.0"
+				iyy="1e-6" iyz="0.0"
+				izz="1e-6"/>
 		</inertial>
 		<visual>
 		  	<geometry>
@@ -292,18 +298,18 @@
 		  	<geometry>
 		   		<mesh filename="package://mycobot_description/meshes/mycobot_280/gripper_left2.dae"/>
 		  	</geometry>
-				<origin xyz = "-0.005 -0.0195 -0.012 " rpy = " 0 0 0"/>
+				<origin xyz = "0.005 -0.0195 -0.012 " rpy = " 0 0 0"/>
 		</collision>
 	</link>
 	
 	<link name="gripper_left3">
 		<inertial>
-			<origin xyz="0 0 0.1" rpy="0 0 0"/>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
 		  	<mass value="0.007"/>
 		  	<inertia
-				ixx="0.0" ixy="0.0" ixz="0.0"
-				iyy="0.0" iyz="0.0"
-				izz="0.0"/>
+				ixx="1e-6" ixy="0.0" ixz="0.0"
+				iyy="1e-6" iyz="0.0"
+				izz="1e-6"/>
 		</inertial>
 		<visual>
 		  	<geometry>
@@ -321,12 +327,12 @@
 	
 	<link name="gripper_right1">
 		<inertial>
-			<origin xyz="0 0 0.1" rpy="0 0 0"/>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
 		  	<mass value="0.007"/>
 		  	<inertia
-				ixx="0.0" ixy="0.0" ixz="0.0"
-				iyy="0.0" iyz="0.0"
-				izz="0.0"/>
+				ixx="1e-6" ixy="0.0" ixz="0.0"
+				iyy="1e-6" iyz="0.0"
+				izz="1e-6"/>
 		</inertial>
 		<visual>
 			<geometry>
@@ -344,12 +350,12 @@
 	
 	<link name="gripper_right2">
 		<inertial>
-			<origin xyz="0 0 0.1" rpy="0 0 0"/>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
 		  	<mass value="0.007"/>
 		  	<inertia
-				ixx="0.0" ixy="0.0" ixz="0.0"
-				iyy="0.0" iyz="0.0"
-				izz="0.0"/>
+				ixx="1e-6" ixy="0.0" ixz="0.0"
+				iyy="1e-6" iyz="0.0"
+				izz="1e-6"/>
 		</inertial>
 		<visual>
 			<geometry>
@@ -367,12 +373,12 @@
 	
 	<link name="gripper_right3">
 		<inertial>
-			<origin xyz="0 0 0.1" rpy="0 0 0"/>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
 		  	<mass value="0.007"/>
 		  	<inertia
-				ixx="0.0" ixy="0.0" ixz="0.0"
-				iyy="0.0" iyz="0.0"
-				izz="0.0"/>
+				ixx="1e-6" ixy="0.0" ixz="0.0"
+				iyy="1e-6" iyz="0.0"
+				izz="1e-6"/>
 		</inertial>
 		<visual>
 			<geometry>
@@ -406,9 +412,9 @@
 			effort: Maximum torque in Nm 
 			lower: Minimum allowed angle in radians
 			upper: Maximum allowed angle in radians 
-			velocity: Maximum allowed angular velocity (ignored for fixed joints) 
+			velocity: Maximum allowed angular velocity in radians per second (ignored for fixed joints) 
 		-->
-		<limit effort = "1000.0" lower = "${-pi}" upper = "${pi}" velocity = "0"/>
+		<limit effort = "${effort}" lower = "${-pi}" upper = "${pi}" velocity = "${velocity}"/>
 		<!-- The link this joint connects to on one side -->
 		<parent link="base_link"/>
 		<!-- The link this joint connects to on the other side -->
@@ -425,7 +431,7 @@
 
 	<joint name="link1_to_link2" type="revolute">
 		<axis xyz="0 0 1"/>
-		<limit effort = "1000.0" lower = "-2.879793" upper = "2.879793" velocity = "0"/>
+		<limit effort = "${effort}" lower = "-2.879793" upper = "2.879793" velocity = "${velocity}"/>
 		<parent link="link1"/>
 		<child link="link2"/>
 		<origin xyz= "0 0 0.13156" rpy = "0 0 ${pi/2}"/>  
@@ -433,7 +439,7 @@
 
 	<joint name="link2_to_link3" type="revolute">
 		<axis xyz="0 0 1"/>
-		<limit effort = "1000.0" lower = "-2.879793" upper = "2.879793" velocity = "0"/>
+		<limit effort = "${effort}" lower = "-2.879793" upper = "2.879793" velocity = "${velocity}"/>
 		<parent link="link2"/>
 		<child link="link3"/>
 		<origin xyz= "0 0 -0.001" rpy = "0 ${pi/2} ${-pi/2}"/>  
@@ -441,7 +447,7 @@
 
 	<joint name="link3_to_link4" type="revolute">
 		<axis xyz=" 0 0 1"/>
-		<limit effort = "1000.0" lower = "-2.879793" upper = "2.879793" velocity = "0"/>
+		<limit effort = "${effort}" lower = "-2.879793" upper = "2.879793" velocity = "${velocity}"/>
 		<parent link="link3"/>
 		<child link="link4"/>
 		<origin xyz= "-0.1104 0 0   " rpy = "0 0 0"/>
@@ -449,7 +455,7 @@
 
 	<joint name="link4_to_link5" type="revolute">
 		<axis xyz=" 0 0 1"/>
-		<limit effort = "1000.0" lower = "-2.879793" upper = "2.879793" velocity = "0"/>
+		<limit effort = "${effort}" lower = "-2.879793" upper = "2.879793" velocity = "${velocity}"/>
 		<parent link="link4"/>
 		<child link="link5"/>
 		<origin xyz= "-0.096 0 0.06062" rpy = "0 0 ${-pi/2}"/>
@@ -457,7 +463,7 @@
 
 	<joint name="link5_to_link6" type="revolute">
 		<axis xyz=" 0 0 1"/>
-		<limit effort = "1000.0" lower = "-2.879793" upper = "2.879793" velocity = "0"/>
+		<limit effort = "${effort}" lower = "-2.879793" upper = "2.879793" velocity = "${velocity}"/>
 		<parent link="link5"/>
 		<child link="link6"/>
 		<origin xyz= "0 -0.07318 0" rpy = "${pi/2} ${-pi/2} 0"/>
@@ -465,7 +471,7 @@
 
 	<joint name="link6_to_link6flange" type="revolute">
 		<axis xyz=" 0 0 1"/>
-		<limit effort = "1000.0" lower = "-3.05" upper = "3.05" velocity = "0"/>
+		<limit effort = "${effort}" lower = "-3.05" upper = "3.05" velocity = "${velocity}"/>
 		<parent link="link6"/>
 		<child link="link6_flange"/>
 		<origin xyz= "0 0.0456 0" rpy = "${-pi/2} 0 0"/>
@@ -479,7 +485,7 @@
 
 	<joint name="gripper_controller" type="revolute">
 		<axis xyz="0 0 1"/>
-		<limit effort = "1000.0" lower = "-0.7" upper = "0.15" velocity = "0"/>
+		<limit effort = "${effort}" lower = "-0.7" upper = "0.15" velocity = "${velocity}"/>
 		<parent link="gripper_base"/>
 		<child link="gripper_left3"/>
 		<origin xyz= "-0.012 0.005 0" rpy = "0 0 0"/> 
@@ -490,7 +496,7 @@
 	-->
 	<joint name="gripper_base_to_gripper_left2" type="revolute">
 		<axis xyz="0 0 1"/>
-		<limit effort = "1000.0" lower = "-0.8" upper = "0.5" velocity = "0"/>
+		<limit effort = "${effort}" lower = "-0.8" upper = "0.5" velocity = "${velocity}"/>
 		<parent link="gripper_base"/>
 		<child link="gripper_left2"/>
 		<origin xyz= "-0.005 0.027 0" rpy = "0 0 0"/> 
@@ -499,7 +505,7 @@
 	
 	<joint name="gripper_left3_to_gripper_left1" type="revolute">
 		<axis xyz="0 0 1"/>
-		<limit effort = "1000.0" lower = "-0.5" upper = "0.5" velocity = "0"/>
+		<limit effort = "${effort}" lower = "-0.5" upper = "0.5" velocity = "${velocity}"/>
 		<parent link="gripper_left3"/>
 		<child link="gripper_left1"/>
 		<origin xyz= "-0.027 0.016 0" rpy = "0 0 0"/> 
@@ -508,7 +514,7 @@
 	
 	<joint name="gripper_base_to_gripper_right3" type="revolute">
 		<axis xyz="0 0 1"/>
-		<limit effort = "1000.0" lower = "-0.15" upper = "0.7" velocity = "0"/>
+		<limit effort = "${effort}" lower = "-0.15" upper = "0.7" velocity = "${velocity}"/>
 		<parent link="gripper_base"/>
 		<child link="gripper_right3"/>
 		<origin xyz= "0.012 0.005 0" rpy = "0 0 0"/> 
@@ -517,7 +523,7 @@
 	
 	<joint name="gripper_base_to_gripper_right2" type="revolute">
 		<axis xyz="0 0 1"/>
-		<limit effort = "1000.0" lower = "-0.5" upper = "0.8" velocity = "0"/>
+		<limit effort = "${effort}" lower = "-0.5" upper = "0.8" velocity = "${velocity}"/>
 		<parent link="gripper_base"/>
 		<child link="gripper_right2"/>
 		<origin xyz= "0.005 0.027 0" rpy = "0 0 0"/> 
@@ -526,7 +532,7 @@
 	
 	<joint name="gripper_right3_to_gripper_right1" type="revolute">
 		<axis xyz="0 0 1"/>
-		<limit effort = "1000.0" lower = "-0.5" upper = "0.5" velocity = "0"/>
+		<limit effort = "${effort}" lower = "-0.5" upper = "0.5" velocity = "${velocity}"/>
 		<parent link="gripper_right3"/>
 		<child link="gripper_right1"/>
 		<origin xyz= "0.027 0.016 0" rpy = "0 0 0"/> 
