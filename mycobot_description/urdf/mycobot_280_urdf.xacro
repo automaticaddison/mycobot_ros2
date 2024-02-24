@@ -87,7 +87,8 @@
 			<origin xyz = "0.0 0 0.0 " rpy = " 0 0 -1.5708"/>
 		</collision>
 	</link>
-
+	
+	<!-- Define the second link of the robotic arm, and so on.-->
 	<link name="link2">
 		<inertial>
 			<origin xyz="0 0 0.1" rpy="0 0 0"/>
