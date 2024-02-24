@@ -485,7 +485,7 @@
 	</joint>
 	
 	<!-- The mimic element means this joint will follow the movements of the 
-		gripper_controller joint 
+		gripper_controller joint. 
 	-->
 	<joint name="gripper_base_to_gripper_left2" type="revolute">
 		<axis xyz="0 0 1"/>
