@@ -38,13 +38,13 @@
 			<geometry>
 				<mesh filename="package://mycobot_description/meshes/mycobot_280/base_link.dae"/>
 			</geometry>
-			<origin xyz = "0.0 0 -0.03" rpy = "0 0 1.5708"/>
+			<origin xyz = "0.0 0 -0.03" rpy = "0 0 ${pi/2}"/>
 		</visual>
 		<collision>
 			<geometry>
 				<mesh filename="package://mycobot_description/meshes/mycobot_280/base_link.dae"/>
 			</geometry>
-			<origin xyz = "0.0 0 -0.03" rpy = "0 0 1.5708"/>
+			<origin xyz = "0.0 0 -0.03" rpy = "0 0 ${pi/2}"/>
 		</collision>
 	</link>
 	
@@ -76,7 +76,7 @@
 			<!--Define the position and orientation of the visual representation relative to the 
 			link's reference frame. Here, it's rotated by -1.5708 radians (or -90 degrees) 
 			around the Z-axis.-->
-			<origin xyz = "0.0 0 0 " rpy = " 0 0 -1.5708"/>
+			<origin xyz = "0.0 0 0 " rpy = " 0 0 ${-pi/2}"/>
 		</visual>
 		<!--Define the shape used for collision detection during simulation. This piece is important
 		for accurate physical interactions between robot components and the environment or other objects.-->
@@ -84,7 +84,7 @@
 			<geometry>
 				<mesh filename="package://mycobot_description/meshes/mycobot_280/link1.dae"/>
 			</geometry>
-			<origin xyz = "0.0 0 0.0 " rpy = " 0 0 -1.5708"/>
+			<origin xyz = "0.0 0 0.0 " rpy = " 0 0 ${-pi/2}"/>
 		</collision>
 	</link>
 	
@@ -102,13 +102,13 @@
 			<geometry>
 				<mesh filename="package://mycobot_description/meshes/mycobot_280/link2.dae"/>
 			</geometry>
-			<origin xyz = "0.0 0 -0.06096" rpy = " 0 0 -1.5708"/>
+			<origin xyz = "0.0 0 -0.06096" rpy = " 0 0 ${-pi/2}"/>
 		</visual>
 		<collision>
 			<geometry>
 				<mesh filename="package://mycobot_description/meshes/mycobot_280/link2.dae"/>
 			</geometry>
-			<origin xyz = "0.0 0 -0.06096" rpy = " 0 0 -1.5708"/>
+			<origin xyz = "0.0 0 -0.06096" rpy = " 0 0 ${-pi/2}"/>
 		</collision>
 	</link>
 
@@ -125,13 +125,13 @@
 		  	<geometry>
 		   		<mesh filename="package://mycobot_description/meshes/mycobot_280/link3.dae"/>
 		  	</geometry>
-			<origin xyz = "0.0 0 0.03256 " rpy = " 0 -1.5708 0"/>
+			<origin xyz = "0.0 0 0.03256 " rpy = " 0 ${-pi/2} 0"/>
 		</visual>
 		<collision>
 		  	<geometry>
 		   		<mesh filename="package://mycobot_description/meshes/mycobot_280/link3.dae"/>
 		  	</geometry>
-		  	<origin xyz = "0.00 0 0.03256 " rpy = " 0 -1.5708 0"/>
+		  	<origin xyz = "0.00 0 0.03256 " rpy = " 0 ${-pi/2} 0"/>
 		</collision>
 	</link>
 
@@ -148,13 +148,13 @@
 			<geometry>
 				<mesh filename="package://mycobot_description/meshes/mycobot_280/link4.dae"/>
 			</geometry>
-			<origin xyz = "0.0 0 0.03056 " rpy = " 0 -1.5708 0"/>
+			<origin xyz = "0.0 0 0.03056 " rpy = " 0 ${-pi/2} 0"/>
 		</visual>
 		<collision>
 			<geometry>
 				<mesh filename="package://mycobot_description/meshes/mycobot_280/link4.dae"/>
 			</geometry>
-			<origin xyz = "-0.0 0 0.03056 " rpy = " 0 -1.5708 0"/>
+			<origin xyz = "-0.0 0 0.03056 " rpy = " 0 ${-pi/2} 0"/>
 		</collision>
 	</link>
 
@@ -171,13 +171,13 @@
 		  	<geometry>
 				<mesh filename="package://mycobot_description/meshes/mycobot_280/link5.dae"/>
 		  	</geometry>
-		  	<origin xyz = "0.0 0 -0.03356 " rpy = "-1.5708 0 0"/>
+		  	<origin xyz = "0.0 0 -0.03356 " rpy = "${-pi/2} 0 0"/>
 		</visual>
 		<collision>
 		   	<geometry>	
 		   		<mesh filename="package://mycobot_description/meshes/mycobot_280/link5.dae"/>
 		  	</geometry>
-		  	<origin xyz = "0.0 0 -0.03356 " rpy = "-1.5708 0 0"/>
+		  	<origin xyz = "0.0 0 -0.03356 " rpy = "${-pi/2} 0 0"/>
 		</collision>
 	</link>
 
@@ -408,7 +408,7 @@
 			upper: Maximum allowed angle in radians 
 			velocity: Maximum allowed angular velocity (ignored for fixed joints) 
 		-->
-		<limit effort = "1000.0" lower = "-3.14" upper = "3.14159" velocity = "0"/>
+		<limit effort = "1000.0" lower = "${-pi}" upper = "${pi}" velocity = "0"/>
 		<!-- The link this joint connects to on one side -->
 		<parent link="base_link"/>
 		<!-- The link this joint connects to on the other side -->
@@ -428,7 +428,7 @@
 		<limit effort = "1000.0" lower = "-2.879793" upper = "2.879793" velocity = "0"/>
 		<parent link="link1"/>
 		<child link="link2"/>
-		<origin xyz= "0 0 0.13156" rpy = "0 0 1.5708"/>  
+		<origin xyz= "0 0 0.13156" rpy = "0 0 ${pi/2}"/>  
 	</joint>
 
 	<joint name="link2_to_link3" type="revolute">
@@ -436,7 +436,7 @@
 		<limit effort = "1000.0" lower = "-2.879793" upper = "2.879793" velocity = "0"/>
 		<parent link="link2"/>
 		<child link="link3"/>
-		<origin xyz= "0 0 -0.001" rpy = "0 1.5708 -1.5708"/>  
+		<origin xyz= "0 0 -0.001" rpy = "0 ${pi/2} ${-pi/2}"/>  
 	</joint>
 
 	<joint name="link3_to_link4" type="revolute">
@@ -452,7 +452,7 @@
 		<limit effort = "1000.0" lower = "-2.879793" upper = "2.879793" velocity = "0"/>
 		<parent link="link4"/>
 		<child link="link5"/>
-		<origin xyz= "-0.096 0 0.06062" rpy = "0 0 -1.5708"/>
+		<origin xyz= "-0.096 0 0.06062" rpy = "0 0 ${-pi/2}"/>
 	</joint>
 
 	<joint name="link5_to_link6" type="revolute">
@@ -460,7 +460,7 @@
 		<limit effort = "1000.0" lower = "-2.879793" upper = "2.879793" velocity = "0"/>
 		<parent link="link5"/>
 		<child link="link6"/>
-		<origin xyz= "0 -0.07318 0" rpy = "1.5708 -1.5708 0"/>
+		<origin xyz= "0 -0.07318 0" rpy = "${pi/2} ${-pi/2} 0"/>
 	</joint>
 
 	<joint name="link6_to_link6flange" type="revolute">
@@ -468,7 +468,7 @@
 		<limit effort = "1000.0" lower = "-3.05" upper = "3.05" velocity = "0"/>
 		<parent link="link6"/>
 		<child link="link6_flange"/>
-		<origin xyz= "0 0.0456 0" rpy = "-1.5708 0 0"/>
+		<origin xyz= "0 0.0456 0" rpy = "${-pi/2} 0 0"/>
 	</joint>
 
 	<joint name="link6flange_to_gripper_base" type="fixed">
