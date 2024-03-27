@@ -26,6 +26,7 @@ def generate_launch_description():
     jsp_gui = LaunchConfiguration('jsp_gui')
     rviz_config_file = LaunchConfiguration('rviz_config_file')
     urdf_model = LaunchConfiguration('urdf_model')
+    use_rviz = LaunchConfiguration('use_rviz')
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     # Declare the launch arguments 
@@ -44,6 +45,11 @@ def generate_launch_description():
         name='urdf_model', 
         default_value=default_urdf_model_path, 
         description='Absolute path to robot urdf file')
+
+    declare_use_rviz_cmd = DeclareLaunchArgument(
+        name='use_rviz',
+        default_value='true',
+        description='Whether to start RVIZ')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         name='use_sim_time',
@@ -79,6 +85,7 @@ def generate_launch_description():
       
     # Launch RViz
     start_rviz_cmd = Node(
+        condition=IfCondition(use_rviz),
         package='rviz2',
         executable='rviz2',
         name='rviz2',
@@ -94,6 +101,7 @@ def generate_launch_description():
     ld.add_action(declare_jsp_gui_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_urdf_model_path_cmd)
+    ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_use_sim_time_cmd)
 
     # Add any actions
