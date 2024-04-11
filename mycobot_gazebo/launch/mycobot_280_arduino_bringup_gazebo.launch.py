@@ -23,7 +23,7 @@ def generate_launch_description():
   gazebo_launch_file_path = 'launch'
   #rviz_config_file_path = 'mycobot_280_arduino_view_description.rviz'
   #urdf_file_path = 'urdf/mycobot_280_gazebo.urdf.xacro'
-  world_file_path = 'worlds/empty.world'
+  world_file_path = 'worlds/empty.world' # Example: 'worlds/house.world', 'worlds/empty.world'
 
   # Set the path to different files and folders.  
   pkg_ros_gz_sim = FindPackageShare(package='ros_gz_sim').find('ros_gz_sim')  
@@ -36,7 +36,6 @@ def generate_launch_description():
   gazebo_launch_file_path = os.path.join(pkg_share_gazebo, gazebo_launch_file_path)   
   gazebo_models_path = os.path.join(pkg_share_gazebo, gazebo_models_path)
   world_path = os.path.join(pkg_share_gazebo, world_file_path)
-  #os.environ["GAZEBO_MODEL_PATH"] = gazebo_models_path
   
   # Launch configuration variables specific to simulation
   headless = LaunchConfiguration('headless')
@@ -153,6 +152,20 @@ def generate_launch_description():
       os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')),
     launch_arguments={'gz_args': '-g -v4 '}.items(),
     condition=IfCondition(PythonExpression([use_simulator, ' and not ', headless])))
+    
+  # Publish the joint state values for the non-fixed joints in the URDF file.
+  # start_joint_state_publisher_cmd = Node(
+    # package='joint_state_publisher',
+    # executable='joint_state_publisher',
+    # name='joint_state_publisher',
+    # condition=UnlessCondition(jsp_gui))
+
+  # Depending on gui parameter, either launch joint_state_publisher or joint_state_publisher_gui
+  # start_joint_state_publisher_gui_cmd = Node(
+    # package='joint_state_publisher_gui',
+    # executable='joint_state_publisher_gui',
+    # name='joint_state_publisher_gui',
+    # condition=IfCondition(jsp_gui))
 
   # # Subscribe to the joint states of the robot, and publish the 3D pose of each link.
   # robot_description_content = ParameterValue(Command(['xacro ', urdf_model]), value_type=str)
@@ -175,7 +188,7 @@ def generate_launch_description():
     # output='screen',
     # arguments=['-d', rviz_config_file])  
     
-  ############################ BEGIN TEST 1 #############################################
+  ############################ SPAWN #############################################
   # Define the spawn_entity node
   # spawn_entity_node = Node(
     # package='gazebo_ros',
@@ -192,15 +205,112 @@ def generate_launch_description():
     #   '-P', pitch,
     #   '-Y', yaw])
 
+  # start_gazebo_ros_spawner_cmd = Node(
+    # package='ros_gz_sim',
+    # executable='create',
+    # arguments=[
+        # '-name', TURTLEBOT3_MODEL,
+        # '-file', urdf_path,
+        # '-x', x_pose,
+        # '-y', y_pose,
+        # '-z', '0.01'
+    # ],
+    # output='screen')
+    
+    # spawn = Node(package='ros_gz_sim', executable='create',
+                 # parameters=[{
+                    # 'name': 'my_custom_model',
+                    # 'x': 1.2,
+                    # 'z': 2.3,
+                    # 'Y': 3.4,
+                    # 'topic': '/robot_description'}],
+                 # output='screen')
 
-    # start_joint_state_publisher_gui_cmd = Node(
-        # package='joint_state_publisher_gui',
-        # executable='joint_state_publisher_gui',
-        # name='joint_state_publisher_gui',
-        # condition=IfCondition(jsp_gui))
-
+    # spawn = Node(
+        # package='ros_gz_sim',
+        # executable='create',
+        # parameters=[{'name': 'rrbot',
+                    # 'topic': 'robot_description'}],
+        # output='screen',
+    # )
  
-  ############################ END TEST 1 #############################################
+  ############################ GZ-ROS BRIDGE #####################################
+  # Bridge ROS topics and Gazebo messages for establishing communication
+    # # Gz - ROS Bridge
+    # bridge = Node(
+        # package='ros_gz_bridge',
+        # executable='parameter_bridge',
+        # arguments=[
+            # # Clock (IGN -> ROS2)
+            # '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
+            # # Joint states (IGN -> ROS2)
+            # '/world/empty/model/rrbot/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
+        # ],
+        # remappings=[
+            # ('/world/empty/model/rrbot/joint_state', 'joint_states'),
+        # ],
+        # output='screen'
+    # )
+    
+    
+        # # Launch a bridge to forward tf and joint states to ros2
+        # Node(
+            # package='ros_gz_bridge',
+            # executable='parameter_bridge',
+            # arguments=[
+                # '/world/default/model/double_pendulum_with_base0/joint_state@'
+                # 'sensor_msgs/msg/JointState[gz.msgs.Model',
+                # '/model/double_pendulum_with_base0/pose@'
+                # 'tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'
+            # ],
+            # remappings=[
+                # ('/model/double_pendulum_with_base0/pose', '/tf'),
+                # ('/world/default/model/double_pendulum_with_base0/joint_state', '/joint_states')
+            # ]
+        # ),
+        
+    # bridge_params = os.path.join(
+        # get_package_share_directory('turtlebot3_gazebo'),
+        # 'params',
+        # 'turtlebot3_waffle_bridge.yaml'
+    # )
+
+    # start_gazebo_ros_bridge_cmd = Node(
+        # package='ros_gz_bridge',
+        # executable='parameter_bridge',
+        # arguments=[
+            # '--ros-args',
+            # '-p',
+            # f'config_file:={bridge_params}',
+        # ],
+        # output='screen',
+    # )
+
+    # bridge = Node(
+        # package='ros_gz_bridge',
+        # executable='parameter_bridge',
+        # parameters=[{
+            # 'config_file': os.path.join(pkg_project_bringup, 'config', 'ros_gz_example_bridge.yaml'),
+            # 'qos_overrides./tf_static.publisher.durability': 'transient_local',
+        # }],
+        # output='screen'
+    # )
+    
+        # # Launch a bridge to forward tf and joint states to ros2
+        # Node(
+            # package='ros_gz_bridge',
+            # executable='parameter_bridge',
+            # arguments=[
+                # '/world/default/model/double_pendulum_with_base0/joint_state@'
+                # 'sensor_msgs/msg/JointState[gz.msgs.Model',
+                # '/model/double_pendulum_with_base0/pose@'
+                # 'tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'
+            # ],
+            # remappings=[
+                # ('/model/double_pendulum_with_base0/pose', '/tf'),
+                # ('/world/default/model/double_pendulum_with_base0/joint_state', '/joint_states')
+            # ]
+        # ),
   
   # Create the launch description and populate
   ld = LaunchDescription()
