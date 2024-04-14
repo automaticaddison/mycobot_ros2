@@ -3,7 +3,7 @@
 <package format="3">
   <name>mycobot_gazebo</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Contains the files to simulate the robot with Gazebo, an open-source robotics simulator.</description>
   <maintainer email="ubuntu@todo.todo">ubuntu</maintainer>
   <license>BSD-3-Clause</license>
 

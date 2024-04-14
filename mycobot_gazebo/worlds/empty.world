@@ -19,7 +19,7 @@
       filename="gz-sim-scene-broadcaster-system"
       name="gz::sim::systems::SceneBroadcaster">
     </plugin>
-
+    
     <!-- Include a model of the Sun from an external URI -->
     <include>
       <uri>
