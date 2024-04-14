@@ -187,7 +187,7 @@ def generate_launch_description():
       '-P', pitch,
       '-Y', yaw
       ],
-      output='screen')  
+    output='screen')  
     
   # Bridge ROS topics and Gazebo messages for establishing communication
   start_gazebo_ros_bridge_cmd = Node(
