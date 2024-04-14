@@ -546,12 +546,12 @@
         </plugin>    
     </gazebo>   
 
-    <!-- JointTrajectoryController subscribes to joint trajectory messages 
+    <!-- JointTrajectoryController subscribes to joint trajectory messages
     <gazebo>
         <plugin filename="gz-sim-joint-trajectory-controller-system" name="gz::sim::systems::JointTrajectoryController">
             <topic>arm_controller/command</topic>
         </plugin>    
     </gazebo>   
-    --> 
+     --> 
 
 </robot>

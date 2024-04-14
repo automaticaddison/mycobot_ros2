@@ -17,7 +17,7 @@ def generate_launch_description():
   package_name_description = 'mycobot_description'
   package_name_gazebo = 'mycobot_gazebo'
 
-  robot_name_in_model = 'mycobot_280'
+  default_robot_name = 'mycobot_280'
   gazebo_launch_file_path = 'launch'
   gazebo_models_path = 'models'
   ros_gz_bridge_config_file_path = 'config/ros_gz_bridge.yaml'
@@ -39,6 +39,7 @@ def generate_launch_description():
   
   # Launch configuration variables specific to simulation
   headless = LaunchConfiguration('headless')
+  robot_name = LaunchConfiguration('robot_name')
   rviz_config_file = LaunchConfiguration('rviz_config_file')
   urdf_model = LaunchConfiguration('urdf_model')
   use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
@@ -56,6 +57,11 @@ def generate_launch_description():
   yaw = LaunchConfiguration('yaw')
   
   # Declare the launch arguments  
+  declare_robot_name_cmd = DeclareLaunchArgument(
+    name='robot_name',
+    default_value=default_robot_name,
+    description='The name for the robot')
+
   declare_rviz_config_file_cmd = DeclareLaunchArgument(
     name='rviz_config_file',
     default_value=default_rviz_config_path,
@@ -172,8 +178,8 @@ def generate_launch_description():
     package='ros_gz_sim',
     executable='create',
     arguments=[
-      '-name', robot_name_in_model,
-      '-file', default_urdf_model_path,
+      '-name', robot_name,
+      '-file', urdf_model, 
       '-x', x,
       '-y', y,
       '-z', z,
@@ -197,6 +203,7 @@ def generate_launch_description():
   ld = LaunchDescription()
 
   # Declare the launch options
+  ld.add_action(declare_robot_name_cmd)
   ld.add_action(declare_rviz_config_file_cmd)
   ld.add_action(declare_simulator_cmd)
   ld.add_action(declare_urdf_model_path_cmd)
