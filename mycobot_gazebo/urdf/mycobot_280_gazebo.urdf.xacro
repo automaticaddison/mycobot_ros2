@@ -544,14 +544,6 @@
         <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
             <topic>joint_states</topic>
         </plugin>    
-    </gazebo>   
-
-    <!-- JointTrajectoryController subscribes to joint trajectory messages
-    <gazebo>
-        <plugin filename="gz-sim-joint-trajectory-controller-system" name="gz::sim::systems::JointTrajectoryController">
-            <topic>arm_controller/command</topic>
-        </plugin>    
-    </gazebo>   
-     --> 
+    </gazebo>      
 
 </robot>

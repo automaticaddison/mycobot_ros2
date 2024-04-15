@@ -4,10 +4,4 @@
   ros_type_name: "sensor_msgs/msg/JointState"
   gz_type_name: "gz.msgs.Model"
   direction: GZ_TO_ROS
-  
-# gz topic subscribed by the JointTrajectoryController plugin
-#- ros_topic_name: "arm_controller/command"
-#  gz_topic_name: "arm_controller/command"
-#  ros_type_name: "trajectory_msgs/msg/JointTrajectory"
-#  gz_type_name: "gz.msgs.JointTrajectory"
-#  direction: ROS_TO_GZ
+
