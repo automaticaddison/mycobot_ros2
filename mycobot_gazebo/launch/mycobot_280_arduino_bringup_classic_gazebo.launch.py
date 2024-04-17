@@ -208,7 +208,7 @@ def generate_launch_description():
   ld.add_action(declare_yaw_cmd)  
 
   # Add any actions
-  ld.add_action(set_env_vars_resources)
+  #ld.add_action(set_env_vars_resources)
   ld.add_action(start_gazebo_server_cmd)
   ld.add_action(start_gazebo_client_cmd)
   ld.add_action(start_robot_state_publisher_cmd)

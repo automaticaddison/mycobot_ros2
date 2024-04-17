@@ -23,7 +23,7 @@ def generate_launch_description():
   ros_gz_bridge_config_file_path = 'config/ros_gz_bridge.yaml'
   rviz_config_file_path = 'rviz/mycobot_280_arduino_view_description.rviz'
   urdf_file_path = 'urdf/mycobot_280_gazebo.urdf'
-  world_file_path = 'worlds/empty.world' # Example: 'worlds/house.world', 'worlds/empty.world'
+  world_file_path = 'worlds/empty.world' # e.g. 'world/empty.world', 'world/house.world'
 
   # Set the path to different files and folders.  
   pkg_ros_gz_sim = FindPackageShare(package='ros_gz_sim').find('ros_gz_sim')  
@@ -114,7 +114,7 @@ def generate_launch_description():
     
   declare_z_cmd = DeclareLaunchArgument(
     name='z',
-    default_value='0.0',
+    default_value='0.05',
     description='z component of initial position, meters')
     
   declare_roll_cmd = DeclareLaunchArgument(

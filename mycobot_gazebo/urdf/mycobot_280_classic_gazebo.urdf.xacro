@@ -435,6 +435,7 @@
 		<parent link="link1"/>
 		<child link="link2"/>
 		<origin xyz= "0 0 0.13156" rpy = "0 0 ${pi/2}"/>  
+        <dynamics damping="8.0" friction="4.0"/>
 	</joint>
 
 	<joint name="link2_to_link3" type="revolute">
@@ -443,6 +444,7 @@
 		<parent link="link2"/>
 		<child link="link3"/>
 		<origin xyz= "0 0 -0.001" rpy = "0 ${pi/2} ${-pi/2}"/>  
+        <dynamics damping="8.0" friction="4.0"/>
 	</joint>
 
 	<joint name="link3_to_link4" type="revolute">
@@ -451,6 +453,7 @@
 		<parent link="link3"/>
 		<child link="link4"/>
 		<origin xyz= "-0.1104 0 0   " rpy = "0 0 0"/>
+        <dynamics damping="8.0" friction="4.0"/>
 	</joint>
 
 	<joint name="link4_to_link5" type="revolute">
@@ -459,6 +462,7 @@
 		<parent link="link4"/>
 		<child link="link5"/>
 		<origin xyz= "-0.096 0 0.06062" rpy = "0 0 ${-pi/2}"/>
+        <dynamics damping="8.0" friction="4.0"/>
 	</joint>
 
 	<joint name="link5_to_link6" type="revolute">
@@ -467,6 +471,7 @@
 		<parent link="link5"/>
 		<child link="link6"/>
 		<origin xyz= "0 -0.07318 0" rpy = "${pi/2} ${-pi/2} 0"/>
+        <dynamics damping="5.0" friction="2.5"/>
 	</joint>
 
 	<joint name="link6_to_link6flange" type="revolute">
@@ -475,6 +480,7 @@
 		<parent link="link6"/>
 		<child link="link6_flange"/>
 		<origin xyz= "0 0.0456 0" rpy = "${-pi/2} 0 0"/>
+        <dynamics damping="2.0" friction="1.5"/>
 	</joint>
 
 	<joint name="link6flange_to_gripper_base" type="fixed">
@@ -489,6 +495,7 @@
 		<parent link="gripper_base"/>
 		<child link="gripper_left3"/>
 		<origin xyz= "-0.012 0.005 0" rpy = "0 0 0"/> 
+        <dynamics damping="3.0" friction="6.0"/>
 	</joint>
 	
 	<!-- The mimic element means this joint will follow the movements of the 
@@ -501,6 +508,7 @@
 		<child link="gripper_left2"/>
 		<origin xyz= "-0.005 0.027 0" rpy = "0 0 0"/> 
 		<mimic joint="gripper_controller" multiplier="1.0" offset="0" />
+        <dynamics damping="3.0" friction="6.0"/>
 	</joint>
 	
 	<joint name="gripper_left3_to_gripper_left1" type="revolute">
@@ -510,6 +518,7 @@
 		<child link="gripper_left1"/>
 		<origin xyz= "-0.027 0.016 0" rpy = "0 0 0"/> 
 		<mimic joint="gripper_controller" multiplier="-1.0" offset="0" />
+        <dynamics damping="3.0" friction="6.0"/>
 	</joint>
 	
 	<joint name="gripper_base_to_gripper_right3" type="revolute">
@@ -519,6 +528,7 @@
 		<child link="gripper_right3"/>
 		<origin xyz= "0.012 0.005 0" rpy = "0 0 0"/> 
 		<mimic joint="gripper_controller" multiplier="-1.0" offset="0" />
+        <dynamics damping="3.0" friction="6.0"/>
 	</joint>
 	
 	<joint name="gripper_base_to_gripper_right2" type="revolute">
@@ -528,6 +538,7 @@
 		<child link="gripper_right2"/>
 		<origin xyz= "0.005 0.027 0" rpy = "0 0 0"/> 
 		<mimic joint="gripper_controller" multiplier="-1.0" offset="0" />
+        <dynamics damping="3.0" friction="6.0"/>
 	</joint>
 	
 	<joint name="gripper_right3_to_gripper_right1" type="revolute">
@@ -537,6 +548,7 @@
 		<child link="gripper_right1"/>
 		<origin xyz= "0.027 0.016 0" rpy = "0 0 0"/> 
 		<mimic joint="gripper_controller" multiplier="1.0" offset="0" />
+        <dynamics damping="3.0" friction="6.0"/>
 	</joint>
 
     <!-- Publishes joint state information for the model which the robot_state_publisher uses to broadcast to 
