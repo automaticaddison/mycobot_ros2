@@ -22,10 +22,10 @@
 	-->
   <link name="world"/>
   <!-- ********** LINKS ********** -->
-  <!-- Define the base plate of the robotic arm -->
-  <link name="base_link">
-    <!-- The inertial values below were taken from link1 (with slight modification. 
+  <!-- Define the base plate of the robotic arm 
+    	The inertial values below were taken from link1 (with slight modification. 
 		They are just placeholder values. -->
+  <link name="base_link">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0.0"/>
       <mass value="0.33"/>
@@ -46,33 +46,17 @@
   </link>
   <!--Define the first link of the robotic arm. Each link represents a solid part of the robot.-->
   <link name="link1">
-    <!--Define the inertial properties of the link, which characterizes the link's resistance
-		to changes in its rotational motion.-->
     <inertial>
-      <!--Specify the pose of the center of mass of the link relative 
-			to this link's coordinate frame.-->
       <origin rpy="0 0 0" xyz="0 0 0.0"/>
-      <!--The mass of the link in kilograms-->
       <mass value="0.12"/>
-      <!--The rotational inertia values, which reflect how easily the link can rotate around
-			different axes given the distribution of mass within the link. Here we see rotation is
-			most difficult around the y axis.-->
       <inertia ixx="0.000148" ixy="0.0" ixz="0.0" iyy="0.000148" iyz="0.0" izz="0.000096"/>
     </inertial>
-    <!--Define the visual representation of the link in simulation.-->
     <visual>
-      <!--Define the shape of the link-->
       <geometry>
-        <!--Specify the link's visual appearance using the 3D mesh file.-->
         <mesh filename="file:///home/ubuntu/ros2_ws/install/mycobot_description/share/mycobot_description/meshes/mycobot_280/link1.dae"/>
       </geometry>
-      <!--Define the position and orientation of the visual representation relative to the 
-			link's reference frame. Here, it's rotated by -1.5708 radians (or -90 degrees) 
-			around the Z-axis.-->
       <origin rpy=" 0 0 -1.5707963267948966" xyz="0.0 0 0 "/>
     </visual>
-    <!--Define the shape used for collision detection during simulation. This piece is important
-		for accurate physical interactions between robot components and the environment or other objects.-->
     <collision>
       <geometry>
         <mesh filename="file:///home/ubuntu/ros2_ws/install/mycobot_description/share/mycobot_description/meshes/mycobot_280/link1.dae"/>
@@ -328,6 +312,34 @@
       <origin rpy=" 0 0 0" xyz="-0.012 0.0025 -0.012"/>
     </collision>
   </link>
+  <!-- ********** COLORS ********** -->
+  <gazebo reference="base_link">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+  <gazebo reference="link1">
+    <material>Gazebo/White</material>
+  </gazebo>
+  <gazebo reference="link2">
+    <material>Gazebo/White</material>
+  </gazebo>
+  <gazebo reference="link3">
+    <material>Gazebo/White</material>
+  </gazebo>
+  <gazebo reference="link4">
+    <material>Gazebo/White</material>
+  </gazebo>
+  <gazebo reference="link5">
+    <material>Gazebo/White</material>
+  </gazebo>
+  <gazebo reference="link6">
+    <material>Gazebo/White</material>
+  </gazebo>
+  <gazebo reference="link6_flange">
+    <material>Gazebo/White</material>
+  </gazebo>
+  <gazebo reference="gripper_base">
+    <material>Gazebo/White</material>
+  </gazebo>
   <!-- ********** JOINTS ********** -->
   <!-- Attach the robot base to the world frame with no initial offset or rotation. -->
   <joint name="virtual_joint" type="fixed">
@@ -338,26 +350,10 @@
   <!-- Define the joint name and its type as "fixed". A fixed joint 
 	means the two connected links cannot move relative to each other. -->
   <joint name="base_link_to_link1" type="fixed">
-    <!-- Specifies the axis around which the joint could rotate if it wasn't fixed. -->
     <axis xyz="0 0 0"/>
-    <!-- Specifies the range of allowed motion if the joint wasn't fixed. 
-			effort: Maximum torque in Nm 
-			lower: Minimum allowed angle in radians
-			upper: Maximum allowed angle in radians 
-			velocity: Maximum allowed angular velocity in radians per second (ignored for fixed joints) 
-		-->
     <limit effort="5.0" lower="-3.141592653589793" upper="3.141592653589793" velocity="2.792527"/>
-    <!-- The link this joint connects to on one side -->
     <parent link="base_link"/>
-    <!-- The link this joint connects to on the other side -->
     <child link="link1"/>
-    <!-- The origin of the joint relative to the parent link's coordinate frame.
-			xyz: The position of the child link relative to the parent link's coordinate frame.
-			rpy: The orientation of the child link relative to the parent link's coordinate frame.
-			See these posts for more information on coordinate frames in robotics: 
-			https://automaticaddison.com/coordinate-frames-and-transforms-for-ros-based-mobile-robots/
-			https://automaticaddison.com/yaw-pitch-and-roll-diagrams-using-2d-coordinate-systems/
-		-->
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
   <joint name="link1_to_link2" type="revolute">
@@ -366,7 +362,7 @@
     <parent link="link1"/>
     <child link="link2"/>
     <origin rpy="0 0 1.5707963267948966" xyz="0 0 0.13156"/>
-    <dynamics damping="8.0" friction="4.0"/>
+    <dynamics damping="12.0" friction="6.0"/>
   </joint>
   <joint name="link2_to_link3" type="revolute">
     <axis xyz="0 0 1"/>
@@ -374,7 +370,7 @@
     <parent link="link2"/>
     <child link="link3"/>
     <origin rpy="0 1.5707963267948966 -1.5707963267948966" xyz="0 0 -0.001"/>
-    <dynamics damping="8.0" friction="4.0"/>
+    <dynamics damping="12.0" friction="6.0"/>
   </joint>
   <joint name="link3_to_link4" type="revolute">
     <axis xyz=" 0 0 1"/>
@@ -382,7 +378,7 @@
     <parent link="link3"/>
     <child link="link4"/>
     <origin rpy="0 0 0" xyz="-0.1104 0 0   "/>
-    <dynamics damping="8.0" friction="4.0"/>
+    <dynamics damping="12.0" friction="6.0"/>
   </joint>
   <joint name="link4_to_link5" type="revolute">
     <axis xyz=" 0 0 1"/>
@@ -390,7 +386,7 @@
     <parent link="link4"/>
     <child link="link5"/>
     <origin rpy="0 0 -1.5707963267948966" xyz="-0.096 0 0.06062"/>
-    <dynamics damping="8.0" friction="4.0"/>
+    <dynamics damping="12.0" friction="6.0"/>
   </joint>
   <joint name="link5_to_link6" type="revolute">
     <axis xyz=" 0 0 1"/>
@@ -398,7 +394,7 @@
     <parent link="link5"/>
     <child link="link6"/>
     <origin rpy="1.5707963267948966 -1.5707963267948966 0" xyz="0 -0.07318 0"/>
-    <dynamics damping="5.0" friction="2.5"/>
+    <dynamics damping="7.0" friction="4.0"/>
   </joint>
   <joint name="link6_to_link6flange" type="revolute">
     <axis xyz=" 0 0 1"/>
@@ -406,7 +402,7 @@
     <parent link="link6"/>
     <child link="link6_flange"/>
     <origin rpy="-1.5707963267948966 0 0" xyz="0 0.0456 0"/>
-    <dynamics damping="2.0" friction="1.5"/>
+    <dynamics damping="3.0" friction="3.0"/>
   </joint>
   <joint name="link6flange_to_gripper_base" type="fixed">
     <parent link="link6_flange"/>
@@ -419,7 +415,7 @@
     <parent link="gripper_base"/>
     <child link="gripper_left3"/>
     <origin rpy="0 0 0" xyz="-0.012 0.005 0"/>
-    <dynamics damping="3.0" friction="6.0"/>
+    <dynamics damping="2.0" friction="4.0"/>
   </joint>
   <!-- The mimic element means this joint will follow the movements of the 
 		gripper_controller joint. 
@@ -431,7 +427,7 @@
     <child link="gripper_left2"/>
     <origin rpy="0 0 0" xyz="-0.005 0.027 0"/>
     <mimic joint="gripper_controller" multiplier="1.0" offset="0"/>
-    <dynamics damping="3.0" friction="6.0"/>
+    <dynamics damping="2.0" friction="4.0"/>
   </joint>
   <joint name="gripper_left3_to_gripper_left1" type="revolute">
     <axis xyz="0 0 1"/>
@@ -440,7 +436,7 @@
     <child link="gripper_left1"/>
     <origin rpy="0 0 0" xyz="-0.027 0.016 0"/>
     <mimic joint="gripper_controller" multiplier="-1.0" offset="0"/>
-    <dynamics damping="3.0" friction="6.0"/>
+    <dynamics damping="2.0" friction="4.0"/>
   </joint>
   <joint name="gripper_base_to_gripper_right3" type="revolute">
     <axis xyz="0 0 1"/>
@@ -449,7 +445,7 @@
     <child link="gripper_right3"/>
     <origin rpy="0 0 0" xyz="0.012 0.005 0"/>
     <mimic joint="gripper_controller" multiplier="-1.0" offset="0"/>
-    <dynamics damping="3.0" friction="6.0"/>
+    <dynamics damping="2.0" friction="4.0"/>
   </joint>
   <joint name="gripper_base_to_gripper_right2" type="revolute">
     <axis xyz="0 0 1"/>
@@ -458,7 +454,7 @@
     <child link="gripper_right2"/>
     <origin rpy="0 0 0" xyz="0.005 0.027 0"/>
     <mimic joint="gripper_controller" multiplier="-1.0" offset="0"/>
-    <dynamics damping="3.0" friction="6.0"/>
+    <dynamics damping="2.0" friction="4.0"/>
   </joint>
   <joint name="gripper_right3_to_gripper_right1" type="revolute">
     <axis xyz="0 0 1"/>
@@ -467,7 +463,7 @@
     <child link="gripper_right1"/>
     <origin rpy="0 0 0" xyz="0.027 0.016 0"/>
     <mimic joint="gripper_controller" multiplier="1.0" offset="0"/>
-    <dynamics damping="3.0" friction="6.0"/>
+    <dynamics damping="2.0" friction="4.0"/>
   </joint>
   <!-- Publishes joint state information for the model which the robot_state_publisher uses to broadcast to 
             the tf topic, the topic that keeps track of the robot's multiple coordinate frames over time -->

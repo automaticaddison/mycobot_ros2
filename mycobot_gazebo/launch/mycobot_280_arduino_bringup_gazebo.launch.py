@@ -1,6 +1,6 @@
 # Author: Addison Sears-Collins
 # Date: April 14, 2024
-# Description: Launch a robotic arm in Gazebo
+# Description: Launch a robotic arm in Gazebo 
 import os
 from launch import LaunchDescription
 from launch.actions import AppendEnvironmentVariable, DeclareLaunchArgument, IncludeLaunchDescription

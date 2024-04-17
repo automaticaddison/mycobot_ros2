@@ -1,5 +1,5 @@
 # Author: Addison Sears-Collins
-# Date: April 16, 2024
+# Date: April 17, 2024
 # Description: Launch a robotic arm in Gazebo (Classic)
 import os
 from launch import LaunchDescription
@@ -22,7 +22,7 @@ def generate_launch_description():
   gazebo_models_path = 'models'
   rviz_config_file_path = 'rviz/mycobot_280_arduino_view_description.rviz'
   urdf_file_path = 'urdf/mycobot_280_classic_gazebo.urdf'
-  world_file_path = 'worlds/empty.world' # Example: 'worlds/house.world', 'worlds/empty.world'
+  world_file_path = 'worlds/empty_classic.world' # Example: 'worlds/house_classic.world', 'worlds/empty_classic.world'
 
   # Set the path to different files and folders.  
   pkg_gazebo_ros = FindPackageShare(package='gazebo_ros').find('gazebo_ros')  
@@ -112,7 +112,7 @@ def generate_launch_description():
     
   declare_z_cmd = DeclareLaunchArgument(
     name='z',
-    default_value='0.0',
+    default_value='0.05',
     description='z component of initial position, meters')
     
   declare_roll_cmd = DeclareLaunchArgument(
@@ -208,7 +208,7 @@ def generate_launch_description():
   ld.add_action(declare_yaw_cmd)  
 
   # Add any actions
-  #ld.add_action(set_env_vars_resources)
+  ld.add_action(set_env_vars_resources)
   ld.add_action(start_gazebo_server_cmd)
   ld.add_action(start_gazebo_client_cmd)
   ld.add_action(start_robot_state_publisher_cmd)
