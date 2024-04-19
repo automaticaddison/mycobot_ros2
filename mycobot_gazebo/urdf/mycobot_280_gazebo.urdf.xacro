@@ -435,7 +435,7 @@
 		<parent link="link1"/>
 		<child link="link2"/>
 	    <origin xyz= "0 0 0.13156" rpy = "0 0 ${pi/2}"/>  
-        <dynamics damping="12.0" friction="6.0"/>
+        <dynamics damping="0.05" friction="0.05"/>
 	</joint>
 
 	<joint name="link2_to_link3" type="revolute">
@@ -444,7 +444,7 @@
 		<parent link="link2"/>
 		<child link="link3"/>
 		<origin xyz= "0 0 -0.001" rpy = "0 ${pi/2} ${-pi/2}"/>  
-        <dynamics damping="12.0" friction="6.0"/>
+        <dynamics damping="0.205" friction="0.515"/>
 	</joint>
 
 	<joint name="link3_to_link4" type="revolute">
@@ -453,7 +453,7 @@
 		<parent link="link3"/>
 		<child link="link4"/>
 		<origin xyz= "-0.1104 0 0   " rpy = "0 0 0"/>
-        <dynamics damping="12.0" friction="6.0"/>
+        <dynamics damping="0.21" friction="0.41"/>
 	</joint>
 
 	<joint name="link4_to_link5" type="revolute">
@@ -462,7 +462,7 @@
 		<parent link="link4"/>
 		<child link="link5"/>
 		<origin xyz= "-0.096 0 0.06062" rpy = "0 0 ${-pi/2}"/>
-        <dynamics damping="12.0" friction="6.0"/>
+        <dynamics damping="0.10" friction="0.20"/>
 	</joint>
 
 	<joint name="link5_to_link6" type="revolute">
@@ -471,7 +471,7 @@
 		<parent link="link5"/>
 		<child link="link6"/>
 		<origin xyz= "0 -0.07318 0" rpy = "${pi/2} ${-pi/2} 0"/>
-        <dynamics damping="7.0" friction="4.0"/>
+        <dynamics damping="0.01" friction="0.005"/>
 	</joint>
 
 	<joint name="link6_to_link6flange" type="revolute">
@@ -480,7 +480,7 @@
 		<parent link="link6"/>
 		<child link="link6_flange"/>
 		<origin xyz= "0 0.0456 0" rpy = "${-pi/2} 0 0"/>
-        <dynamics damping="3.0" friction="3.0"/>
+        <dynamics damping="0.01" friction="0.005"/>
 	</joint>
 
 	<joint name="link6flange_to_gripper_base" type="fixed">
@@ -495,7 +495,7 @@
 		<parent link="gripper_base"/>
 		<child link="gripper_left3"/>
 		<origin xyz= "-0.012 0.005 0" rpy = "0 0 0"/> 
-        <dynamics damping="2.0" friction="4.0"/>
+        <dynamics damping="0.01" friction="0.005"/>
 	</joint>
 	
 	<!-- The mimic element means this joint will follow the movements of the 
@@ -508,7 +508,7 @@
 		<child link="gripper_left2"/>
 		<origin xyz= "-0.005 0.027 0" rpy = "0 0 0"/> 
 		<mimic joint="gripper_controller" multiplier="1.0" offset="0" />
-        <dynamics damping="2.0" friction="4.0"/>
+        <dynamics damping="0.01" friction="0.005"/>
 	</joint>
 	
 	<joint name="gripper_left3_to_gripper_left1" type="revolute">
@@ -518,7 +518,7 @@
 		<child link="gripper_left1"/>
 		<origin xyz= "-0.027 0.016 0" rpy = "0 0 0"/> 
 		<mimic joint="gripper_controller" multiplier="-1.0" offset="0" />
-        <dynamics damping="2.0" friction="4.0"/>
+        <dynamics damping="0.01" friction="0.005"/>
 	</joint>
 	
 	<joint name="gripper_base_to_gripper_right3" type="revolute">
@@ -528,7 +528,7 @@
 		<child link="gripper_right3"/>
 		<origin xyz= "0.012 0.005 0" rpy = "0 0 0"/> 
 		<mimic joint="gripper_controller" multiplier="-1.0" offset="0" />
-        <dynamics damping="2.0" friction="4.0"/>
+        <dynamics damping="0.01" friction="0.005"/>
 	</joint>
 	
 	<joint name="gripper_base_to_gripper_right2" type="revolute">
@@ -538,7 +538,7 @@
 		<child link="gripper_right2"/>
 		<origin xyz= "0.005 0.027 0" rpy = "0 0 0"/> 
 		<mimic joint="gripper_controller" multiplier="-1.0" offset="0" />
-        <dynamics damping="2.0" friction="4.0"/>
+        <dynamics damping="0.01" friction="0.005"/>
 	</joint>
 	
 	<joint name="gripper_right3_to_gripper_right1" type="revolute">
@@ -548,14 +548,82 @@
 		<child link="gripper_right1"/>
 		<origin xyz= "0.027 0.016 0" rpy = "0 0 0"/> 
 		<mimic joint="gripper_controller" multiplier="1.0" offset="0" />
-        <dynamics damping="2.0" friction="4.0"/>
+        <dynamics damping="0.01" friction="0.005"/>
 	</joint>
 
-    <!-- JointStatePublisher publishes joint state information for the model -->
+    <!-- JointStatePublisher publishes joint state information for the model.
+         In future versions of Gazebo, replace 'ignition-gazebo' with 'gz-sim' and
+         'ignition::gazebo' with 'gz::sim'
+    -->
     <gazebo>
-        <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+        <plugin filename="ignition-gazebo-joint-state-publisher-system" name="ignition::gazebo::systems::JointStatePublisher">
             <topic>joint_states</topic>
         </plugin>    
     </gazebo>      
+
+    <!-- JointPositionController subscribes to target joint positions.
+         In future versions of Gazebo, replace 'ignition-gazebo' with 'gz-sim' and
+         'ignition::gazebo' with 'gz::sim'
+    -->   
+    <gazebo>
+        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+            <joint_name>link1_to_link2</joint_name>
+        </plugin>    
+    </gazebo>  
+    <gazebo>
+        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+            <joint_name>link2_to_link3</joint_name>
+        </plugin>    
+    </gazebo>  
+    <gazebo>
+        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+            <joint_name>link3_to_link4</joint_name>
+        </plugin>    
+    </gazebo>  
+    <gazebo>
+        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+            <joint_name>link4_to_link5</joint_name>
+        </plugin>    
+    </gazebo>  
+    <gazebo>
+        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+            <joint_name>link5_to_link6</joint_name>
+        </plugin>    
+    </gazebo>  
+    <gazebo>
+        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+            <joint_name>link6_to_link6flange</joint_name>
+        </plugin>    
+    </gazebo>  
+    <gazebo>
+        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+            <joint_name>gripper_controller</joint_name>
+        </plugin>    
+    </gazebo>  
+    <gazebo>
+        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+            <joint_name>gripper_base_to_gripper_left2</joint_name>
+        </plugin>    
+    </gazebo>  
+    <gazebo>
+        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+            <joint_name>gripper_left3_to_gripper_left1</joint_name>
+        </plugin>    
+    </gazebo>  
+    <gazebo>
+        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+            <joint_name>gripper_base_to_gripper_right3</joint_name>
+        </plugin>    
+    </gazebo>  
+    <gazebo>
+        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+            <joint_name>gripper_base_to_gripper_right2</joint_name>
+        </plugin>    
+    </gazebo>  
+    <gazebo>
+        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+            <joint_name>gripper_right3_to_gripper_right1</joint_name>
+        </plugin>    
+    </gazebo>       
 
 </robot>

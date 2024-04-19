@@ -2,6 +2,78 @@
 - ros_topic_name: "joint_states"
   gz_topic_name: "joint_states"
   ros_type_name: "sensor_msgs/msg/JointState"
-  gz_type_name: "gz.msgs.Model"
+  gz_type_name: "ignition.msgs.Model" # In future, this will be gz.msgs.Model
   direction: GZ_TO_ROS
 
+# gz topic subscribed by the JointPositionController plugin
+- ros_topic_name: "model/mycobot_280/joint/link1_to_link2/cmd_pos"
+  gz_topic_name: "model/mycobot_280/joint/link1_to_link2/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "ignition.msgs.Double" # In future, this will be gz.msgs.Double
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "model/mycobot_280/joint/link2_to_link3/cmd_pos"
+  gz_topic_name: "model/mycobot_280/joint/link2_to_link3/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "ignition.msgs.Double" # In future, this will be gz.msgs.Double
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "model/mycobot_280/joint/link3_to_link4/cmd_pos"
+  gz_topic_name: "model/mycobot_280/joint/link3_to_link4/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "ignition.msgs.Double" # In future, this will be gz.msgs.Double
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "model/mycobot_280/joint/link4_to_link5/cmd_pos"
+  gz_topic_name: "model/mycobot_280/joint/link4_to_link5/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "ignition.msgs.Double" # In future, this will be gz.msgs.Double
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "model/mycobot_280/joint/link5_to_link6/cmd_pos"
+  gz_topic_name: "model/mycobot_280/joint/link5_to_link6/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "ignition.msgs.Double" # In future, this will be gz.msgs.Double
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "model/mycobot_280/joint/link6_to_link6flange/cmd_pos"
+  gz_topic_name: "model/mycobot_280/joint/link6_to_link6flange/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "ignition.msgs.Double" # In future, this will be gz.msgs.Double
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "model/mycobot_280/joint/gripper_controller/cmd_pos"
+  gz_topic_name: "model/mycobot_280/joint/gripper_controller/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "ignition.msgs.Double" # In future, this will be gz.msgs.Double
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "model/mycobot_280/joint/gripper_base_to_gripper_left2/cmd_pos"
+  gz_topic_name: "model/mycobot_280/joint/gripper_base_to_gripper_left2/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "ignition.msgs.Double" # In future, this will be gz.msgs.Double
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "model/mycobot_280/joint/gripper_left3_to_gripper_left1/cmd_pos"
+  gz_topic_name: "model/mycobot_280/joint/gripper_left3_to_gripper_left1/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "ignition.msgs.Double" # In future, this will be gz.msgs.Double
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "model/mycobot_280/joint/gripper_base_to_gripper_right3/cmd_pos"
+  gz_topic_name: "model/mycobot_280/joint/gripper_base_to_gripper_right3/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "ignition.msgs.Double" # In future, this will be gz.msgs.Double
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "model/mycobot_280/joint/gripper_base_to_gripper_right2/cmd_pos"
+  gz_topic_name: "model/mycobot_280/joint/gripper_base_to_gripper_right2/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "ignition.msgs.Double" # In future, this will be gz.msgs.Double
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "model/mycobot_280/joint/gripper_right3_to_gripper_right1/cmd_pos"
+  gz_topic_name: "model/mycobot_280/joint/gripper_right3_to_gripper_right1/0/cmd_pos"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "ignition.msgs.Double" # In future, this will be gz.msgs.Double
+  direction: ROS_TO_GZ

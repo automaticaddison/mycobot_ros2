@@ -12,14 +12,24 @@ find_package(ros_gz REQUIRED)
 find_package(ros_gz_bridge REQUIRED)
 find_package(ros_gz_sim REQUIRED)
 find_package(ros_gz_image REQUIRED)
+find_package(trajectory_msgs REQUIRED)
 find_package(xacro REQUIRED)
 
 # Copy necessary files to designated locations in the project
 install (
-  DIRECTORY config launch models urdf worlds
+  DIRECTORY config launch models scripts urdf worlds
   DESTINATION share/${PROJECT_NAME}
 )
 
+# Install Python modules for import
+ament_python_install_package(${PROJECT_NAME})
+
+# Install Python executables
+install(PROGRAMS
+  scripts/test_set_joint_position_publisher.py
+  scripts/test_set_joint_trajectory_publisher.py
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

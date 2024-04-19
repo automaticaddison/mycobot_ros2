@@ -465,6 +465,7 @@
     <mimic joint="gripper_controller" multiplier="1.0" offset="0"/>
     <dynamics damping="2.0" friction="4.0"/>
   </joint>
+  <!-- ********** PLUGINS ********** -->
   <!-- Publishes joint state information for the model which the robot_state_publisher uses to broadcast to 
             the tf topic, the topic that keeps track of the robot's multiple coordinate frames over time -->
   <gazebo>
@@ -477,6 +478,20 @@
       <joint_name>link5_to_link6</joint_name>
       <joint_name>link6_to_link6flange</joint_name>
       <joint_name>gripper_controller</joint_name>
+      <joint_name>gripper_base_to_gripper_left2</joint_name>
+      <joint_name>gripper_left3_to_gripper_left1</joint_name>
+      <joint_name>gripper_base_to_gripper_right3</joint_name>
+      <joint_name>gripper_base_to_gripper_right2</joint_name>
+      <joint_name>gripper_right3_to_gripper_right1</joint_name>
+    </plugin>
+  </gazebo>
+  <!-- Subscribes to a JointTrajectory message from the /set_joint_trajectory topic 
+        To publish to this topic type: 
+            ros2 topic pub -1 /set_joint_trajectory trajectory_msgs/msg/JointTrajectory "{header: {frame_id: base_link}, joint_names: [link1_to_link2, link2_to_link3, etc.], points: [{positions: [0.0,0.0,etc.]}]}" 
+    -->
+  <gazebo>
+    <plugin filename="libgazebo_ros_joint_pose_trajectory.so" name="gazebo_ros_joint_pose_trajectory">
+      <update_rate>20</update_rate>
     </plugin>
   </gazebo>
 </robot>
