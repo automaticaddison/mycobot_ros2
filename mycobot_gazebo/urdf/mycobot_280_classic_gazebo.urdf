@@ -350,8 +350,6 @@
   <!-- Define the joint name and its type as "fixed". A fixed joint 
 	means the two connected links cannot move relative to each other. -->
   <joint name="base_link_to_link1" type="fixed">
-    <axis xyz="0 0 0"/>
-    <limit effort="5.0" lower="-3.141592653589793" upper="3.141592653589793" velocity="2.792527"/>
     <parent link="base_link"/>
     <child link="link1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>

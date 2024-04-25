@@ -1,0 +1,119 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="mycobot_280">
+
+    <!-- Interface the robot's hardware with the ROS 2 Control library -->
+    <ros2_control name="RobotSystem" type="system">
+        <hardware>
+            <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+        </hardware>
+
+        <joint name="link1_to_link2">
+            <command_interface name="position">
+                <param name="min">-2.879793</param>
+                <param name="max">2.879793</param>
+            </command_interface>
+            <state_interface name="position"/>
+        </joint>
+
+        <joint name="link2_to_link3">
+            <command_interface name="position">
+                <param name="min">-2.879793</param>
+                <param name="max">2.879793</param>
+            </command_interface>
+            <state_interface name="position"/>
+        </joint>
+
+        <joint name="link3_to_link4">
+            <command_interface name="position">
+                <param name="min">-2.879793</param>
+                <param name="max">2.879793</param>
+            </command_interface>
+            <state_interface name="position"/>
+        </joint>
+
+        <joint name="link4_to_link5">
+            <command_interface name="position">
+                <param name="min">-2.879793</param>
+                <param name="max">2.879793</param>
+            </command_interface>
+            <state_interface name="position"/>
+        </joint>
+
+        <joint name="link5_to_link6">
+            <command_interface name="position">
+                <param name="min">-2.879793</param>
+                <param name="max">2.879793</param>
+            </command_interface>
+            <state_interface name="position"/>
+        </joint>
+
+        <joint name="link6_to_link6flange">
+            <command_interface name="position">
+                <param name="min">-3.05</param>
+                <param name="max">3.05</param>
+            </command_interface>
+            <state_interface name="position"/>
+        </joint>
+
+        <joint name="gripper_controller">
+            <command_interface name="position">
+                <param name="min">-0.7</param>
+                <param name="max">0.15</param>
+            </command_interface>
+            <state_interface name="position"/>
+        </joint>
+
+        <joint name="gripper_base_to_gripper_left2">
+            <param name="mimic">gripper_controller</param>
+            <param name="multiplier">1.0</param>
+            <command_interface name="position">
+                <param name="min">-0.8</param>
+                <param name="max">0.5</param>
+            </command_interface>
+            <state_interface name="position"/>
+        </joint>
+
+        <joint name="gripper_left3_to_gripper_left1">
+            <param name="mimic">gripper_controller</param>
+            <param name="multiplier">-1.0</param>
+            <command_interface name="position">
+                <param name="min">-0.5</param>
+                <param name="max">0.5</param>
+            </command_interface>
+            <state_interface name="position"/>
+        </joint>
+
+        <joint name="gripper_base_to_gripper_right3">
+            <param name="mimic">gripper_controller</param>
+            <param name="multiplier">-1.0</param>
+            <command_interface name="position">
+                <param name="min">-0.15</param>
+                <param name="max">0.7</param>
+            </command_interface>
+            <state_interface name="position"/>
+        </joint>
+
+        <joint name="gripper_base_to_gripper_right2">
+            <param name="mimic">gripper_controller</param>
+            <param name="multiplier">-1.0</param>
+            <command_interface name="position">
+                <param name="min">-0.5</param>
+                <param name="max">0.8</param>
+            </command_interface>
+            <state_interface name="position"/>
+        </joint>
+
+        <joint name="gripper_right3_to_gripper_right1">
+            <param name="mimic">gripper_controller</param>
+            <param name="multiplier">1.0</param>
+            <command_interface name="position">
+                <param name="min">-0.5</param>
+                <param name="max">0.5</param>
+            </command_interface>
+            <state_interface name="position"/>
+        </joint>
+
+    </ros2_control>
+    
+    
+</robot>

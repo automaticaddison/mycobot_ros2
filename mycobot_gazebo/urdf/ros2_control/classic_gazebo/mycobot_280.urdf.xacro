@@ -11,27 +11,39 @@
 			in ROS (Robot Operating System) for parameterizing XML documents.
 		name: 
 			Specify the name of the robot.
-	-->
-	
+	-->	
+
+    <xacro:include filename="$(find mycobot_gazebo)/urdf/ros2_control/classic_gazebo/mycobot_280_classic_gazebo.xacro"/>
+    <xacro:include filename="$(find mycobot_gazebo)/urdf/ros2_control/classic_gazebo/mycobot_280_ros2_control.xacro"/>
+
+	<!-- ****************** ROBOT CONSTANTS *******************************  -->
+	<!-- Source: https://www.elephantrobotics.com/en/mycobot280-for-arduino-specifications-en/ -->
+	<!-- Numbers are estimated when necessary -->
 	<!-- Reference Files: https://github.com/elephantrobotics/mycobot_ros/ -->
+	<xacro:property name="effort" value="5.0"/>
+	<xacro:property name="velocity" value="2.792527"/>
+
+    <!-- Transmission defines how actuators are mechanically connected to joints. -->
+    <xacro:macro name="default_transmission" params="joint_name">
+        <transmission name="transmission_${joint_name}">
+            <plugin>transmission_interface/SimpleTransmission</plugin>
+            <actuator name="actuator_${joint_name}" role="actuator_${joint_name}"/>
+            <joint name="${joint_name}" role="${joint_name}">
+                <mechanical_reduction>1.0</mechanical_reduction>
+            </joint>
+        </transmission>
+    </xacro:macro>
 	
+	<!-- ********** LINKS ********** -->
 	<!-- Provide a global reference frame for the robotic arm in simulation (Gazebo) 
 		or visualization (RViz) environments
 	-->
 	<link name="world"/>
 
-	<!-- ****************** ROBOT CONSTANTS *******************************  -->
-	<!-- Source: https://www.elephantrobotics.com/en/mycobot280-for-arduino-specifications-en/ -->
-	<!-- Numbers are estimated when necessary -->
-	<xacro:property name="effort" value="5.0"/>
-	<xacro:property name="velocity" value="2.792527"/>
-	
-	<!-- ********** LINKS ********** -->
-
-    <!-- Define the base plate of the robotic arm -->
-	<link name="base_link">
-		<!-- The inertial values below were taken from link1 (with slight modification. 
+    <!-- Define the base plate of the robotic arm 
+    	The inertial values below were taken from link1 (with slight modification. 
 		They are just placeholder values. -->
+	<link name="base_link">
 		<inertial>
 			<origin xyz="0 0 0.0" rpy="0 0 0"/>
 			<mass value="0.33"/>
@@ -56,36 +68,20 @@
 
 	<!--Define the first link of the robotic arm. Each link represents a solid part of the robot.--> 
 	<link name="link1">
-		<!--Define the inertial properties of the link, which characterizes the link's resistance
-		to changes in its rotational motion.-->
 		<inertial>
-			<!--Specify the pose of the center of mass of the link relative 
-			to this link's coordinate frame.-->
 			<origin xyz="0 0 0.0" rpy="0 0 0"/>
-			<!--The mass of the link in kilograms-->
 			<mass value="0.12"/>
-			<!--The rotational inertia values, which reflect how easily the link can rotate around
-			different axes given the distribution of mass within the link. Here we see rotation is
-			most difficult around the y axis.-->
 			<inertia
 				ixx="0.000148" ixy="0.0" ixz="0.0"
 				iyy="0.000148" iyz="0.0"
 				izz="0.000096"/>
 		</inertial>
-		<!--Define the visual representation of the link in simulation.-->
 		<visual>
-			<!--Define the shape of the link-->
 			<geometry>
-				<!--Specify the link's visual appearance using the 3D mesh file.-->
 				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link1.dae"/>
 			</geometry>
-			<!--Define the position and orientation of the visual representation relative to the 
-			link's reference frame. Here, it's rotated by -1.5708 radians (or -90 degrees) 
-			around the Z-axis.-->
 			<origin xyz = "0.0 0 0 " rpy = " 0 0 ${-pi/2}"/>
 		</visual>
-		<!--Define the shape used for collision detection during simulation. This piece is important
-		for accurate physical interactions between robot components and the environment or other objects.-->
 		<collision>
 			<geometry>
 				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link1.dae"/>
@@ -393,6 +389,35 @@
 			<origin xyz = "-0.012 0.0025 -0.012" rpy = " 0 0 0"/>
 		</collision>
 	</link>
+
+    <!-- ********** COLORS ********** -->
+    <gazebo reference="base_link">
+        <material>Gazebo/Grey</material>
+    </gazebo>
+    <gazebo reference="link1">
+        <material>Gazebo/White</material>
+    </gazebo>
+    <gazebo reference="link2">
+        <material>Gazebo/White</material>
+    </gazebo>
+    <gazebo reference="link3">
+        <material>Gazebo/White</material>
+    </gazebo>
+    <gazebo reference="link4">
+        <material>Gazebo/White</material>
+    </gazebo>
+    <gazebo reference="link5">
+        <material>Gazebo/White</material>
+    </gazebo>
+    <gazebo reference="link6">
+        <material>Gazebo/White</material>
+    </gazebo>
+    <gazebo reference="link6_flange">
+        <material>Gazebo/White</material>
+    </gazebo>
+    <gazebo reference="gripper_base">
+        <material>Gazebo/White</material>
+    </gazebo>
   
 	<!-- ********** JOINTS ********** -->
 	
@@ -405,19 +430,19 @@
 	
 	<!-- Define the joint name and its type as "fixed". A fixed joint 
 	means the two connected links cannot move relative to each other. -->
-        <joint name="base_link_to_link1" type="fixed">
-            <parent link="base_link"/>
-            <child link="link1"/>
-            <origin xyz="0 0 0" rpy="0 0 0"/>
-        </joint>
+    <joint name="base_link_to_link1" type="fixed">
+        <parent link="base_link"/>
+        <child link="link1"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
 
 	<joint name="link1_to_link2" type="revolute">
 		<axis xyz="0 0 1"/>
 		<limit effort = "${effort}" lower = "-2.879793" upper = "2.879793" velocity = "${velocity}"/>
 		<parent link="link1"/>
 		<child link="link2"/>
-	    <origin xyz= "0 0 0.13156" rpy = "0 0 ${pi/2}"/>  
-        <dynamics damping="0.05" friction="0.05"/>
+		<origin xyz= "0 0 0.13156" rpy = "0 0 ${pi/2}"/>  
+        <dynamics damping="12.0" friction="6.0"/>
 	</joint>
 
 	<joint name="link2_to_link3" type="revolute">
@@ -426,7 +451,7 @@
 		<parent link="link2"/>
 		<child link="link3"/>
 		<origin xyz= "0 0 -0.001" rpy = "0 ${pi/2} ${-pi/2}"/>  
-        <dynamics damping="0.205" friction="0.15"/>
+        <dynamics damping="12.0" friction="6.0"/>
 	</joint>
 
 	<joint name="link3_to_link4" type="revolute">
@@ -435,7 +460,7 @@
 		<parent link="link3"/>
 		<child link="link4"/>
 		<origin xyz= "-0.1104 0 0   " rpy = "0 0 0"/>
-        <dynamics damping="0.21" friction="0.41"/>
+        <dynamics damping="12.0" friction="6.0"/>
 	</joint>
 
 	<joint name="link4_to_link5" type="revolute">
@@ -444,7 +469,7 @@
 		<parent link="link4"/>
 		<child link="link5"/>
 		<origin xyz= "-0.096 0 0.06062" rpy = "0 0 ${-pi/2}"/>
-        <dynamics damping="0.10" friction="0.20"/>
+        <dynamics damping="12.0" friction="6.0"/>
 	</joint>
 
 	<joint name="link5_to_link6" type="revolute">
@@ -453,7 +478,7 @@
 		<parent link="link5"/>
 		<child link="link6"/>
 		<origin xyz= "0 -0.07318 0" rpy = "${pi/2} ${-pi/2} 0"/>
-        <dynamics damping="0.01" friction="0.005"/>
+        <dynamics damping="7.0" friction="4.0"/>
 	</joint>
 
 	<joint name="link6_to_link6flange" type="revolute">
@@ -462,7 +487,7 @@
 		<parent link="link6"/>
 		<child link="link6_flange"/>
 		<origin xyz= "0 0.0456 0" rpy = "${-pi/2} 0 0"/>
-        <dynamics damping="0.01" friction="0.005"/>
+        <dynamics damping="3.0" friction="3.0"/>
 	</joint>
 
 	<joint name="link6flange_to_gripper_base" type="fixed">
@@ -477,7 +502,7 @@
 		<parent link="gripper_base"/>
 		<child link="gripper_left3"/>
 		<origin xyz= "-0.012 0.005 0" rpy = "0 0 0"/> 
-        <dynamics damping="0.01" friction="0.005"/>
+        <dynamics damping="2.0" friction="4.0"/>
 	</joint>
 	
 	<!-- The mimic element means this joint will follow the movements of the 
@@ -490,7 +515,7 @@
 		<child link="gripper_left2"/>
 		<origin xyz= "-0.005 0.027 0" rpy = "0 0 0"/> 
 		<mimic joint="gripper_controller" multiplier="1.0" offset="0" />
-        <dynamics damping="0.01" friction="0.005"/>
+        <dynamics damping="2.0" friction="4.0"/>
 	</joint>
 	
 	<joint name="gripper_left3_to_gripper_left1" type="revolute">
@@ -500,7 +525,7 @@
 		<child link="gripper_left1"/>
 		<origin xyz= "-0.027 0.016 0" rpy = "0 0 0"/> 
 		<mimic joint="gripper_controller" multiplier="-1.0" offset="0" />
-        <dynamics damping="0.01" friction="0.005"/>
+        <dynamics damping="2.0" friction="4.0"/>
 	</joint>
 	
 	<joint name="gripper_base_to_gripper_right3" type="revolute">
@@ -510,7 +535,7 @@
 		<child link="gripper_right3"/>
 		<origin xyz= "0.012 0.005 0" rpy = "0 0 0"/> 
 		<mimic joint="gripper_controller" multiplier="-1.0" offset="0" />
-        <dynamics damping="0.01" friction="0.005"/>
+        <dynamics damping="2.0" friction="4.0"/>
 	</joint>
 	
 	<joint name="gripper_base_to_gripper_right2" type="revolute">
@@ -520,7 +545,7 @@
 		<child link="gripper_right2"/>
 		<origin xyz= "0.005 0.027 0" rpy = "0 0 0"/> 
 		<mimic joint="gripper_controller" multiplier="-1.0" offset="0" />
-        <dynamics damping="0.01" friction="0.005"/>
+        <dynamics damping="2.0" friction="4.0"/>
 	</joint>
 	
 	<joint name="gripper_right3_to_gripper_right1" type="revolute">
@@ -530,82 +555,21 @@
 		<child link="gripper_right1"/>
 		<origin xyz= "0.027 0.016 0" rpy = "0 0 0"/> 
 		<mimic joint="gripper_controller" multiplier="1.0" offset="0" />
-        <dynamics damping="0.01" friction="0.005"/>
+        <dynamics damping="2.0" friction="4.0"/>
 	</joint>
 
-    <!-- JointStatePublisher publishes joint state information for the model.
-         In future versions of Gazebo, replace 'ignition-gazebo' with 'gz-sim' and
-         'ignition::gazebo' with 'gz::sim'
-    -->
-    <gazebo>
-        <plugin filename="ignition-gazebo-joint-state-publisher-system" name="ignition::gazebo::systems::JointStatePublisher">
-            <topic>joint_states</topic>
-        </plugin>    
-    </gazebo>      
-
-    <!-- JointPositionController subscribes to target joint positions.
-         In future versions of Gazebo, replace 'ignition-gazebo' with 'gz-sim' and
-         'ignition::gazebo' with 'gz::sim'
-    -->   
-    <gazebo>
-        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
-            <joint_name>link1_to_link2</joint_name>
-        </plugin>    
-    </gazebo>  
-    <gazebo>
-        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
-            <joint_name>link2_to_link3</joint_name>
-        </plugin>    
-    </gazebo>  
-    <gazebo>
-        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
-            <joint_name>link3_to_link4</joint_name>
-        </plugin>    
-    </gazebo>  
-    <gazebo>
-        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
-            <joint_name>link4_to_link5</joint_name>
-        </plugin>    
-    </gazebo>  
-    <gazebo>
-        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
-            <joint_name>link5_to_link6</joint_name>
-        </plugin>    
-    </gazebo>  
-    <gazebo>
-        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
-            <joint_name>link6_to_link6flange</joint_name>
-        </plugin>    
-    </gazebo>  
-    <gazebo>
-        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
-            <joint_name>gripper_controller</joint_name>
-        </plugin>    
-    </gazebo>  
-    <gazebo>
-        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
-            <joint_name>gripper_base_to_gripper_left2</joint_name>
-        </plugin>    
-    </gazebo>  
-    <gazebo>
-        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
-            <joint_name>gripper_left3_to_gripper_left1</joint_name>
-        </plugin>    
-    </gazebo>  
-    <gazebo>
-        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
-            <joint_name>gripper_base_to_gripper_right3</joint_name>
-        </plugin>    
-    </gazebo>  
-    <gazebo>
-        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
-            <joint_name>gripper_base_to_gripper_right2</joint_name>
-        </plugin>    
-    </gazebo>  
-    <gazebo>
-        <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
-            <joint_name>gripper_right3_to_gripper_right1</joint_name>
-        </plugin>    
-    </gazebo>       
+    <!-- Put this at the bottom of the URDF -->
+    <xacro:default_transmission joint_name="link1_to_link2"/>
+    <xacro:default_transmission joint_name="link2_to_link3"/>
+    <xacro:default_transmission joint_name="link3_to_link4"/>
+    <xacro:default_transmission joint_name="link4_to_link5"/>
+    <xacro:default_transmission joint_name="link5_to_link6"/>
+    <xacro:default_transmission joint_name="link6_to_link6flange"/>
+    <xacro:default_transmission joint_name="gripper_controller"/>
+    <xacro:default_transmission joint_name="gripper_base_to_gripper_left2"/>
+    <xacro:default_transmission joint_name="gripper_left3_to_gripper_left1"/>
+    <xacro:default_transmission joint_name="gripper_base_to_gripper_right3"/>
+    <xacro:default_transmission joint_name="gripper_base_to_gripper_right2"/>
+    <xacro:default_transmission joint_name="gripper_right3_to_gripper_right1"/>
 
 </robot>

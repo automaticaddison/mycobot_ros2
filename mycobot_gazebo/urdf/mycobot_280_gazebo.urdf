@@ -338,26 +338,8 @@
   <!-- Define the joint name and its type as "fixed". A fixed joint 
 	means the two connected links cannot move relative to each other. -->
   <joint name="base_link_to_link1" type="fixed">
-    <!-- Specifies the axis around which the joint could rotate if it wasn't fixed. -->
-    <axis xyz="0 0 0"/>
-    <!-- Specifies the range of allowed motion if the joint wasn't fixed. 
-			effort: Maximum torque in Nm 
-			lower: Minimum allowed angle in radians
-			upper: Maximum allowed angle in radians 
-			velocity: Maximum allowed angular velocity in radians per second (ignored for fixed joints) 
-		-->
-    <limit effort="5.0" lower="-3.141592653589793" upper="3.141592653589793" velocity="2.792527"/>
-    <!-- The link this joint connects to on one side -->
     <parent link="base_link"/>
-    <!-- The link this joint connects to on the other side -->
     <child link="link1"/>
-    <!-- The origin of the joint relative to the parent link's coordinate frame.
-			xyz: The position of the child link relative to the parent link's coordinate frame.
-			rpy: The orientation of the child link relative to the parent link's coordinate frame.
-			See these posts for more information on coordinate frames in robotics: 
-			https://automaticaddison.com/coordinate-frames-and-transforms-for-ros-based-mobile-robots/
-			https://automaticaddison.com/yaw-pitch-and-roll-diagrams-using-2d-coordinate-systems/
-		-->
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
   <joint name="link1_to_link2" type="revolute">

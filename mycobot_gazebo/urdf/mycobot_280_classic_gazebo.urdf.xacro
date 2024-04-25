@@ -418,13 +418,11 @@
 	
 	<!-- Define the joint name and its type as "fixed". A fixed joint 
 	means the two connected links cannot move relative to each other. -->
-	<joint name="base_link_to_link1" type="fixed">
-		<axis xyz="0 0 0"/>
-		<limit effort = "${effort}" lower = "${-pi}" upper = "${pi}" velocity = "${velocity}"/>
-		<parent link="base_link"/>
-		<child link="link1"/>
-		<origin xyz= "0 0 0" rpy = "0 0 0"/>  
-	</joint>
+        <joint name="base_link_to_link1" type="fixed">
+            <parent link="base_link"/>
+            <child link="link1"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </joint>
 
 	<joint name="link1_to_link2" type="revolute">
 		<axis xyz="0 0 1"/>
