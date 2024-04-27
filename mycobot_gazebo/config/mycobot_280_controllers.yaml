@@ -1,0 +1,73 @@
+# controller_manager provides the necessary infrastructure to manage multiple controllers efficiently and robustly.
+controller_manager:
+  ros__parameters:
+    update_rate: 10 # update_rate specifies how often (in Hz) the controllers should be updated.
+     
+    arm_controller:
+      # The JointTrajectoryController allows you to send joint trajectory commands to a group 
+      # of joints on a robot. These commands specify the desired positions for each joint.
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    #gripper_controller:
+    #  type: joint_trajectory_controller/JointTrajectoryController
+
+    gripper_controller:
+      # The ForwardCommandController enables you to send raw, uninterpolated command signals to 
+      # the robot's joints.
+      type: forward_command_controller/ForwardCommandController
+
+    joint_state_broadcaster:
+      # Responsible for publishing the current state of the robot's joints to the /joint_states 
+      # ROS 2 topic
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+# Define the parameters for each controller
+arm_controller:
+  ros__parameters:
+    joints:
+      - link1_to_link2
+      - link2_to_link3
+      - link3_to_link4
+      - link4_to_link5
+      - link5_to_link6
+      - link6_to_link6flange
+
+    # The controller will expect position commands as input for each of these joints.
+    command_interfaces:
+      - position
+    
+    # Tells the controller that it should expect to receive position data as the state 
+    # feedback from the hardware interface,
+    state_interfaces:
+      - position
+
+    # If true, When set to true, the controller will not use any feedback from the system 
+    # (e.g., joint positions, velocities, efforts) to compute the control commands. 
+    open_loop_control: true
+
+    # When set to true, it allows the controller to integrate the trajectory goals it receives. 
+    # This means that if the goal trajectory only specifies positions, the controller will 
+    # numerically integrate the positions to compute the velocities and accelerations required 
+    # to follow the trajectory.
+    allow_integration_in_goal_trajectories: true
+
+gripper_controller:
+  ros__parameters:
+    joints:
+      - gripper_controller
+      - gripper_base_to_gripper_left2
+      - gripper_left3_to_gripper_left1
+      - gripper_base_to_gripper_right3
+      - gripper_base_to_gripper_right2
+      - gripper_right3_to_gripper_right1   
+
+    interface_name: position 
+
+    # command_interfaces:
+    #   - position
+
+    # state_interfaces:
+    #   - position
+
+    # open_loop_control: true
+    # allow_integration_in_goal_trajectories: true
