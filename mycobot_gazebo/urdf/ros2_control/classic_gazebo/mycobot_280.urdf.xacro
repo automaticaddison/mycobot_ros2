@@ -529,10 +529,5 @@
     <xacro:default_transmission joint_name="link5_to_link6"/>
     <xacro:default_transmission joint_name="link6_to_link6flange"/>
     <xacro:default_transmission joint_name="gripper_controller"/>
-    <xacro:default_transmission joint_name="gripper_base_to_gripper_left2"/>
-    <xacro:default_transmission joint_name="gripper_left3_to_gripper_left1"/>
-    <xacro:default_transmission joint_name="gripper_base_to_gripper_right3"/>
-    <xacro:default_transmission joint_name="gripper_base_to_gripper_right2"/>
-    <xacro:default_transmission joint_name="gripper_right3_to_gripper_right1"/>
 
 </robot>

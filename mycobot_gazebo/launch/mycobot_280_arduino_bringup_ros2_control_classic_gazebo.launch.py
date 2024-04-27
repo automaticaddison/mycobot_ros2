@@ -1,9 +1,9 @@
 # Author: Addison Sears-Collins
-# Date: April 26, 2024
+# Date: April 27, 2024
 # Description: Launch a robotic arm in Gazebo (Classic). The URDF uses the ROS 2 Control library.
 import os
 from launch import LaunchDescription
-from launch.actions import AppendEnvironmentVariable, DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.actions import AppendEnvironmentVariable, DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration, PythonExpression
@@ -136,18 +136,26 @@ def generate_launch_description():
     'GAZEBO_MODEL_PATH',
     gazebo_models_path)
   
-  # Launch joint_state_broadcaster
-  start_arm_controller_cmd = ExecuteProcess(
-    cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-         'arm_controller'],
-    output='screen'
+  # Launch arm controller
+  start_arm_controller_cmd = Node(
+    package="controller_manager",
+    executable="spawner",
+    arguments=[
+      "arm_controller",
+      "--controller-manager",
+      "/controller_manager"
+    ]
   )  
 
-  # Launch joint_state_broadcaster
-  start_gripper_controller_cmd = ExecuteProcess(
-    cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-         'gripper_controller'],
-    output='screen'
+  # Launch gripper controller
+  start_gripper_controller_cmd = Node(
+    package="controller_manager",
+    executable="spawner",
+    arguments=[
+      "grip_controller",
+      "--controller-manager",
+      "/controller_manager"
+    ]
   )  
   
   # Start Gazebo server
@@ -163,11 +171,15 @@ def generate_launch_description():
       os.path.join(pkg_gazebo_ros, 'launch', 'gzclient.launch.py')),
     condition=IfCondition(PythonExpression([use_simulator, ' and not ', headless])))
 
-  # Launch joint_state_broadcaster
-  start_joint_state_broadcaster_cmd = ExecuteProcess(
-    cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-         'joint_state_broadcaster'],
-    output='screen'
+  # Launch joint state broadcaster
+  start_joint_state_broadcaster_cmd = Node(
+    package="controller_manager",
+    executable="spawner",
+    arguments=[
+      "joint_state_broadcaster",
+      "--controller-manager",
+      "/controller_manager"
+    ]
   )  
     
   # Subscribe to the joint states of the robot, and publish the 3D pose of each link.
@@ -230,10 +242,10 @@ def generate_launch_description():
 
   # Add any actions
   ld.add_action(set_env_vars_resources)
-  #ld.add_action(start_arm_controller_cmd) 
+  ld.add_action(start_arm_controller_cmd) 
   ld.add_action(start_gazebo_server_cmd)
   ld.add_action(start_gazebo_client_cmd)
-  #ld.add_action(start_gripper_controller_cmd) 
+  ld.add_action(start_gripper_controller_cmd) 
   ld.add_action(start_joint_state_broadcaster_cmd)
   ld.add_action(start_robot_state_publisher_cmd)
   ld.add_action(start_rviz_cmd)  

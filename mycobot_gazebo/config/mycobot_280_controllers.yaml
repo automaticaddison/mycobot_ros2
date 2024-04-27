@@ -2,23 +2,18 @@
 controller_manager:
   ros__parameters:
     update_rate: 10 # update_rate specifies how often (in Hz) the controllers should be updated.
-     
+
+    # The JointTrajectoryController allows you to send joint trajectory commands to a group 
+    # of joints on a robot. These commands specify the desired positions for each joint.     
     arm_controller:
-      # The JointTrajectoryController allows you to send joint trajectory commands to a group 
-      # of joints on a robot. These commands specify the desired positions for each joint.
       type: joint_trajectory_controller/JointTrajectoryController
 
-    #gripper_controller:
-    #  type: joint_trajectory_controller/JointTrajectoryController
+    grip_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
 
-    gripper_controller:
-      # The ForwardCommandController enables you to send raw, uninterpolated command signals to 
-      # the robot's joints.
-      type: forward_command_controller/ForwardCommandController
-
+    # Responsible for publishing the current state of the robot's joints to the /joint_states 
+    # ROS 2 topic
     joint_state_broadcaster:
-      # Responsible for publishing the current state of the robot's joints to the /joint_states 
-      # ROS 2 topic
       type: joint_state_broadcaster/JointStateBroadcaster
 
 # Define the parameters for each controller
@@ -51,23 +46,17 @@ arm_controller:
     # to follow the trajectory.
     allow_integration_in_goal_trajectories: true
 
-gripper_controller:
+grip_controller:
   ros__parameters:
     joints:
       - gripper_controller
-      - gripper_base_to_gripper_left2
-      - gripper_left3_to_gripper_left1
-      - gripper_base_to_gripper_right3
-      - gripper_base_to_gripper_right2
-      - gripper_right3_to_gripper_right1   
+      
+    command_interfaces:
+      - position
 
-    interface_name: position 
+    state_interfaces:
+      - position
 
-    # command_interfaces:
-    #   - position
+    open_loop_control: true
+    allow_integration_in_goal_trajectories: true
 
-    # state_interfaces:
-    #   - position
-
-    # open_loop_control: true
-    # allow_integration_in_goal_trajectories: true
