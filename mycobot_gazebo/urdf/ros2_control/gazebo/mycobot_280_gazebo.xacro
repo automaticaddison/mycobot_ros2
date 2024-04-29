@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="mycobot_280">
+    <gazebo>
+        <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+            <parameters>$(find mycobot_gazebo)/config/mycobot_280_controllers.yaml</parameters>
+        </plugin>
+    </gazebo>
+</robot>

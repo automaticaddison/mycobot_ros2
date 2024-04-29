@@ -1,0 +1,577 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="mycobot_280">
+    <xacro:include filename="$(find mycobot_gazebo)/urdf/ros2_control/gazebo/mycobot_280_gazebo.xacro"/>
+    <xacro:include filename="$(find mycobot_gazebo)/urdf/ros2_control/gazebo/mycobot_280_ros2_control.xacro"/>
+
+	<link name="world"/>
+
+	<xacro:property name="effort" value="5.0"/>
+	<xacro:property name="velocity" value="2.792527"/>
+
+	<link name="base_link">
+		<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<mass value="0.33"/>
+			<inertia
+				ixx="0.000784" ixy="0.0" ixz="0.0"
+				iyy="0.000867" iyz="0.0"
+				izz="0.001598"/>
+		</inertial>
+		<visual>
+			<geometry>
+				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/base_link.dae"/>
+			</geometry>
+			<origin xyz = "0.0 0 -0.03" rpy = "0 0 ${pi/2}"/>
+		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/base_link.dae"/>
+			</geometry>
+			<origin xyz = "0.0 0 -0.03" rpy = "0 0 ${pi/2}"/>
+		</collision>
+	</link>
+
+	<link name="link1">
+		<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<mass value="0.12"/>
+			<inertia
+				ixx="0.000148" ixy="0.0" ixz="0.0"
+				iyy="0.000148" iyz="0.0"
+				izz="0.000096"/>
+		</inertial>
+		<visual>
+			<geometry>
+				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link1.dae"/>
+			</geometry>
+			<origin xyz = "0.0 0 0 " rpy = " 0 0 ${-pi/2}"/>
+		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link1.dae"/>
+			</geometry>
+			<origin xyz = "0.0 0 0.0 " rpy = " 0 0 ${-pi/2}"/>
+		</collision>
+	</link>
+	
+	<link name="link2">
+		<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<mass value="0.19"/>
+			<inertia
+				ixx="0.000148" ixy="0.0" ixz="0.0"
+				iyy="0.000148" iyz="0.0"
+				izz="0.000096"/>
+		</inertial>
+		<visual>
+			<geometry>
+				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link2.dae"/>
+			</geometry>
+			<origin xyz = "0.0 0 -0.06096" rpy = " 0 0 ${-pi/2}"/>
+		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link2.dae"/>
+			</geometry>
+			<origin xyz = "0.0 0 -0.06096" rpy = " 0 0 ${-pi/2}"/>
+		</collision>
+	</link>
+
+	<link name="link3">
+		<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.16"/>
+			<inertia
+			  ixx="0.000148" ixy="0.0" ixz="0.0"
+			  iyy="0.000148" iyz="0.0"
+			  izz="0.000096"/>
+		</inertial>
+		<visual>
+		  	<geometry>
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link3.dae"/>
+		  	</geometry>
+			<origin xyz = "0.0 0 0.03256 " rpy = " 0 ${-pi/2} 0"/>
+		</visual>
+		<collision>
+		  	<geometry>
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link3.dae"/>
+		  	</geometry>
+		  	<origin xyz = "0.00 0 0.03256 " rpy = " 0 ${-pi/2} 0"/>
+		</collision>
+	</link>
+
+	<link name="link4">
+		<inertial>
+		  	<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<mass value="0.124"/>
+			<inertia
+			  	ixx="0.000103" ixy="0.0" ixz="0.0"
+			  	iyy="0.000103" iyz="0.0"
+			  	izz="0.000096"/>
+		</inertial>
+		<visual>
+			<geometry>
+				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link4.dae"/>
+			</geometry>
+			<origin xyz = "0.0 0 0.03056 " rpy = " 0 ${-pi/2} 0"/>
+		</visual>
+		<collision>
+			<geometry>
+				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link4.dae"/>
+			</geometry>
+			<origin xyz = "0.0 0 0.03056 " rpy = " 0 ${-pi/2} 0"/>
+		</collision>
+	</link>
+
+	<link name="link5">
+		<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.11"/>
+			<inertia
+			  ixx="0.000103" ixy="0.0" ixz="0.0"
+			  iyy="0.000103" iyz="0.0"
+			  izz="0.000096"/>
+		</inertial>
+		<visual>
+		  	<geometry>
+				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link5.dae"/>
+		  	</geometry>
+		  	<origin xyz = "0.0 0 -0.03356 " rpy = "${-pi/2} 0 0"/>
+		</visual>
+		<collision>
+		   	<geometry>	
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link5.dae"/>
+		  	</geometry>
+		  	<origin xyz = "0.0 0 -0.03356 " rpy = "${-pi/2} 0 0"/>
+		</collision>
+	</link>
+
+	<link name="link6">
+		<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.0739"/>
+			<inertia
+			  ixx="0.00006649" ixy="0.0" ixz="0.0"
+			  iyy="0.00006649" iyz="0.0"
+			  izz="0.000096"/>
+		</inertial>
+		<visual>
+		  	<geometry>
+				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link6.dae"/>
+		  	</geometry>
+		  	<origin xyz = "0 0.00 -0.038" rpy = "0 0 0"/>
+		</visual>
+		<collision>
+		   	<geometry>	
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link6.dae"/>
+		  	</geometry>
+		  	<origin xyz = "0 0.00 -0.038" rpy = "0 0 0"/>
+		</collision>
+	</link>
+
+	<link name="link6_flange">
+		<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.035"/>
+		  	<inertia
+				ixx="0.0000149" ixy="0.0" ixz="0.0"
+				iyy="0.0000149" iyz="0.0"
+				izz="0.0000196"/>
+		</inertial>
+		<visual>
+		  	<geometry>
+				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link7.dae"/>
+		  	</geometry>
+		  	<origin xyz = "0.0 0 -0.012 " rpy = "0 0 0"/>
+		</visual>
+		<collision>
+		   	<geometry>	
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link7.dae"/>
+		  	</geometry>
+		  	<origin xyz = "0.0 0 -0.012 " rpy = "0 0 0"/>
+		</collision>
+	</link>
+
+	<link name="gripper_base">
+		<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.07"/>
+		  	<inertia
+				ixx="0.000010725" ixy="0.0" ixz="0.0"
+				iyy="0.000014392" iyz="0.0"
+				izz="0.000018517"/>
+		</inertial>
+		<visual>
+		  	<geometry>
+				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/gripper_base.dae"/>
+		  	</geometry>
+		  	<origin xyz = "0.0 0.0 -0.012" rpy = "0 0 0"/>
+		</visual>
+		<collision>
+		   	<geometry>	
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/gripper_base.dae"/>
+		  	</geometry>
+		  	<origin xyz = "0.0 0.0 -0.012" rpy = "0 0 0"/>
+		</collision>
+	</link>
+
+	<link name="gripper_left1">
+		<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.007"/>
+		  	<inertia
+				ixx="1e-6" ixy="0.0" ixz="0.0"
+				iyy="1e-6" iyz="0.0"
+				izz="1e-6"/>
+		</inertial>
+		<visual>
+		  	<geometry>
+		  		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/gripper_left1.dae"/>
+		  	</geometry>
+			<origin xyz = "0.039 -0.0133 -0.012 " rpy = " 0 0 0"/>
+		</visual>
+		<collision>
+		  	<geometry>
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/gripper_left1.dae"/>
+		  	</geometry>
+			<origin xyz = "0.039 -0.0133 -0.012 " rpy = " 0 0 0"/>
+		</collision>
+	</link>
+	
+	<link name="gripper_left2">
+		<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.007"/>
+		  	<inertia
+				ixx="1e-6" ixy="0.0" ixz="0.0"
+				iyy="1e-6" iyz="0.0"
+				izz="1e-6"/>
+		</inertial>
+		<visual>
+		  	<geometry>
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/gripper_left2.dae"/>
+		  	</geometry>
+			<origin xyz = "0.005 -0.0195 -0.012 " rpy = " 0 0 0"/>
+		</visual>
+		<collision>
+		  	<geometry>
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/gripper_left2.dae"/>
+		  	</geometry>
+				<origin xyz = "0.005 -0.0195 -0.012 " rpy = " 0 0 0"/>
+		</collision>
+	</link>
+	
+	<link name="gripper_left3">
+		<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.007"/>
+		  	<inertia
+				ixx="1e-6" ixy="0.0" ixz="0.0"
+				iyy="1e-6" iyz="0.0"
+				izz="1e-6"/>
+		</inertial>
+		<visual>
+		  	<geometry>
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/gripper_left3.dae"/>
+		  	</geometry>
+		<origin xyz = "0.012 0.0025 -0.012 " rpy = " 0 0 0"/>
+		</visual>
+		<collision>
+		  	<geometry>
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/gripper_left3.dae"/>
+		  	</geometry>
+			<origin xyz = "0.012 0.0025 -0.012" rpy = " 0 0 0"/>
+		</collision>
+	</link>
+	
+	<link name="gripper_right1">
+		<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.007"/>
+		  	<inertia
+				ixx="1e-6" ixy="0.0" ixz="0.0"
+				iyy="1e-6" iyz="0.0"
+				izz="1e-6"/>
+		</inertial>
+		<visual>
+			<geometry>
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/gripper_right1.dae"/>
+		  	</geometry>
+			<origin xyz = "-0.039 -0.0133 -0.012 " rpy = " 0 0 0"/>
+		</visual>
+		<collision>
+		  	<geometry>
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/gripper_right1.dae"/>
+		  	</geometry>
+			<origin xyz = "-0.039 -0.0133 -0.012 " rpy = " 0 0 0"/>
+		</collision>
+	</link>
+	
+	<link name="gripper_right2">
+		<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.007"/>
+		  	<inertia
+				ixx="1e-6" ixy="0.0" ixz="0.0"
+				iyy="1e-6" iyz="0.0"
+				izz="1e-6"/>
+		</inertial>
+		<visual>
+			<geometry>
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/gripper_right2.dae"/>
+		 	</geometry>
+			<origin xyz = "-0.005 -0.0195 -0.012 " rpy = " 0 0 0"/>
+		</visual>
+		<collision>
+		  	<geometry>
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/gripper_right2.dae"/>
+		  	</geometry>
+			<origin xyz = "-0.005 -0.0195 -0.012 " rpy = " 0 0 0"/>
+		</collision>
+	</link>
+	
+	<link name="gripper_right3">
+		<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.007"/>
+		  	<inertia
+				ixx="1e-6" ixy="0.0" ixz="0.0"
+				iyy="1e-6" iyz="0.0"
+				izz="1e-6"/>
+		</inertial>
+		<visual>
+			<geometry>
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/gripper_right3.dae"/>
+			</geometry>
+			<origin xyz = "-0.012 0.0025 -0.012 " rpy = " 0 0 0"/>
+		</visual>
+		<collision>
+		  	<geometry>
+		   		<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/gripper_right3.dae"/>
+		  	</geometry>
+			<origin xyz = "-0.012 0.0025 -0.012" rpy = " 0 0 0"/>
+		</collision>
+	</link>
+
+    <gazebo reference="base_link">
+        <visual>
+            <material>
+                <ambient>0.5 0.5 0.5 1</ambient>
+                <diffuse>0.5 0.5 0.5 1</diffuse>
+                <specular>0.5 0.5 0.5 1</specular>
+            </material>
+        </visual>
+    </gazebo>
+    
+    <gazebo reference="link1">
+        <visual>
+            <material>
+                <ambient>0.5 0.5 0.5 1</ambient>
+                <diffuse>0.5 0.5 0.5 1</diffuse>
+                <specular>0.5 0.5 0.5 1</specular>
+            </material>
+        </visual>
+    </gazebo>
+    
+    <gazebo reference="link2">
+        <visual>
+            <material>
+                <ambient>1 1 1 1</ambient>
+                <diffuse>1 1 1 1</diffuse>
+                <specular>1 1 1 1</specular>
+            </material>
+        </visual>
+    </gazebo>
+
+    <gazebo reference="link3">
+        <visual>
+            <material>
+                <ambient>1 1 1 1</ambient>
+                <diffuse>1 1 1 1</diffuse>
+                <specular>1 1 1 1</specular>
+            </material>
+        </visual>
+    </gazebo>
+
+    <gazebo reference="link4">
+        <visual>
+            <material>
+                <ambient>1 1 1 1</ambient>
+                <diffuse>1 1 1 1</diffuse>
+                <specular>1 1 1 1</specular>
+            </material>
+        </visual>
+    </gazebo>
+
+    <gazebo reference="link5">
+        <visual>
+            <material>
+                <ambient>1 1 1 1</ambient>
+                <diffuse>1 1 1 1</diffuse>
+                <specular>1 1 1 1</specular>
+            </material>
+        </visual>
+    </gazebo>
+
+    <gazebo reference="link6">
+        <visual>
+            <material>
+                <ambient>1 1 1 1</ambient>
+                <diffuse>1 1 1 1</diffuse>
+                <specular>1 1 1 1</specular>
+            </material>
+        </visual>
+    </gazebo>
+
+    <gazebo reference="link6_flange">
+        <visual>
+            <material>
+                <ambient>0.5 0.5 0.5 1</ambient>
+                <diffuse>0.5 0.5 0.5 1</diffuse>
+                <specular>0.5 0.5 0.5 1</specular>
+            </material>
+        </visual>
+    </gazebo>
+
+    <gazebo reference="gripper_base">
+        <visual>
+            <material>
+                <ambient>1 1 1 1</ambient>
+                <diffuse>1 1 1 1</diffuse>
+                <specular>1 1 1 1</specular>
+            </material>
+        </visual>
+    </gazebo>
+    
+	<joint name="virtual_joint" type="fixed">
+		<parent link="world"/>
+		<child link="base_link"/>
+		<origin xyz= "0 0 0" rpy = "0 0 0"/>  
+	</joint>
+	
+    <joint name="base_link_to_link1" type="fixed">
+        <parent link="base_link"/>
+            <child link="link1"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+	<joint name="link1_to_link2" type="revolute">
+		<axis xyz="0 0 1"/>
+		<limit effort = "${effort}" lower = "-2.879793" upper = "2.879793" velocity = "${velocity}"/>
+		<parent link="link1"/>
+		<child link="link2"/>
+		<origin xyz= "0 0 0.13156" rpy = "0 0 ${pi/2}"/>  
+        <dynamics damping="0.0" friction="0.0"/>
+	</joint>
+
+	<joint name="link2_to_link3" type="revolute">
+		<axis xyz="0 0 1"/>
+		<limit effort = "${effort}" lower = "-2.879793" upper = "2.879793" velocity = "${velocity}"/>
+		<parent link="link2"/>
+		<child link="link3"/>
+		<origin xyz= "0 0 -0.001" rpy = "0 ${pi/2} ${-pi/2}"/>  
+        <dynamics damping="0.0" friction="0.0"/>
+	</joint>
+
+	<joint name="link3_to_link4" type="revolute">
+		<axis xyz=" 0 0 1"/>
+		<limit effort = "${effort}" lower = "-2.879793" upper = "2.879793" velocity = "${velocity}"/>
+		<parent link="link3"/>
+		<child link="link4"/>
+		<origin xyz= "-0.1104 0 0   " rpy = "0 0 0"/>
+        <dynamics damping="0.0" friction="0.0"/>
+	</joint>
+
+	<joint name="link4_to_link5" type="revolute">
+		<axis xyz=" 0 0 1"/>
+		<limit effort = "${effort}" lower = "-2.879793" upper = "2.879793" velocity = "${velocity}"/>
+		<parent link="link4"/>
+		<child link="link5"/>
+		<origin xyz= "-0.096 0 0.06062" rpy = "0 0 ${-pi/2}"/>
+        <dynamics damping="0.0" friction="0.0"/>
+	</joint>
+
+	<joint name="link5_to_link6" type="revolute">
+		<axis xyz=" 0 0 1"/>
+		<limit effort = "${effort}" lower = "-2.879793" upper = "2.879793" velocity = "${velocity}"/>
+		<parent link="link5"/>
+		<child link="link6"/>
+		<origin xyz= "0 -0.07318 0" rpy = "${pi/2} ${-pi/2} 0"/>
+        <dynamics damping="0.0" friction="0.0"/>
+	</joint>
+
+	<joint name="link6_to_link6flange" type="revolute">
+		<axis xyz=" 0 0 1"/>
+		<limit effort = "${effort}" lower = "-3.05" upper = "3.05" velocity = "${velocity}"/>
+		<parent link="link6"/>
+		<child link="link6_flange"/>
+		<origin xyz= "0 0.0456 0" rpy = "${-pi/2} 0 0"/>
+        <dynamics damping="0.0" friction="0.0"/>
+	</joint>
+
+	<joint name="link6flange_to_gripper_base" type="fixed">
+		<parent link="link6_flange"/>
+		<child link="gripper_base"/>
+		<origin xyz= "0 0 0.034" rpy = "1.579 0 0"/>
+	</joint>
+
+	<joint name="gripper_controller" type="revolute">
+		<axis xyz="0 0 1"/>
+		<limit effort = "${effort}" lower = "-0.7" upper = "0.15" velocity = "${velocity}"/>
+		<parent link="gripper_base"/>
+		<child link="gripper_left3"/>
+		<origin xyz= "-0.012 0.005 0" rpy = "0 0 0"/> 
+        <dynamics damping="0.0" friction="0.0"/>
+	</joint>
+	
+	<joint name="gripper_base_to_gripper_left2" type="revolute">
+		<axis xyz="0 0 1"/>
+		<limit effort = "${effort}" lower = "-0.8" upper = "0.5" velocity = "${velocity}"/>
+		<parent link="gripper_base"/>
+		<child link="gripper_left2"/>
+		<origin xyz= "-0.005 0.027 0" rpy = "0 0 0"/> 
+		<mimic joint="gripper_controller" multiplier="1.0" offset="0" />
+        <dynamics damping="0.0" friction="0.0"/>
+	</joint>
+	
+	<joint name="gripper_left3_to_gripper_left1" type="revolute">
+		<axis xyz="0 0 1"/>
+		<limit effort = "${effort}" lower = "-0.5" upper = "0.5" velocity = "${velocity}"/>
+		<parent link="gripper_left3"/>
+		<child link="gripper_left1"/>
+		<origin xyz= "-0.027 0.016 0" rpy = "0 0 0"/> 
+		<mimic joint="gripper_controller" multiplier="-1.0" offset="0" />
+        <dynamics damping="0.0" friction="0.0"/>
+	</joint>
+	
+	<joint name="gripper_base_to_gripper_right3" type="revolute">
+		<axis xyz="0 0 1"/>
+		<limit effort = "${effort}" lower = "-0.15" upper = "0.7" velocity = "${velocity}"/>
+		<parent link="gripper_base"/>
+		<child link="gripper_right3"/>
+		<origin xyz= "0.012 0.005 0" rpy = "0 0 0"/> 
+		<mimic joint="gripper_controller" multiplier="-1.0" offset="0" />
+        <dynamics damping="0.0" friction="0.0"/>
+	</joint>
+	
+	<joint name="gripper_base_to_gripper_right2" type="revolute">
+		<axis xyz="0 0 1"/>
+		<limit effort = "${effort}" lower = "-0.5" upper = "0.8" velocity = "${velocity}"/>
+		<parent link="gripper_base"/>
+		<child link="gripper_right2"/>
+		<origin xyz= "0.005 0.027 0" rpy = "0 0 0"/> 
+		<mimic joint="gripper_controller" multiplier="-1.0" offset="0" />
+        <dynamics damping="0.0" friction="0.0"/>
+	</joint>
+	
+	<joint name="gripper_right3_to_gripper_right1" type="revolute">
+		<axis xyz="0 0 1"/>
+		<limit effort = "${effort}" lower = "-0.5" upper = "0.5" velocity = "${velocity}"/>
+		<parent link="gripper_right3"/>
+		<child link="gripper_right1"/>
+		<origin xyz= "0.027 0.016 0" rpy = "0 0 0"/> 
+		<mimic joint="gripper_controller" multiplier="1.0" offset="0" />
+        <dynamics damping="0.0" friction="0.0"/>
+	</joint>
+
+</robot>
