@@ -11,6 +11,7 @@
 
   <exec_depend>controller_manager</exec_depend>
   <exec_depend>gazebo_ros</exec_depend>
+  <exec_depend>rclcpp</exec_depend>
   <exec_depend>ros_gz</exec_depend>
   <exec_depend>ros_gz_bridge</exec_depend>
   <exec_depend>ros_gz_sim</exec_depend>
