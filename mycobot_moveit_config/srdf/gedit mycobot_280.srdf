@@ -32,6 +32,7 @@
         <joint name="link3_to_link4" value="0"/>
         <joint name="link4_to_link5" value="0"/>
         <joint name="link5_to_link6" value="0"/>
+        <joint name="link6_to_link6flange" value="0"/>
     </group_state>
 
     <group_state name="home" group="gripper">

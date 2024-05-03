@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>mycobot_moveit</name>
+  <name>mycobot_moveit_config</name>
   <version>0.0.0</version>
   <description>Contains the files that enable the robot to integrate with Move It 2</description>
   <maintainer email="automaticaddion@todo.com">Automatic Addison</maintainer>
