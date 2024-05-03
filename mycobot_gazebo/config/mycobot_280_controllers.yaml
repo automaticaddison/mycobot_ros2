@@ -1,4 +1,4 @@
-# controller_manager provides the necessary infrastructure to manage multiple controllers efficiently and robustly.
+# controller_manager provides the necessary infrastructure to manage multiple controllers efficiently and robustly using ROS 2 Control.
 controller_manager:
   ros__parameters:
     update_rate: 10 # update_rate specifies how often (in Hz) the controllers should be updated.
