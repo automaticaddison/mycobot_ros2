@@ -22,7 +22,7 @@ def generate_launch_description():
   gazebo_models_path = 'models'
   rviz_config_file_path = 'rviz/mycobot_280_arduino_view_description.rviz'
   urdf_file_path = 'urdf/ros2_control/classic_gazebo/mycobot_280.urdf.xacro'
-  world_file_path = 'worlds/empty_classic.world' # Example: 'worlds/house_classic.world', 'worlds/empty_classic.world'
+  world_file_path = 'worlds/small_warehouse_classic.world' # Example: 'worlds/house_classic.world', 'worlds/empty_classic.world', 'worlds/small_warehouse_classic.world'
 
   # Set the path to different files and folders.  
   pkg_gazebo_ros = FindPackageShare(package='gazebo_ros').find('gazebo_ros')  
@@ -112,7 +112,7 @@ def generate_launch_description():
     
   declare_z_cmd = DeclareLaunchArgument(
     name='z',
-    default_value='0.05',
+    default_value='0.05', # 0.05 for house_classic.world and empty_classic.world, 0.2 for small_warehouse_classic.world
     description='z component of initial position, meters')
     
   declare_roll_cmd = DeclareLaunchArgument(
