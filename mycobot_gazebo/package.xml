@@ -13,6 +13,7 @@
   <depend>gazebo_ros</depend>
   <depend>gazebo_ros2_control</depend>
   <depend>gazebo_ros_pkgs</depend>
+  <depend>gz_ros2_control</depend>
   <depend>rclcpp</depend>
   <depend>ros_gz</depend>
   <depend>ros_gz_bridge</depend>
