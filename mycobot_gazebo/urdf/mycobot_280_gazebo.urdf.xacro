@@ -1,37 +1,12 @@
 <?xml version="1.0" ?>
 <robot xmlns:xacro="http://wiki.ros.org/xacro" name="mycobot_280">
-	<!-- 
-		xml: 	
-			Declare this file as an XML document and specifies the XML version.
-		robot: 	
-			The root element 'robot' defines a robot model. Everything about the 
-			robot configuration will be nested inside this element.
-		xmlns:xacro:	
-			Declares the XML namespace for xacro, which is a XML macro language used 
-			in ROS (Robot Operating System) for parameterizing XML documents.
-		name: 
-			Specify the name of the robot.
-	-->
-	
-	<!-- Reference Files: https://github.com/elephantrobotics/mycobot_ros/ -->
-	
-	<!-- Provide a global reference frame for the robotic arm in simulation (Gazebo) 
-		or visualization (RViz) environments
-	-->
 	<link name="world"/>
 
-	<!-- ****************** ROBOT CONSTANTS *******************************  -->
-	<!-- Source: https://www.elephantrobotics.com/en/mycobot280-for-arduino-specifications-en/ -->
-	<!-- Numbers are estimated when necessary -->
 	<xacro:property name="effort" value="5.0"/>
 	<xacro:property name="velocity" value="2.792527"/>
-	
-	<!-- ********** LINKS ********** -->
 
-    <!-- Define the base plate of the robotic arm -->
 	<link name="base_link">
-		<!-- The inertial values below were taken from link1 (with slight modification. 
-		They are just placeholder values. -->
+
 		<inertial>
 			<origin xyz="0 0 0.0" rpy="0 0 0"/>
 			<mass value="0.33"/>
@@ -54,38 +29,31 @@
 		</collision>
 	</link>
 
-	<!--Define the first link of the robotic arm. Each link represents a solid part of the robot.--> 
+
 	<link name="link1">
-		<!--Define the inertial properties of the link, which characterizes the link's resistance
-		to changes in its rotational motion.-->
+
 		<inertial>
-			<!--Specify the pose of the center of mass of the link relative 
-			to this link's coordinate frame.-->
+
 			<origin xyz="0 0 0.0" rpy="0 0 0"/>
-			<!--The mass of the link in kilograms-->
+
 			<mass value="0.12"/>
-			<!--The rotational inertia values, which reflect how easily the link can rotate around
-			different axes given the distribution of mass within the link. Here we see rotation is
-			most difficult around the y axis.-->
+
 			<inertia
 				ixx="0.000148" ixy="0.0" ixz="0.0"
 				iyy="0.000148" iyz="0.0"
 				izz="0.000096"/>
 		</inertial>
-		<!--Define the visual representation of the link in simulation.-->
+
 		<visual>
-			<!--Define the shape of the link-->
+
 			<geometry>
-				<!--Specify the link's visual appearance using the 3D mesh file.-->
+
 				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link1.dae"/>
 			</geometry>
-			<!--Define the position and orientation of the visual representation relative to the 
-			link's reference frame. Here, it's rotated by -1.5708 radians (or -90 degrees) 
-			around the Z-axis.-->
+
 			<origin xyz = "0.0 0 0 " rpy = " 0 0 ${-pi/2}"/>
 		</visual>
-		<!--Define the shape used for collision detection during simulation. This piece is important
-		for accurate physical interactions between robot components and the environment or other objects.-->
+
 		<collision>
 			<geometry>
 				<mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/link1.dae"/>
@@ -94,7 +62,6 @@
 		</collision>
 	</link>
 	
-	<!-- Define the second link of the robotic arm, and so on.-->
 	<link name="link2">
 		<inertial>
 			<origin xyz="0 0 0.0" rpy="0 0 0"/>
@@ -394,17 +361,13 @@
 		</collision>
 	</link>
   
-	<!-- ********** JOINTS ********** -->
-	
-	<!-- Attach the robot base to the world frame with no initial offset or rotation. -->
+
 	<joint name="virtual_joint" type="fixed">
 		<parent link="world"/>
 		<child link="base_link"/>
 		<origin xyz= "0 0 0" rpy = "0 0 0"/>  
 	</joint>
 	
-	<!-- Define the joint name and its type as "fixed". A fixed joint 
-	means the two connected links cannot move relative to each other. -->
         <joint name="base_link_to_link1" type="fixed">
             <parent link="base_link"/>
             <child link="link1"/>
@@ -479,10 +442,7 @@
 		<origin xyz= "-0.012 0.005 0" rpy = "0 0 0"/> 
         <dynamics damping="0.01" friction="0.005"/>
 	</joint>
-	
-	<!-- The mimic element means this joint will follow the movements of the 
-		gripper_controller joint. 
-	-->
+
 	<joint name="gripper_base_to_gripper_left2" type="revolute">
 		<axis xyz="0 0 1"/>
 		<limit effort = "${effort}" lower = "-0.8" upper = "0.5" velocity = "${velocity}"/>
@@ -533,20 +493,12 @@
         <dynamics damping="0.01" friction="0.005"/>
 	</joint>
 
-    <!-- JointStatePublisher publishes joint state information for the model.
-         In future versions of Gazebo, replace 'ignition-gazebo' with 'gz-sim' and
-         'ignition::gazebo' with 'gz::sim'
-    -->
     <gazebo>
         <plugin filename="ignition-gazebo-joint-state-publisher-system" name="ignition::gazebo::systems::JointStatePublisher">
             <topic>joint_states</topic>
         </plugin>    
     </gazebo>      
 
-    <!-- JointPositionController subscribes to target joint positions.
-         In future versions of Gazebo, replace 'ignition-gazebo' with 'gz-sim' and
-         'ignition::gazebo' with 'gz::sim'
-    -->   
     <gazebo>
         <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
             <joint_name>link1_to_link2</joint_name>

@@ -1,5 +1,5 @@
 # Author: Addison Sears-Collins
-# Date: April 14, 2024
+# Date: July 8, 2024
 # Description: Launch a robotic arm in Gazebo 
 import os
 from launch import LaunchDescription
@@ -23,7 +23,7 @@ def generate_launch_description():
   ros_gz_bridge_config_file_path = 'config/ros_gz_bridge.yaml'
   rviz_config_file_path = 'rviz/mycobot_280_arduino_view_description.rviz'
   urdf_file_path = 'urdf/mycobot_280_gazebo.urdf.xacro' 
-  world_file_path = 'worlds/empty.world' # e.g. 'world/empty.world', 'world/house.world'
+  world_file_path = 'worlds/empty.world' # e.g. 'worlds/empty.world', 'worlds/house.world'
 
   # Set the path to different files and folders.  
   pkg_ros_gz_sim = FindPackageShare(package='ros_gz_sim').find('ros_gz_sim')  
@@ -179,7 +179,7 @@ def generate_launch_description():
     executable='create',
     arguments=[
       '-name', robot_name,
-      '-topic', "robot_description"
+      '-topic', 'robot_description',
       '-x', x,
       '-y', y,
       '-z', z,

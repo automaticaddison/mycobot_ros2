@@ -539,7 +539,7 @@
             <pose>7.15317 0.982767 0.817812 -0.001238 -0.000976 1.02476</pose>
 	</model>
         <model name='Trash_01_002'>
-            <static>false</static>    
+            <static>true</static>    
             <include>
                 <uri>model://aws_robomaker_residential_Trash_01</uri>
             </include>
@@ -567,7 +567,6 @@
 
             <pose>0.615509 -5.105954 -0.011049 0 -0 1.5700</pose>
 
-            <pose>0.629509 -5.183576 -0.017049 0 -0 1.5792</pose>
         </model>
 	    <model
             name='Vase_01_001'>
