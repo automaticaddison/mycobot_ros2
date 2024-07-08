@@ -9,11 +9,15 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(controller_manager REQUIRED)
 find_package(gazebo_ros REQUIRED)
+find_package(gazebo_ros2_control REQUIRED)
+find_package(gazebo_ros_pkgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(ros_gz REQUIRED)
 find_package(ros_gz_bridge REQUIRED)
 find_package(ros_gz_sim REQUIRED)
 find_package(ros_gz_image REQUIRED)
+find_package(ros2_control REQUIRED)
+find_package(ros2_controllers REQUIRED)
 find_package(trajectory_msgs REQUIRED)
 find_package(xacro REQUIRED)
 
@@ -23,6 +27,10 @@ set(dependencies
   rclcpp
   std_msgs
   trajectory_msgs
+  ros2_control
+  ros2_controllers
+  gazebo_ros2_control
+  gazebo_ros_pkgs
 )
 
 # Add the specified directories to the list of paths that the compiler
