@@ -2,7 +2,7 @@
 
 <robot xmlns:xacro="http://wiki.ros.org/xacro" name="mycobot_280">
 
-	<group name="arm">
+    <group name="arm">
         <joint name="virtual_joint"/>
         
         <joint name="base_link_to_link1"/>
@@ -35,8 +35,16 @@
         <joint name="link6_to_link6flange" value="0"/>
     </group_state>
 
-    <group_state name="home" group="gripper">
-        <joint name="gripper_controller" value="0"/>
+    <group_state name="open" group="gripper">
+        <joint name="gripper_controller" value="0.0"/>
+    </group_state>
+    
+    <group_state name="half_closed" group="gripper">
+        <joint name="gripper_controller" value="-0.35"/>
+    </group_state>
+    
+    <group_state name="closed" group="gripper">
+        <joint name="gripper_controller" value="-0.70"/>
     </group_state>
 
     <disable_collisions link1="base_link" link2="link1" reason="Adjacent"/>

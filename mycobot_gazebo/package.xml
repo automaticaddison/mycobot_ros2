@@ -4,7 +4,7 @@
   <name>mycobot_gazebo</name>
   <version>0.0.0</version>
   <description>Contains the files to simulate the robot with Gazebo, an open-source robotics simulator.</description>
-  <maintainer email="ubuntu@todo.todo">ubuntu</maintainer>
+  <maintainer email="automaticaddison@todo.todo">Addison Sears-Collins</maintainer>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

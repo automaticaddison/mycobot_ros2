@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(mycobot_moveit_config)
+project(mycobot_moveit_config_manual_setup)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -7,16 +7,9 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-
-
-# Locate and configure packages required by the project.
-find_package(ament_cmake REQUIRED)
-
-# Copy necessary files to designated locations in the project
-install (
-  DIRECTORY config src srdf
-  DESTINATION share/${PROJECT_NAME}
-)
+# uncomment the following section in order to fill in
+# further dependencies manually.
+# find_package(<dependency> REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
