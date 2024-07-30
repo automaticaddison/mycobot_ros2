@@ -103,7 +103,6 @@ def generate_launch_description():
             moveit_config.to_dict(),
             {'use_sim_time': use_sim_time},
             {'default_planning_pipeline': 'pilz_industrial_motion_planner'},
-            {'pilz_industrial_motion_planner': {'cartesian_limits': pilz_cartesian_limits_file_path}},
             {'start_state': {'content': initial_positions_file_path}}
         ],
     )
@@ -116,13 +115,7 @@ def generate_launch_description():
         name="rviz2",
         output="log",
         arguments=["-d", rviz_config_file],
-        parameters=[
-            moveit_config.robot_description,
-            moveit_config.robot_description_semantic,
-            moveit_config.robot_description_kinematics,
-            moveit_config.planning_pipelines,
-            moveit_config.joint_limits,
-        ],
+        parameters=[moveit_config.to_dict()],
     )
 
     # Static TF
@@ -161,3 +154,4 @@ def generate_launch_description():
     ld.add_action(start_robot_state_publisher_cmd)
 
     return ld
+    
