@@ -1,0 +1,9 @@
+# Default initial position for each movable joint
+initial_positions:
+  link1_to_link2: 0.0
+  link2_to_link3: 0.0
+  link3_to_link4: 0.0
+  link4_to_link5: 0.0
+  link5_to_link6: 0.0
+  link6_to_link6flange: 0.0
+  gripper_controller: 0.0
