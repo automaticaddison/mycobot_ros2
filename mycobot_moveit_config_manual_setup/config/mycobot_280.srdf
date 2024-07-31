@@ -2,8 +2,9 @@
 
 <robot xmlns:xacro="http://wiki.ros.org/xacro" name="mycobot_280">
 
+    <virtual_joint name="virtual_joint" type="fixed" parent_frame="world" child_link="base_link"/>
+
     <group name="arm">
-        <joint name="virtual_joint"/>
         
         <joint name="base_link_to_link1"/>
         <joint name="link1_to_link2"/>

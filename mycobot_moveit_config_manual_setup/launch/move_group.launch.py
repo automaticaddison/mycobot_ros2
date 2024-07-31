@@ -12,6 +12,7 @@ from launch_ros.substitutions import FindPackageShare
 from moveit_configs_utils import MoveItConfigsBuilder
 import xacro
 
+
 def generate_launch_description():
 
     # Constants for paths to different files and folders
@@ -58,23 +59,27 @@ def generate_launch_description():
         description='Whether to start RViz')
 
     # Load the robot configuration
+    # Typically, you would also have this line in here: .robot_description(file_path=urdf_model_path)
+    # Another launch file is launching the robot description.
     moveit_config = (
         MoveItConfigsBuilder("mycobot_280", package_name=package_name_moveit_config)
         .trajectory_execution(file_path=moveit_controllers_file_path)
-        .robot_description(file_path=urdf_model_path)
         .robot_description_semantic(file_path=srdf_model_path)
         .joint_limits(file_path=joint_limits_file_path)
         .robot_description_kinematics(file_path=kinematics_file_path)
-        .planning_pipelines(pipelines=["ompl", "pilz_industrial_motion_planner"])
+        .planning_pipelines(
+            pipelines=["ompl", "pilz_industrial_motion_planner"],
+            default_planning_pipeline="pilz_industrial_motion_planner"
+        )
         .planning_scene_monitor(
-            publish_robot_description=True,
+            publish_robot_description=False,
             publish_robot_description_semantic=True,
             publish_planning_scene=True,
         )
         .pilz_cartesian_limits(file_path=pilz_cartesian_limits_file_path)
         .to_moveit_configs()
     )
-  
+    
     # Start the actual move_group node/action server
     start_move_group_node_cmd = Node(
         package="moveit_ros_move_group",
@@ -83,8 +88,7 @@ def generate_launch_description():
         parameters=[
             moveit_config.to_dict(),
             {'use_sim_time': use_sim_time},
-            {'default_planning_pipeline': 'pilz_industrial_motion_planner'},
-            {'start_state': {'content': initial_positions_file_path}}
+            {'start_state': {'content': initial_positions_file_path}},
         ],
     )
 
@@ -97,7 +101,7 @@ def generate_launch_description():
         output="log",
         arguments=["-d", rviz_config_file],
         parameters=[
-            moveit_config.robot_description,
+            moveit_config.to_dict(),
             moveit_config.robot_description_semantic,
             moveit_config.planning_pipelines,
             moveit_config.robot_description_kinematics,
@@ -105,8 +109,6 @@ def generate_launch_description():
         ],
     )
     
-    #parameters=[moveit_config.to_dict(), {'use_sim_time': use_sim_time}],
-
     # Create the launch description and populate
     ld = LaunchDescription()
 
