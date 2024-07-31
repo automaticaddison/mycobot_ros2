@@ -34,6 +34,7 @@ def generate_launch_description():
 
     # Set the full paths
     urdf_model_path = os.path.join(pkg_share_gazebo, urdf_file_path)
+    srdf_model_path = os.path.join(pkg_share_moveit_config, srdf_file_path)
     moveit_controllers_file_path = os.path.join(pkg_share_moveit_config, moveit_controllers_file_path)
     joint_limits_file_path = os.path.join(pkg_share_moveit_config, joint_limits_file_path)
     kinematics_file_path = os.path.join(pkg_share_moveit_config, kinematics_file_path)
@@ -44,8 +45,6 @@ def generate_launch_description():
     # Launch configuration variables
     use_sim_time = LaunchConfiguration('use_sim_time')
     use_rviz = LaunchConfiguration('use_rviz')
-    use_static_tf = LaunchConfiguration('use_static_tf')
-    use_robot_state_publisher = LaunchConfiguration('use_robot_state_publisher')
 
     # Declare the launch arguments
     declare_use_sim_time_cmd = DeclareLaunchArgument(
@@ -61,9 +60,9 @@ def generate_launch_description():
     # Load the robot configuration
     moveit_config = (
         MoveItConfigsBuilder("mycobot_280", package_name=package_name_moveit_config)
-        .robot_description(file_path=urdf_model_path)
-        .robot_description_semantic(file_path=srdf_file_path)
         .trajectory_execution(file_path=moveit_controllers_file_path)
+        .robot_description(file_path=urdf_model_path)
+        .robot_description_semantic(file_path=srdf_model_path)
         .joint_limits(file_path=joint_limits_file_path)
         .robot_description_kinematics(file_path=kinematics_file_path)
         .planning_pipelines(pipelines=["ompl", "pilz_industrial_motion_planner"])
@@ -75,7 +74,7 @@ def generate_launch_description():
         .pilz_cartesian_limits(file_path=pilz_cartesian_limits_file_path)
         .to_moveit_configs()
     )
-
+  
     # Start the actual move_group node/action server
     start_move_group_node_cmd = Node(
         package="moveit_ros_move_group",
@@ -97,8 +96,16 @@ def generate_launch_description():
         name="rviz2",
         output="log",
         arguments=["-d", rviz_config_file],
-        parameters=[moveit_config.to_dict(), {'use_sim_time': use_sim_time}],
+        parameters=[
+            moveit_config.robot_description,
+            moveit_config.robot_description_semantic,
+            moveit_config.planning_pipelines,
+            moveit_config.robot_description_kinematics,
+            moveit_config.joint_limits,
+        ],
     )
+    
+    #parameters=[moveit_config.to_dict(), {'use_sim_time': use_sim_time}],
 
     # Create the launch description and populate
     ld = LaunchDescription()

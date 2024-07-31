@@ -21,6 +21,11 @@ install (
   DESTINATION share/${PROJECT_NAME}
 )
 
+# Install the .setup_assistant file
+install(
+  FILES .setup_assistant
+  DESTINATION share/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

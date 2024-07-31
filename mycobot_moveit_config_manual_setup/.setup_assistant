@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: mycobot_gazebo
+    relative_path: urdf/ros2_control/gazebo/mycobot_280.urdf.xacro
+    xacro_args: ""
+  SRDF:
+    relative_path: config/mycobot_280.srdf
+  CONFIG:
+    author_name: AutomaticAddison
+    author_email: addison@todo.com
+    generated_timestamp: 1690848000
