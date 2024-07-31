@@ -1,5 +1,5 @@
 # Author: Addison Sears-Collins
-# Date: April 29, 2024
+# Date: July 30, 2024
 # Description: Launch a robotic arm in Gazebo 
 import os
 from launch import LaunchDescription
@@ -164,8 +164,10 @@ def generate_launch_description():
     executable='rviz2',
     name='rviz2',
     output='screen',
-    arguments=['-d', rviz_config_file])  
+    arguments=['-d', rviz_config_file],
+    parameters=[{'use_sim_time': use_sim_time}])  
     
+   
   # Spawn the robot
   start_gazebo_ros_spawner_cmd = Node(
     package='ros_gz_sim',

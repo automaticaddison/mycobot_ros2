@@ -94,6 +94,10 @@ def generate_launch_description():
         .to_moveit_configs()
     )
 
+    # Add use_sim_time parameter to moveit_config
+    moveit_config.update_package_directories(package_name_moveit_config)
+    moveit_config.param('use_sim_time', use_sim_time)
+
     # Start the actual move_group node/action server
     start_move_group_node_cmd = Node(
         package="moveit_ros_move_group",
@@ -115,7 +119,7 @@ def generate_launch_description():
         name="rviz2",
         output="log",
         arguments=["-d", rviz_config_file],
-        parameters=[moveit_config.to_dict()],
+        parameters=[moveit_config.to_dict(), {'use_sim_time': use_sim_time}],
     )
 
     # Static TF
@@ -126,6 +130,7 @@ def generate_launch_description():
         name="static_transform_publisher",
         output="log",
         arguments=["0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "world", "base_link"],
+        parameters=[{'use_sim_time': use_sim_time}],
     )
 
     # Publish TF
@@ -135,7 +140,7 @@ def generate_launch_description():
         executable="robot_state_publisher",
         name="robot_state_publisher",
         output="both",
-        parameters=[moveit_config.robot_description],
+        parameters=[moveit_config.robot_description, {'use_sim_time': use_sim_time}],
     )
 
     # Create the launch description and populate
@@ -154,4 +159,3 @@ def generate_launch_description():
     ld.add_action(start_robot_state_publisher_cmd)
 
     return ld
-    
