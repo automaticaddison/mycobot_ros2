@@ -17,7 +17,7 @@ find_package(rviz_visual_tools REQUIRED)
 
 # Copy necessary files to designated locations in the project
 install (
-  DIRECTORY config launch rviz
+  DIRECTORY config launch rviz scripts
   DESTINATION share/${PROJECT_NAME}
 )
 
