@@ -140,7 +140,7 @@ Visualization Manager:
             Value: true
         Robot Alpha: 1
         Show Robot Collision: false
-        Show Robot Visual: true
+        Show Robot Visual: false
       Value: true
     - Class: moveit_rviz_plugin/Trajectory
       Color Enabled: false
@@ -355,7 +355,7 @@ Visualization Manager:
         Show Trail: false
         State Display Time: 0.05 s
         Trail Step Size: 1
-        Trajectory Topic: /move_group/display_planned_path
+        Trajectory Topic: /display_planned_path
       Planning Metrics:
         Payload: 1
         Show Joint Torques: false
@@ -367,9 +367,9 @@ Visualization Manager:
         Colliding Link Color: 255; 0; 0
         Goal State Alpha: 1
         Goal State Color: 250; 128; 0
-        Interactive Marker Size: 0
+        Interactive Marker Size: 0.2
         Joint Violation Color: 255; 0; 255
-        Planning Group: panda_arm
+        Planning Group: arm
         Query Goal State: false
         Query Start State: false
         Show Workspace: false
@@ -482,12 +482,12 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /move_group_tutorial
+        Value: /display_contacts
       Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: world
+    Fixed Frame: base_link
     Frame Rate: 30
   Name: root
   Tools:
