@@ -4,8 +4,10 @@
 
 import os
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, EmitEvent, RegisterEventHandler
 from launch.conditions import IfCondition
+from launch.event_handlers import OnProcessExit
+from launch.events import Shutdown
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -97,13 +99,24 @@ def generate_launch_description():
         condition=IfCondition(use_rviz),
         package="rviz2",
         executable="rviz2",
-        name="rviz2",
-        output="log",
         arguments=["-d", rviz_config_file],
+        output="screen",
         parameters=[
-            moveit_config.to_dict(),
-            {'use_sim_time': use_sim_time}, 
+            moveit_config.robot_description,
+            moveit_config.robot_description_semantic,
+            moveit_config.planning_pipelines,
+            moveit_config.robot_description_kinematics,
+            moveit_config.joint_limits,
+            {'use_sim_time': use_sim_time}
         ],
+    )
+    
+    exit_event_handler = RegisterEventHandler(
+        condition=IfCondition(use_rviz),
+        event_handler=OnProcessExit(
+            target_action=start_rviz_node_cmd,
+            on_exit=EmitEvent(event=Shutdown(reason='rviz exited')),
+        ),
     )
     
     # Create the launch description and populate
@@ -116,5 +129,8 @@ def generate_launch_description():
     # Add any actions
     ld.add_action(start_move_group_node_cmd)
     ld.add_action(start_rviz_node_cmd)
+    
+    # Clean shutdown of RViz
+    ld.add_action(exit_event_handler)
 
     return ld
