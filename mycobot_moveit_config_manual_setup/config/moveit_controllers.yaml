@@ -7,6 +7,7 @@ moveit_simple_controller_manager:
   controller_names:
     - arm_controller   # Name of the controller for the robotic arm.
     - grip_controller  # Name of the controller for the gripper.
+    - grip_action_controller # Other controller for the gripper (preferred)
 
   # Configuration for the arm_controller.
   arm_controller:
@@ -25,9 +26,17 @@ moveit_simple_controller_manager:
   grip_controller:
     action_ns: follow_joint_trajectory  
     type: FollowJointTrajectory         
-    default: true                    
+    default: false                    
     joints:                           
-      - gripper_controller              
+      - gripper_controller      
+  
+  # Configuration for the grip_action_controller.    
+  grip_action_controller:  
+    action_ns: gripper_cmd 
+    type: GripperCommand
+    default: true
+    joints:
+      - gripper_controller       
 
            
 

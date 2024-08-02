@@ -60,6 +60,7 @@
                 <param name="max">0.15</param>
             </command_interface>
             <state_interface name="position"/>
+            <state_interface name="velocity"/> 
         </joint>
 
         <joint name="gripper_base_to_gripper_left2">
@@ -70,6 +71,7 @@
                 <param name="max">0.5</param>
             </command_interface>
             <state_interface name="position"/>
+            <state_interface name="velocity"/> 
         </joint>
 
         <joint name="gripper_left3_to_gripper_left1">
@@ -80,6 +82,7 @@
                 <param name="max">0.5</param>
             </command_interface>
             <state_interface name="position"/>
+            <state_interface name="velocity"/> 
         </joint>
 
         <joint name="gripper_base_to_gripper_right3">
@@ -90,6 +93,7 @@
                 <param name="max">0.7</param>
             </command_interface>
             <state_interface name="position"/>
+            <state_interface name="velocity"/> 
         </joint>
 
         <joint name="gripper_base_to_gripper_right2">
@@ -100,6 +104,7 @@
                 <param name="max">0.8</param>
             </command_interface>
             <state_interface name="position"/>
+            <state_interface name="velocity"/> 
         </joint>
 
         <joint name="gripper_right3_to_gripper_right1">
@@ -110,6 +115,7 @@
                 <param name="max">0.5</param>
             </command_interface>
             <state_interface name="position"/>
+            <state_interface name="velocity"/> 
         </joint>
 
     </ros2_control>    

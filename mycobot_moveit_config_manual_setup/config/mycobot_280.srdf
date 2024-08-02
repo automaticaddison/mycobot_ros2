@@ -16,8 +16,13 @@
         <joint name="gripper_controller"/>
     </group>
 
-    <end_effector name="gripper" parent_link="link6_flange" group="gripper"/>
+    <group name="arm_with_gripper">
+        <group name="arm" />
+        <group name="gripper" />
+    </group>
     
+    <end_effector name="gripper" parent_link="link6_flange" group="gripper"/>
+
     <group_state name="home" group="arm">
         <joint name="link1_to_link2" value="0"/>
         <joint name="link2_to_link3" value="0"/>
@@ -37,6 +42,16 @@
     
     <group_state name="closed" group="gripper">
         <joint name="gripper_controller" value="-0.59"/>
+    </group_state>
+
+    <group_state name="ready" group="arm_with_gripper">
+        <joint name="link1_to_link2" value="0"/>
+        <joint name="link2_to_link3" value="0"/>
+        <joint name="link3_to_link4" value="0"/>
+        <joint name="link4_to_link5" value="0"/>
+        <joint name="link5_to_link6" value="0"/>
+        <joint name="link6_to_link6flange" value="0"/>
+        <joint name="gripper_controller" value="0"/>
     </group_state>
 
     <!-- 

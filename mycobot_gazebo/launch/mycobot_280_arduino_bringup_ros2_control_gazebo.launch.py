@@ -134,8 +134,14 @@ def generate_launch_description():
 
   # Start gripper controller
   start_gripper_controller_cmd =  ExecuteProcess(
-    cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+    cmd=['ros2', 'control', 'load_controller', '--set-state', 'inactive',
         'grip_controller'],
+        output='screen')
+
+  # Start gripper action controller
+  start_gripper_action_controller_cmd = ExecuteProcess(
+    cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+        'grip_action_controller'],
         output='screen')
   
   # Launch joint state broadcaster
@@ -202,6 +208,12 @@ def generate_launch_description():
     event_handler=OnProcessExit(
     target_action=start_arm_controller_cmd,
     on_exit=[start_gripper_controller_cmd],))
+    
+  # Launch the gripper action controller after launching the gripper controller
+  load_gripper_action_controller_cmd = RegisterEventHandler(
+    event_handler=OnProcessExit(
+    target_action=start_gripper_controller_cmd,
+    on_exit=[start_gripper_action_controller_cmd],))    
 
   # Create the launch description and populate
   ld = LaunchDescription()
@@ -232,6 +244,7 @@ def generate_launch_description():
   ld.add_action(load_joint_state_broadcaster_cmd)
   ld.add_action(load_arm_controller_cmd) 
   ld.add_action(load_gripper_controller_cmd) 
+  ld.add_action(load_gripper_action_controller_cmd)
 
   return ld
 
