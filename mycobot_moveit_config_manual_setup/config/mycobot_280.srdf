@@ -32,11 +32,11 @@
     </group_state>
     
     <group_state name="half_closed" group="gripper">
-        <joint name="gripper_controller" value="-0.30"/>
+        <joint name="gripper_controller" value="-0.36"/>
     </group_state>
     
     <group_state name="closed" group="gripper">
-        <joint name="gripper_controller" value="-0.61"/>
+        <joint name="gripper_controller" value="-0.59"/>
     </group_state>
 
     <!-- 
