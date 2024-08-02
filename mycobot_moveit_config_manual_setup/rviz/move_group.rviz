@@ -239,7 +239,7 @@ Visualization Manager:
       Trail Step Size: 1
       Trajectory Topic: /display_planned_path
       Value: true
-    - Acceleration_Scaling_Factor: 0.1
+    - Acceleration_Scaling_Factor: 1.0
       Class: moveit_rviz_plugin/MotionPlanning
       Enabled: true
       Move Group Namespace: ""
@@ -247,8 +247,8 @@ Visualization Manager:
       MoveIt_Allow_External_Program: false
       MoveIt_Allow_Replanning: false
       MoveIt_Allow_Sensor_Positioning: false
-      MoveIt_Planning_Attempts: 10
-      MoveIt_Planning_Time: 5
+      MoveIt_Planning_Attempts: 3
+      MoveIt_Planning_Time: 0.1
       MoveIt_Use_Cartesian_Path: false
       MoveIt_Use_Constraint_Aware_IK: true
       MoveIt_Warehouse_Host: 127.0.0.1
@@ -471,7 +471,7 @@ Visualization Manager:
         Show Robot Collision: false
         Show Robot Visual: true
       Value: true
-      Velocity_Scaling_Factor: 0.1
+      Velocity_Scaling_Factor: 1.0
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
       Name: MarkerArray
