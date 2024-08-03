@@ -70,7 +70,7 @@ def generate_launch_description():
         .joint_limits(file_path=joint_limits_file_path)
         .robot_description_kinematics(file_path=kinematics_file_path)
         .planning_pipelines(
-            pipelines=["ompl", "pilz_industrial_motion_planner"],
+            pipelines=["ompl", "pilz_industrial_motion_planner", "stomp"],
             default_planning_pipeline="pilz_industrial_motion_planner"
         )
         .planning_scene_monitor(
