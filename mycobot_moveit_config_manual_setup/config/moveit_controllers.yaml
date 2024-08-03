@@ -7,7 +7,7 @@ moveit_simple_controller_manager:
   controller_names:
     - arm_controller   # Name of the controller for the robotic arm.
     - grip_controller  # Name of the controller for the gripper.
-    - grip_action_controller # Other controller for the gripper (preferred)
+    - grip_action_controller # Other controller for the gripper (recommended)
 
   # Configuration for the arm_controller.
   arm_controller:
