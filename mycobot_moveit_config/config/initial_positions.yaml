@@ -1,0 +1,10 @@
+# Default initial positions for mycobot_280's ros2_control fake system
+
+initial_positions:
+  gripper_controller: 0
+  link1_to_link2: 0
+  link2_to_link3: 0
+  link3_to_link4: 0
+  link4_to_link5: 0
+  link5_to_link6: 0
+  link6_to_link6flange: 0

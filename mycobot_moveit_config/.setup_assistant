@@ -1,0 +1,25 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: mycobot_gazebo
+    relative_path: urdf/ros2_control/gazebo/mycobot_280.urdf.xacro
+  srdf:
+    relative_path: config/mycobot_280.srdf
+  package_settings:
+    author_name: Automatic Addison
+    author_email: addison@todo.com
+    generated_timestamp: 1722895126
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
+  modified_urdf:
+    xacros:
+      - control_xacro
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity

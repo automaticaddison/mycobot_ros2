@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="mycobot_280">
+    <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
+
+    <!-- Import mycobot_280 urdf file -->
+    <xacro:include filename="$(find mycobot_gazebo)/urdf/ros2_control/gazebo/mycobot_280.urdf.xacro" />
+
+    <!-- Import control_xacro -->
+    <xacro:include filename="mycobot_280.ros2_control.xacro" />
+
+
+    <xacro:mycobot_280_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
+
+</robot>
