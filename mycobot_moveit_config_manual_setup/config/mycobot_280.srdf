@@ -47,8 +47,8 @@
     <group_state name="ready" group="arm_with_gripper">
         <joint name="link1_to_link2" value="0"/>
         <joint name="link2_to_link3" value="0"/>
-        <joint name="link3_to_link4" value="0"/>
-        <joint name="link4_to_link5" value="0"/>
+        <joint name="link3_to_link4" value="1.5708"/>
+        <joint name="link4_to_link5" value="1.5708"/>
         <joint name="link5_to_link6" value="0"/>
         <joint name="link6_to_link6flange" value="0"/>
         <joint name="gripper_controller" value="0"/>
