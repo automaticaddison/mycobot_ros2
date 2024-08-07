@@ -66,7 +66,6 @@ int main(int argc, char * argv[])
   // Display helpful logging messages on the terminal
   RCLCPP_INFO(logger, "Planning pipeline: %s", arm_group_interface.getPlanningPipelineId().c_str());    
   RCLCPP_INFO(logger, "Planner ID: %s", arm_group_interface.getPlannerId().c_str());
-  RCLCPP_INFO(logger, "Planning frame: %s", arm_group_interface.getPlanningFrame().c_str());
   RCLCPP_INFO(logger, "Planning time: %.2f", arm_group_interface.getPlanningTime());
 
   // Set a target pose for the end effector of the arm 
