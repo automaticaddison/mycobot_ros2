@@ -68,7 +68,7 @@ int main(int argc, char * argv[])
   arm_group_interface.setPlannerId("RRTConnectkConfigDefault");  
 
   // Specify the maximum amount of time in seconds to use when planning
-  arm_group_interface.setPlanningTime(5.0);
+  arm_group_interface.setPlanningTime(1.0);
   
   // Set a scaling factor for optionally reducing the maximum joint velocity. Allowed values are in (0,1].
   arm_group_interface.setMaxVelocityScalingFactor(1.0);
