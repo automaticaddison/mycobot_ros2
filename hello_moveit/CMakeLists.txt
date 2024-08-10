@@ -7,7 +7,9 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(moveit_msgs REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
+find_package(moveit_visual_tools REQUIRED)
 find_package(rclcpp REQUIRED)
 
 # Function to add an executable with common settings
@@ -18,7 +20,9 @@ function(add_common_executable target_name source_file)
     $<INSTALL_INTERFACE:include>)
   target_compile_features(${target_name} PUBLIC c_std_99 cxx_std_17)
   ament_target_dependencies(${target_name}
+    moveit_msgs
     moveit_ros_planning_interface
+    moveit_visual_tools
     rclcpp
   )
 endfunction()
@@ -26,11 +30,13 @@ endfunction()
 # Add executables
 add_common_executable(hello_moveit_v1 hello_moveit_v1.cpp)
 add_common_executable(hello_moveit_v2 hello_moveit_v2.cpp)
+add_common_executable(plan_around_objects plan_around_objects.cpp)
 
 # Install targets
 install(TARGETS 
   hello_moveit_v1
   hello_moveit_v2
+  plan_around_objects
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
