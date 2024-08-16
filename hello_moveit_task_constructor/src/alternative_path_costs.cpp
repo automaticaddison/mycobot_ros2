@@ -54,9 +54,6 @@ int main(int argc, char** argv) {
     auto node = rclcpp::Node::make_shared("alternative_path_costs_demo", node_options);
     std::cout << "Created ROS 2 node: alternative_path_costs_demo" << std::endl;
     
-    // Create a logger
-    auto logger = node->get_logger();
-    
     // Start a separate thread to handle ROS 2 callbacks
     std::thread spinning_thread([node] { rclcpp::spin(node); });
 
