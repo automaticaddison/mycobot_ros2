@@ -13,19 +13,13 @@
 
 
 #include <rclcpp/rclcpp.hpp>
-
 #include <moveit/planning_scene/planning_scene.h>
-
 #include <moveit/task_constructor/task.h>
 #include <moveit/task_constructor/container.h>
-
 #include <moveit/task_constructor/solvers/pipeline_planner.h>
-
 #include <moveit/task_constructor/stages/connect.h>
 #include <moveit/task_constructor/stages/fixed_state.h>
-
 #include <moveit/task_constructor/cost_terms.h>
-
 #include <iostream> 
 
 using namespace moveit::task_constructor;
