@@ -65,7 +65,7 @@ function(demo name)
 endfunction()
 
 demo(alternative_path_costs)
-# demo(cartesian)
+demo(cartesian)
 # demo(fallbacks_move_to)
 # demo(ik_clearance_cost)
 # demo(modular)
