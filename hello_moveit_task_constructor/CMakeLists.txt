@@ -66,7 +66,7 @@ endfunction()
 
 demo(alternative_path_costs)
 demo(cartesian)
-# demo(fallbacks_move_to)
+demo(fallbacks_move_to)
 # demo(ik_clearance_cost)
 # demo(modular)
 # demo(pick_place_demo)

@@ -258,7 +258,7 @@ int main(int argc, char** argv) {
     
   RCLCPP_INFO(node->get_logger(), "Waiting for ROS 2 spinning thread to finish");
     
-  // Wait for the spinning thread to finish
+  // Keeps the program running so that you can inspect the results in RViz
   spinning_thread.join();
     
   RCLCPP_INFO(node->get_logger(), "Cartesian path planning demo completed");

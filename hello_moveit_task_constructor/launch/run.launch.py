@@ -9,6 +9,7 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from moveit_configs_utils import MoveItConfigsBuilder
+ 
 
 def generate_launch_description():
     # Constants for paths to different files and folders
@@ -75,7 +76,7 @@ def generate_launch_description():
         )
         .to_moveit_configs()
     )
-
+    
     node = Node(
         package="hello_moveit_task_constructor",
         executable=exe,
@@ -85,6 +86,7 @@ def generate_launch_description():
             moveit_config.robot_description_semantic,
             moveit_config.robot_description_kinematics,
             moveit_config.joint_limits,
+            moveit_config.pilz_cartesian_limits,
             moveit_config.planning_pipelines,
             {'use_sim_time': use_sim_time},
         ],
