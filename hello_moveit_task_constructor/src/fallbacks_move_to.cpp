@@ -6,15 +6,10 @@
  * planning task with multiple initial states and fallback planning strategies. It plans a
  * movement for a robot arm using different planning methods (Cartesian, Pilz, and OMPL).
  *
- * Initial States:
- *   1. Close to target state in workspace
- *   2. Directly reachable without collision
- *   3. Getting to target requires collision avoidance (includes a collision object)
- *
  * Planning Methods:
  *   - Cartesian path
- *   - PTP (Point-To-Point) path
- *   - RRT-Connect path
+ *   - Pilz path
+ *   - OMPL path
  *
  * @author Addison Sears-Collins
  * @date August 17, 2024
@@ -127,9 +122,9 @@ int main(int argc, char** argv) {
   RCLCPP_INFO(logger, "Setting up initial state alternatives");
   auto initial_alternatives = std::make_unique<Alternatives>("initial states");
 
-  // First initial state option: close to target state in workspace
+  // First initial state option: 90 degree offset from target goal
   {
-    auto fixed{ std::make_unique<stages::FixedState>("close to target state in workspace") };
+    auto fixed{ std::make_unique<stages::FixedState>("90 degree offset from target goal") };
     auto scene{ initial_scene->diff() };
     scene->getCurrentStateNonConst().setVariablePositions({ { "link1_to_link2", -TAU / 8 } });
     fixed->setState(scene);
@@ -162,8 +157,8 @@ int main(int argc, char** argv) {
       co.operation = co.ADD;
       co.pose = []() {
         geometry_msgs::msg::Pose p;
-        p.position.x = -0.15;
-        p.position.y = 0.0;
+        p.position.x = 0.02;
+        p.position.y = -0.15;
         p.position.z = 0.32 / 2;
         p.orientation.w = 1.0;
         return p;
@@ -171,7 +166,7 @@ int main(int argc, char** argv) {
       co.primitives.push_back([]() {
         shape_msgs::msg::SolidPrimitive sp;
         sp.type = sp.BOX;
-        sp.dimensions = { 0.1, 0.025, 0.32 };
+        sp.dimensions = { 0.005, 0.1, 0.32 };
         return sp;
       }());
       return co;
