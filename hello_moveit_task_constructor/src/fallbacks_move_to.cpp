@@ -102,21 +102,21 @@ int main(int argc, char** argv) {
   
   // Create PipelinePlanner for OMPL (high computational requirements, best for complex paths with many obstacles)
   std::unordered_map<std::string, std::string> ompl_map = {
-    {"ompl", "arm_with_gripper[RRTConnectkConfigDefault]"}
+    {"ompl", "arm[RRTConnectkConfigDefault]"}
   };
   auto ompl_planner = std::make_shared<solvers::PipelinePlanner>(node, ompl_map);
   RCLCPP_INFO(logger, "OMPL planner created");
 
   // Define the target end state for all task plans
   std::map<std::string, double> target_state;
-  robot->getJointModelGroup("arm_with_gripper")->getVariableDefaultPositions("ready", target_state);
+  robot->getJointModelGroup("arm")->getVariableDefaultPositions("ready", target_state);
   target_state["link1_to_link2"] = +TAU / 8;
-  RCLCPP_INFO(logger, "Target state set for 'arm_with_gripper' group");
+  RCLCPP_INFO(logger, "Target state set for 'arm' group");
 
   // Define the default initial state
   RCLCPP_INFO(logger, "Setting up initial scene");
   auto initial_scene{ std::make_shared<planning_scene::PlanningScene>(robot) };
-  initial_scene->getCurrentStateNonConst().setToDefaultValues(robot->getJointModelGroup("arm_with_gripper"), "ready");
+  initial_scene->getCurrentStateNonConst().setToDefaultValues(robot->getJointModelGroup("arm"), "ready");
 
   // Set up three different initial states using an Alternatives container
   RCLCPP_INFO(logger, "Setting up initial state alternatives");
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
       co.pose = []() {
         geometry_msgs::msg::Pose p;
         p.position.x = 0.02;
-        p.position.y = -0.15;
+        p.position.y = -0.20;
         p.position.z = 0.32 / 2;
         p.orientation.w = 1.0;
         return p;
@@ -186,7 +186,7 @@ int main(int argc, char** argv) {
   // Helper lambda to add different planning methods to the fallbacks container
   auto add_to_fallbacks{ [&](auto& solver, auto& name) {
     auto move_to = std::make_unique<stages::MoveTo>(name, solver);
-    move_to->setGroup("arm_with_gripper");
+    move_to->setGroup("arm");
     move_to->setGoal(target_state);
     fallbacks->add(std::move(move_to));
   } };
