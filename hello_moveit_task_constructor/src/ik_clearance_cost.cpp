@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
   co.header.frame_id = t.getRobotModel()->getModelFrame();
   co.primitive_poses.emplace_back();
   co.primitive_poses[0].orientation.w = 1.0;
-  co.primitive_poses[0].position.x = -0.182;
+  co.primitive_poses[0].position.x = -0.183; 
   co.primitive_poses[0].position.y = -0.14;
   co.primitive_poses[0].position.z = 0.15; 
   scene->processCollisionObjectMsg(co);
@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
   ik->setGroup("arm");
 
   // Set the target pose
-  ik->setTargetPose(Eigen::Translation3d(-.182, 0.0175, .15) * Eigen::AngleAxisd(M_PI/4, Eigen::Vector3d::UnitX()));
+  ik->setTargetPose(Eigen::Translation3d(-.183, 0.0175, .15) * Eigen::AngleAxisd(M_PI/4, Eigen::Vector3d::UnitX()));
   
   ik->setTimeout(1.0);
   ik->setMaxIKSolutions(100);
@@ -120,11 +120,39 @@ int main(int argc, char** argv) {
   // Attempt to plan the task
   try {
     RCLCPP_INFO(logger, "Starting task planning");
-    t.plan(0);
-    RCLCPP_INFO(logger, "Task planning completed successfully");
+    
+    // Plan the task
+    moveit::core::MoveItErrorCode error_code = t.plan(0);
+    
+    // Log the planning result
+    if (error_code == moveit::core::MoveItErrorCode::SUCCESS) {
+      RCLCPP_INFO(logger, "Task planning completed successfully");
+      RCLCPP_INFO(logger, "Found %zu solutions", t.numSolutions());
+      
+      // Use printState to log the task state
+      std::ostringstream state_stream;
+      t.printState(state_stream);
+      RCLCPP_INFO(logger, "Task state:\n%s", state_stream.str().c_str());
+      
+    } else {
+      RCLCPP_ERROR(logger, "Task planning failed with error code: %d", error_code.val);
+      
+      // Use explainFailure to log the reason for failure
+      std::ostringstream failure_stream;
+      t.explainFailure(failure_stream);
+      RCLCPP_ERROR(logger, "Failure explanation:\n%s", failure_stream.str().c_str());
+    }
+    
+    // Log a simple summary of each stage
+    RCLCPP_INFO(logger, "Stage summary:");
+    for (size_t i = 0; i < t.stages()->numChildren(); ++i) {
+      const auto* stage = t.stages()->operator[](i);
+      RCLCPP_INFO(logger, "  %s: %zu solutions, %zu failures",
+                  stage->name().c_str(), stage->solutions().size(), stage->failures().size());
+    }
+
   } catch (const InitStageException& e) {
     RCLCPP_ERROR(logger, "InitStageException caught during task planning: %s", e.what());
-    std::cout << e << std::endl;
   }
     
   RCLCPP_INFO(logger, "IK Clearance Cost Demo completed");
@@ -134,3 +162,4 @@ int main(int argc, char** argv) {
     
   return 0;
 }
+
