@@ -108,11 +108,17 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 	/* Create planners used in various stages. Various options are available,
 	namely OMPL, Cartesian, etc. */
 	// OMPL planner
-	std::unordered_map<std::string, std::string> ompl_map = {
+	std::unordered_map<std::string, std::string> ompl_map_arm = {
 	{"ompl", params.arm_group_name + "[RRTConnectkConfigDefault]"}
 	};
-	auto ompl_planner = std::make_shared<solvers::PipelinePlanner>(node, ompl_map);
-	RCLCPP_INFO(LOGGER, "OMPL planner created");
+	auto ompl_planner_arm = std::make_shared<solvers::PipelinePlanner>(node, ompl_map_arm);
+	RCLCPP_INFO(LOGGER, "OMPL planner created for the arm group");
+	
+	std::unordered_map<std::string, std::string> ompl_map_gripper = {
+	{"ompl", params.gripper_group_name + "[RRTConnectkConfigDefault]"}
+	};
+	auto ompl_planner_gripper = std::make_shared<solvers::PipelinePlanner>(node, ompl_map_gripper);
+	RCLCPP_INFO(LOGGER, "OMPL planner created for the gripper group");
 	
 	// Cartesian planner
 	auto cartesian_planner = std::make_shared<solvers::CartesianPath>();
@@ -160,7 +166,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
     	// up an object in the pick-and-place task. 
 	Stage* initial_state_ptr = nullptr;
 	{
-		auto stage = std::make_unique<stages::MoveTo>("open gripper", ompl_planner);
+		auto stage = std::make_unique<stages::MoveTo>("open gripper", ompl_planner_gripper);
 		stage->setGroup(params.gripper_group_name);
 		stage->setGoal(params.gripper_open_pose);
 		initial_state_ptr = stage.get();  // remember start state for monitoring grasp pose generator
@@ -174,10 +180,10 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 	 ***************************************************/
 	// The purpose of the "move to pick" stage is to move the robot's arm from its current position 
 	// (after the gripper has opened) to a position where it can start the pick operation. 
-	// This involves calculating and executing a valid trajectory using the ompl_planner.
+	// This involves calculating and executing a valid trajectory using the ompl_planner_arm.
 	{
 		auto stage = std::make_unique<stages::Connect>(
-		    "move to pick", stages::Connect::GroupPlannerVector{ { params.arm_group_name, ompl_planner } });
+		    "move to pick", stages::Connect::GroupPlannerVector{ { params.arm_group_name, ompl_planner_arm } });
 		stage->setTimeout(5.0);
 		stage->properties().configureInitFrom(Stage::PARENT);
 		t.add(std::move(stage));
@@ -262,7 +268,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
   ---- *               Close Gripper                      *
 		 ***************************************************/
 		{
-			auto stage = std::make_unique<stages::MoveTo>("close gripper", ompl_planner);
+			auto stage = std::make_unique<stages::MoveTo>("close gripper", ompl_planner_gripper);
 			stage->setGroup(params.gripper_group_name);
 			stage->setGoal(params.gripper_close_pose);
 			grasp->insert(std::move(stage));
@@ -273,7 +279,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 		 ***************************************************/
 		{
 			auto stage = std::make_unique<stages::ModifyPlanningScene>("attach object");
-			stage->attachObject(params.object_name, params.gripper_frame);  // attach object to gripper_frame_
+			stage->attachObject(params.object_name, params.gripper_frame);  // attach object to gripper_frame
 			grasp->insert(std::move(stage));
 		}
 
@@ -334,7 +340,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 		// In other words, this stage plans the motion that transports the object from where it was picked up 
 		// to where it will be placed.
 		auto stage = std::make_unique<stages::Connect>(
-		    "move to place", stages::Connect::GroupPlannerVector{ { params.arm_group_name, ompl_planner } });
+		    "move to place", stages::Connect::GroupPlannerVector{ { params.arm_group_name, ompl_planner_arm } });
 		stage->setTimeout(5.0);
 		stage->properties().configureInitFrom(Stage::PARENT);
 		t.add(std::move(stage));
@@ -400,7 +406,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
   ---- *          Open Gripper                              *
 		 *****************************************************/
 		{
-			auto stage = std::make_unique<stages::MoveTo>("open gripper", ompl_planner);
+			auto stage = std::make_unique<stages::MoveTo>("open gripper", ompl_planner_gripper);
 			stage->setGroup(params.gripper_group_name);
 			stage->setGoal(params.gripper_open_pose);
 			place->insert(std::move(stage));
@@ -452,7 +458,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 	 *                                                    *
 	 *****************************************************/
 	{
-		auto stage = std::make_unique<stages::MoveTo>("move home", ompl_planner);
+		auto stage = std::make_unique<stages::MoveTo>("move home", ompl_planner_arm);
 		stage->properties().configureInitFrom(Stage::PARENT, { "group" });
 		stage->setGoal(params.arm_home_pose);
 		stage->restrictDirection(stages::MoveTo::FORWARD);
