@@ -131,6 +131,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 	cartesian_planner->setMaxVelocityScalingFactor(1.0);
 	cartesian_planner->setMaxAccelerationScalingFactor(1.0);
 	cartesian_planner->setStepSize(.01);
+	RCLCPP_INFO(LOGGER, "Cartesian planner created");
 
 	// Set task properties
 	t.setProperty("group", params.arm_group_name);
