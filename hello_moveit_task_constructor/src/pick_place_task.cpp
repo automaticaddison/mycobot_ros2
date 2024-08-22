@@ -114,6 +114,12 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 	auto ompl_planner_arm = std::make_shared<solvers::PipelinePlanner>(node, ompl_map_arm);
 	RCLCPP_INFO(LOGGER, "OMPL planner created for the arm group");
 	
+	// JointInterpolation is a basic planner that is used for simple motions 
+	// It computes quickly but doesn't support complex motions.
+	auto interpolation_planner = std::make_shared<solvers::JointInterpolationPlanner>();
+	RCLCPP_INFO(LOGGER, "Joint Interpolation planner created for the gripper group");
+	
+	// Create an OMPL planner for the gripper (use if JointInterpolation doesn't work)
 	std::unordered_map<std::string, std::string> ompl_map_gripper = {
 	{"ompl", params.gripper_group_name + "[RRTConnectkConfigDefault]"}
 	};
@@ -166,7 +172,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
     	// up an object in the pick-and-place task. 
 	Stage* initial_state_ptr = nullptr;
 	{
-		auto stage = std::make_unique<stages::MoveTo>("open gripper", ompl_planner_gripper);
+		auto stage = std::make_unique<stages::MoveTo>("open gripper", interpolation_planner);
 		stage->setGroup(params.gripper_group_name);
 		stage->setGoal(params.gripper_open_pose);
 		initial_state_ptr = stage.get();  // remember start state for monitoring grasp pose generator
@@ -268,7 +274,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
   ---- *               Close Gripper                      *
 		 ***************************************************/
 		{
-			auto stage = std::make_unique<stages::MoveTo>("close gripper", ompl_planner_gripper);
+			auto stage = std::make_unique<stages::MoveTo>("close gripper", interpolation_planner);
 			stage->setGroup(params.gripper_group_name);
 			stage->setGoal(params.gripper_close_pose);
 			grasp->insert(std::move(stage));
@@ -406,7 +412,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
   ---- *          Open Gripper                              *
 		 *****************************************************/
 		{
-			auto stage = std::make_unique<stages::MoveTo>("open gripper", ompl_planner_gripper);
+			auto stage = std::make_unique<stages::MoveTo>("open gripper", interpolation_planner);
 			stage->setGroup(params.gripper_group_name);
 			stage->setGoal(params.gripper_open_pose);
 			place->insert(std::move(stage));
