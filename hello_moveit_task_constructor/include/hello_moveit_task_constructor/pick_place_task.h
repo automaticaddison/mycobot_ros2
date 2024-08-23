@@ -13,6 +13,7 @@
 
 // Include necessary ROS 2 headers
 #include <rclcpp/node.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 // Include MoveIt headers
 #include <moveit/planning_scene/planning_scene.h>
@@ -20,6 +21,7 @@
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 
 // Include MoveIt Task Constructor (MTC) headers
+#include <moveit/task_constructor/container.h>
 #include <moveit/task_constructor/task.h>
 #include <moveit/task_constructor/stages/compute_ik.h>
 #include <moveit/task_constructor/stages/connect.h>
@@ -53,6 +55,19 @@ using namespace moveit::task_constructor;
  * @param params The parameters for the pick and place demo.
  */
 void setupDemoScene(const pick_place_demo::Params& params);
+
+
+/**
+ * @brief Print detailed information about a stage and its substages.
+ *
+ * This function recursively prints information about a given stage and all of its substages.
+ * It includes details such as the number of solutions, failures, and specific failure messages.
+ * The output is indented to reflect the hierarchical structure of the stages.
+ *
+ * @param stage Pointer to the Stage object to be printed.
+ * @param indent The indentation level for the current stage (default is 0).
+ */
+void printStageDetails(const moveit::task_constructor::Stage* stage, int indent = 0);
 
 /**
  * @class PickPlaceTask

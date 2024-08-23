@@ -14,7 +14,7 @@ pick_place_demo:
       not_empty<>: []
   table_dimensions:
     type: double_array
-    default_value: [0.2, 0.25, 0.025]
+    default_value: [0.20, 0.25, 0.03]
     validation:
       fixed_size<>: [3]
   table_pose:
@@ -34,7 +34,7 @@ pick_place_demo:
       not_empty<>: []
   object_dimensions:
     type: double_array
-    default_value: [0.50, 0.008] # [height, radius] of cylinder
+    default_value: [0.50, 0.015] # [height, radius] of cylinder
     validation:
       fixed_size<>: [2]
   object_pose:
@@ -75,7 +75,7 @@ pick_place_demo:
       not_empty<>: []
   gripper_close_pose:
     type: string
-    default_value: "close"
+    default_value: "half_closed"
     validation:
       not_empty<>: []
   arm_home_pose:
@@ -101,7 +101,7 @@ pick_place_demo:
       fixed_size<>: [6]
   place_pose:
     type: double_array
-    default_value: [0.03, 0.15, 0.0, 0.0, 0.0, 0.0]
+    default_value: [-0.183, -0.14, 0.0, 0.0, 0.0, 0.0]
     validation:
       fixed_size<>: [6]
   place_surface_offset:
@@ -109,14 +109,14 @@ pick_place_demo:
     default_value: 0.0001
   approach_object_min_dist:
     type: double
-    default_value: 0.01
+    default_value: 0.005
   approach_object_max_dist:
     type: double
-    default_value: 0.15
+    default_value: 0.3
   lift_object_min_dist:
     type: double
-    default_value: 0.015
+    default_value: 0.01
   lift_object_max_dist:
     type: double
-    default_value: 0.1
+    default_value: 0.3
     

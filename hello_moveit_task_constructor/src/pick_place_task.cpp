@@ -82,6 +82,51 @@ void setupDemoScene(const pick_place_demo::Params& params) {
 }
 
 /**
+ * @brief Print detailed information about a stage and its substages.
+ * @param stage Pointer to the Stage object to be printed.
+ * @param indent The indentation level for the current stage (default is 0).
+ */
+void printStageDetails(const moveit::task_constructor::Stage* stage, int indent) {
+  std::string indentation(indent * 2, ' ');
+  RCLCPP_INFO(LOGGER, "%s%s: %zu solutions, %zu failures",
+              indentation.c_str(), stage->name().c_str(), 
+              stage->solutions().size(), stage->numFailures());
+
+  // Print solution details
+  for (const auto& solution : stage->solutions()) {
+    RCLCPP_INFO(LOGGER, "%s  Solution: cost = %.3f, comment = %s",
+                indentation.c_str(), solution->cost(), solution->comment().c_str());
+  }
+
+  // Print failure details
+  for (const auto& failure : stage->failures()) {
+    RCLCPP_WARN(LOGGER, "%s  Failure: %s", indentation.c_str(), failure->comment().c_str());
+  }
+
+  // Check if the stage is a container and has child stages
+  if (const auto* container = dynamic_cast<const moveit::task_constructor::ContainerBase*>(stage)) {
+    size_t num_children = container->numChildren();
+    for (size_t i = 0; i < num_children; ++i) {
+      Stage* child = (*container)[i];
+      printStageDetails(child, indent + 1);
+    }
+
+    // Additional information for specific container types
+    if (dynamic_cast<const moveit::task_constructor::SerialContainer*>(container)) {
+      RCLCPP_INFO(LOGGER, "%sType: Serial Container", indentation.c_str());
+    } else if (dynamic_cast<const moveit::task_constructor::Alternatives*>(container)) {
+      RCLCPP_INFO(LOGGER, "%sType: Alternatives Container", indentation.c_str());
+    } else if (dynamic_cast<const moveit::task_constructor::Fallbacks*>(container)) {
+      RCLCPP_INFO(LOGGER, "%sType: Fallbacks Container", indentation.c_str());
+    } else if (dynamic_cast<const moveit::task_constructor::Merger*>(container)) {
+      RCLCPP_INFO(LOGGER, "%sType: Merger Container", indentation.c_str());
+    } else if (dynamic_cast<const moveit::task_constructor::WrapperBase*>(container)) {
+      RCLCPP_INFO(LOGGER, "%sType: Wrapper", indentation.c_str());
+    }
+  }
+}
+
+/**
  * @brief Constructor for the PickPlaceTask class.
  * @param task_name The name of the task.
  */
@@ -130,7 +175,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 	auto cartesian_planner = std::make_shared<solvers::CartesianPath>();
 	cartesian_planner->setMaxVelocityScalingFactor(1.0);
 	cartesian_planner->setMaxAccelerationScalingFactor(1.0);
-	cartesian_planner->setStepSize(.01);
+	cartesian_planner->setStepSize(.001);
 	RCLCPP_INFO(LOGGER, "Cartesian planner created");
 
 	// Set task properties
@@ -372,7 +417,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 			stage->properties().set("marker_ns", "lower_object");
 			stage->properties().set("link", params.gripper_frame);
 			stage->properties().configureInitFrom(Stage::PARENT, { "group" });
-			stage->setMinMaxDistance(.03, .13);
+			stage->setMinMaxDistance(.01, .3);
 
 			// Set downward direction
 			geometry_msgs::msg::Vector3Stamped vec;
@@ -499,19 +544,21 @@ bool PickPlaceTask::plan(const std::size_t max_solutions) {
         RCLCPP_INFO(LOGGER, "Publishing solution for visualization");
         task_->introspection().publishSolution(*task_->solutions().front());
       }
-
-      // Print stage summary
-      for (size_t i = 0; i < task_->stages()->numChildren(); ++i) {
-        const auto* stage = (*task_->stages())[i];
-        RCLCPP_INFO(LOGGER, "  %s: %zu solutions, %zu failures",
-                    stage->name().c_str(), stage->solutions().size(), stage->failures().size());
-      }
+      // Print detailed stage summary
+      RCLCPP_INFO(LOGGER, "Detailed stage summary:");
+      printStageDetails(task_->stages(), 0);  // Pass 0 as the initial indentation level
       return true;
     } else {
       RCLCPP_ERROR(LOGGER, "Task planning failed with error code: %d", error_code.val);
+      
+      // Print detailed failure explanation
       std::ostringstream explanation;
       task_->explainFailure(explanation);
       RCLCPP_ERROR(LOGGER, "Failure explanation: %s", explanation.str().c_str());
+      
+      // Print detailed stage summary even if planning failed
+      RCLCPP_INFO(LOGGER, "Detailed stage summary:");
+      printStageDetails(task_->stages(), 0);  // Pass 0 as the initial indentation level
       return false;
     }
   } catch (const std::exception& ex) {
@@ -519,7 +566,6 @@ bool PickPlaceTask::plan(const std::size_t max_solutions) {
     return false;
   }
 }
-
 /**
  * @brief Executes the planned pick and place task.
  * @return true if execution is successful, false otherwise.

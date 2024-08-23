@@ -48,7 +48,7 @@
 		</visual>
 		<collision>
 			<geometry>
-				<box size="0.115 0.14 0.02"/>
+				<box size="0.105 0.14 0.02"/>
 			</geometry>
 			<origin xyz = "0.0 0 -0.015" rpy = "0 0 0"/>
 		</collision>
