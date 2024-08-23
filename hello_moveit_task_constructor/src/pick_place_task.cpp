@@ -175,7 +175,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 	auto cartesian_planner = std::make_shared<solvers::CartesianPath>();
 	cartesian_planner->setMaxVelocityScalingFactor(1.0);
 	cartesian_planner->setMaxAccelerationScalingFactor(1.0);
-	cartesian_planner->setStepSize(.001);
+	cartesian_planner->setStepSize(.0005);
 	RCLCPP_INFO(LOGGER, "Cartesian planner created");
 
 	// Set task properties
