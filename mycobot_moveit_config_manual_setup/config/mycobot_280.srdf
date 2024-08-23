@@ -44,6 +44,10 @@
     <group_state name="open" group="gripper">
         <joint name="gripper_controller" value="0.0"/>
     </group_state>
+
+    <group_state name="gripper_grasp_25mm" group="gripper">         
+        <joint name="gripper_controller" value="-0.35"/>     
+    </group_state>
     
     <group_state name="half_closed" group="gripper">
         <joint name="gripper_controller" value="-0.36"/>
