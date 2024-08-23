@@ -19,7 +19,7 @@ pick_place_demo:
       fixed_size<>: [3]
   table_pose:
     type: double_array
-    default_value: [0.15, 0.01, 0.0, 0.0, 0.0, 0.0]
+    default_value: [0.16, 0.01, 0.0, 0.0, 0.0, 0.0]
     validation:
       fixed_size<>: [6]
   object_name:
@@ -39,7 +39,7 @@ pick_place_demo:
       fixed_size<>: [2]
   object_pose:
     type: double_array
-    default_value: [0.15, 0.01, 0.0, 0.0, 0.0, 0.0]
+    default_value: [0.16, 0.01, 0.0, 0.0, 0.0, 0.0]
     validation:
       fixed_size<>: [6]
   spawn_table:
