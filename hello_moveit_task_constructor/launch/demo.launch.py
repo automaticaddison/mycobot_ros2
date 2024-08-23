@@ -71,7 +71,7 @@ def generate_launch_description():
         .robot_description_kinematics(file_path=kinematics_file_path)
         .planning_pipelines(
             pipelines=["ompl", "pilz_industrial_motion_planner", "stomp"],
-            default_planning_pipeline="pilz_industrial_motion_planner"
+            default_planning_pipeline="ompl"
         )
         .planning_scene_monitor(
             publish_robot_description=False,

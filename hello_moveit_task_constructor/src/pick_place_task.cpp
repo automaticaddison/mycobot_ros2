@@ -393,7 +393,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 		// to where it will be placed.
 		auto stage = std::make_unique<stages::Connect>(
 		    "move to place", stages::Connect::GroupPlannerVector{ { params.arm_group_name, ompl_planner_arm } });
-		stage->setTimeout(5.0);
+		stage->setTimeout(10.0);
 		stage->properties().configureInitFrom(Stage::PARENT);
 		t.add(std::move(stage));
 	}
@@ -417,7 +417,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 			stage->properties().set("marker_ns", "lower_object");
 			stage->properties().set("link", params.gripper_frame);
 			stage->properties().configureInitFrom(Stage::PARENT, { "group" });
-			stage->setMinMaxDistance(.01, .3);
+			stage->setMinMaxDistance(.005, .4);
 
 			// Set downward direction
 			geometry_msgs::msg::Vector3Stamped vec;
@@ -490,7 +490,7 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 		{
 			auto stage = std::make_unique<stages::MoveRelative>("retreat after place", cartesian_planner);
 			stage->properties().configureInitFrom(Stage::PARENT, { "group" });
-			stage->setMinMaxDistance(.12, .25);
+			stage->setMinMaxDistance(.025, .25);
 			stage->setIKFrame(params.gripper_frame);
 			stage->properties().set("marker_ns", "retreat");
 			geometry_msgs::msg::Vector3Stamped vec;

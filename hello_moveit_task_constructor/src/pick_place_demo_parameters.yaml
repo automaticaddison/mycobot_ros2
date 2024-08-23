@@ -75,7 +75,7 @@ pick_place_demo:
       not_empty<>: []
   gripper_close_pose:
     type: string
-    default_value: "gripper_grasp_25mm"
+    default_value: "half_closed"
     validation:
       not_empty<>: []
   arm_home_pose:
@@ -106,7 +106,7 @@ pick_place_demo:
       fixed_size<>: [6]
   place_surface_offset:
     type: double
-    default_value: 0.0001
+    default_value: -0.03 # Enables the cylinder to stand on the floor
   approach_object_min_dist:
     type: double
     default_value: 0.0015
@@ -115,7 +115,7 @@ pick_place_demo:
     default_value: 0.3
   lift_object_min_dist:
     type: double
-    default_value: 0.01
+    default_value: 0.005
   lift_object_max_dist:
     type: double
     default_value: 0.3
