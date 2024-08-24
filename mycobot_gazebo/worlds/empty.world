@@ -2,6 +2,7 @@
 
 <sdf version="1.6">
   <world name="default">
+  
     <!-- Plugin for simulating physics -->
     <plugin
       filename="gz-sim-physics-system"

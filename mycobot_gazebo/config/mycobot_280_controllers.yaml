@@ -1,7 +1,7 @@
 # controller_manager provides the necessary infrastructure to manage multiple controllers efficiently and robustly using ROS 2 Control.
 controller_manager:
   ros__parameters:
-    update_rate: 10 # update_rate specifies how often (in Hz) the controllers should be updated.
+    update_rate: 100 # update_rate specifies how often (in Hz) the controllers should be updated.
 
     # The JointTrajectoryController allows you to send joint trajectory commands to a group 
     # of joints on a robot. These commands specify the desired positions for each joint.     
@@ -43,7 +43,7 @@ arm_controller:
 
     # If true, When set to true, the controller will not use any feedback from the system 
     # (e.g., joint positions, velocities, efforts) to compute the control commands. 
-    open_loop_control: true
+    open_loop_control: false
 
     # When set to true, it allows the controller to integrate the trajectory goals it receives. 
     # This means that if the goal trajectory only specifies positions, the controller will 
@@ -62,7 +62,7 @@ grip_controller:
     state_interfaces:
       - position
 
-    open_loop_control: true
+    open_loop_control: false
     allow_integration_in_goal_trajectories: true
     
 grip_action_controller:
