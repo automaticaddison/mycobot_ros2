@@ -268,6 +268,8 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 			auto stage = std::make_unique<stages::MoveRelative>("approach object", cartesian_planner);
 			stage->properties().set("marker_ns", "approach_object");
 			stage->properties().set("link", params.gripper_frame);  // link to perform IK for
+			stage->properties().set("trajectory_execution_info",
+		                        	TrajectoryExecutionInfo().set__controller_names(params.controller_names));
 			stage->properties().configureInitFrom(Stage::PARENT, { "group" });  // inherit group from parent stage
 			stage->setMinMaxDistance(params.approach_object_min_dist, params.approach_object_max_dist);
 
@@ -326,6 +328,8 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 			auto stage = std::make_unique<stages::MoveTo>("close gripper", interpolation_planner);
 			stage->setGroup(params.gripper_group_name);
 			stage->setGoal(params.gripper_close_pose);
+			stage->properties().set("trajectory_execution_info",
+		                        	TrajectoryExecutionInfo().set__controller_names(params.controller_names));
 			grasp->insert(std::move(stage));
 		}
 
@@ -358,6 +362,8 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 			stage->setMinMaxDistance(params.lift_object_min_dist, params.lift_object_max_dist); // Min and max distance for lifting 
 			stage->setIKFrame(params.gripper_frame);
 			stage->properties().set("marker_ns", "lift_object");
+			stage->properties().set("trajectory_execution_info",
+		                        	TrajectoryExecutionInfo().set__controller_names(params.controller_names));
 
 			// Set upward direction for lifting the object
 			geometry_msgs::msg::Vector3Stamped vec;
@@ -419,6 +425,8 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 			auto stage = std::make_unique<stages::MoveRelative>("lower object", cartesian_planner);
 			stage->properties().set("marker_ns", "lower_object");
 			stage->properties().set("link", params.gripper_frame);
+			stage->properties().set("trajectory_execution_info",
+		                        	TrajectoryExecutionInfo().set__controller_names(params.controller_names));
 			stage->properties().configureInitFrom(Stage::PARENT, { "group" });
 			stage->setMinMaxDistance(.005, .4);
 
@@ -464,6 +472,8 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 			auto stage = std::make_unique<stages::MoveTo>("open gripper", interpolation_planner);
 			stage->setGroup(params.gripper_group_name);
 			stage->setGoal(params.gripper_open_pose);
+			stage->properties().set("trajectory_execution_info",
+		                        	TrajectoryExecutionInfo().set__controller_names(params.controller_names));
 			place->insert(std::move(stage));
 		}
 
@@ -492,6 +502,8 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 		 *****************************************************/
 		{
 			auto stage = std::make_unique<stages::MoveRelative>("retreat after place", cartesian_planner);
+			stage->properties().set("trajectory_execution_info",
+		                        	TrajectoryExecutionInfo().set__controller_names(params.controller_names));
 			stage->properties().configureInitFrom(Stage::PARENT, { "group" });
 			stage->setMinMaxDistance(.025, .25);
 			stage->setIKFrame(params.gripper_frame);
@@ -514,6 +526,8 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 	 *****************************************************/
 	{
 		auto stage = std::make_unique<stages::MoveTo>("move home", ompl_planner_arm);
+		stage->properties().set("trajectory_execution_info",
+		                        TrajectoryExecutionInfo().set__controller_names(params.controller_names));
 		stage->properties().configureInitFrom(Stage::PARENT, { "group" });
 		stage->setGoal(params.arm_home_pose);
 		stage->restrictDirection(stages::MoveTo::FORWARD);

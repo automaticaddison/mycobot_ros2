@@ -4,7 +4,7 @@ pick_place_demo:
     default_value: true
   controller_names:
     type: string_array
-    default_value: ["arm_controller", "grip_controller", "grip_action_controller"]
+    default_value: ["arm_controller", "grip_action_controller"]
     validation:
       not_empty<>: []
   table_name:
