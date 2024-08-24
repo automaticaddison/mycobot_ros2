@@ -50,6 +50,9 @@ arm_controller:
     # numerically integrate the positions to compute the velocities and accelerations required 
     # to follow the trajectory.
     allow_integration_in_goal_trajectories: true
+    
+    # Allow non-zero velocity at the end of the trajectory
+    allow_nonzero_velocity_at_trajectory_end: true
 
 grip_controller:
   ros__parameters:
@@ -64,6 +67,7 @@ grip_controller:
 
     open_loop_control: false
     allow_integration_in_goal_trajectories: true
+    allow_nonzero_velocity_at_trajectory_end: true
     
 grip_action_controller:
   ros__parameters:
