@@ -198,8 +198,12 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 		// This filter acts as a gatekeeper to ensure that the pick-and-place task does not attempt 
 		// to pick up an object that is already attached to the robot 
 		auto current_state = std::make_unique<stages::CurrentState>("current state");
+		current_state->properties().set("trajectory_execution_info",
+		                        TrajectoryExecutionInfo().set__controller_names(params.controller_names));
 		auto applicability_filter =
 		  std::make_unique<stages::PredicateFilter>("applicability test", std::move(current_state));
+		applicability_filter->properties().set("trajectory_execution_info",
+		                        TrajectoryExecutionInfo().set__controller_names(params.controller_names));
 		applicability_filter->setPredicate([object = params.object_name](const SolutionBase& s, std::string& comment) {
 		  if (s.start()->scene()->getCurrentState().hasAttachedBody(object)) {
                     comment = "object with id '" + object + "' is already attached and cannot be picked";
