@@ -1,7 +1,7 @@
 pick_place_demo:
   execute:
     type: bool
-    default_value: true
+    default_value: false
   controller_names:
     type: string_array
     default_value: ["arm_controller", "grip_action_controller"]
@@ -111,7 +111,7 @@ pick_place_demo:
       fixed_size<>: [6]
   place_surface_offset:
     type: double
-    default_value: -0.03 # Enables the cylinder to stand on the floor
+    default_value: -0.03 # -0.03 Enables the cylinder to stand on the floor
   approach_object_min_dist:
     type: double
     default_value: 0.0015
