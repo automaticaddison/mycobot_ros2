@@ -22,6 +22,7 @@
 
 // Include MoveIt Task Constructor (MTC) headers
 #include <moveit/task_constructor/container.h>
+#include <moveit/task_constructor/properties.h>
 #include <moveit/task_constructor/task.h>
 #include <moveit/task_constructor/stages/compute_ik.h>
 #include <moveit/task_constructor/stages/connect.h>

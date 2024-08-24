@@ -1,7 +1,12 @@
 pick_place_demo:
   execute:
     type: bool
-    default_value: false
+    default_value: true
+  controller_names:
+    type: string_array
+    default_value: ["arm_controller", "grip_controller", "grip_action_controller"]
+    validation:
+      not_empty<>: []
   table_name:
     type: string
     default_value: "table"

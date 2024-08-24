@@ -175,10 +175,11 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 	auto cartesian_planner = std::make_shared<solvers::CartesianPath>();
 	cartesian_planner->setMaxVelocityScalingFactor(1.0);
 	cartesian_planner->setMaxAccelerationScalingFactor(1.0);
-	cartesian_planner->setStepSize(.0005);
+	cartesian_planner->setStepSize(.00025);
 	RCLCPP_INFO(LOGGER, "Cartesian planner created");
 
 	// Set task properties
+ 	t.setProperty("trajectory_execution_info", TrajectoryExecutionInfo().set__controller_names(params.controller_names));
 	t.setProperty("group", params.arm_group_name);
 	t.setProperty("eef", params.eef_name);
 	t.setProperty("gripper", params.gripper_group_name);
@@ -221,6 +222,8 @@ bool PickPlaceTask::init(const rclcpp::Node::SharedPtr& node, const pick_place_d
 		auto stage = std::make_unique<stages::MoveTo>("open gripper", interpolation_planner);
 		stage->setGroup(params.gripper_group_name);
 		stage->setGoal(params.gripper_open_pose);
+		stage->properties().set("trajectory_execution_info",
+		                        TrajectoryExecutionInfo().set__controller_names(params.controller_names));
 		initial_state_ptr = stage.get();  // remember start state for monitoring grasp pose generator
 		t.add(std::move(stage));
 	}
