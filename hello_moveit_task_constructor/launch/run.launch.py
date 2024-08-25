@@ -53,7 +53,7 @@ def generate_launch_description():
         default_value="pick_place_demo",
         description="Which demo to run",
         choices=["alternative_path_costs", "cartesian", "fallbacks_move_to", 
-                 "ik_clearance_cost", "modular", "pick_place_demo"])
+                 "ik_clearance_cost", "modular", "mtc_node", "pick_place_demo"])
   
     # Load the robot configuration
     # Typically, you would also have this line in here: .robot_description(file_path=urdf_model_path)

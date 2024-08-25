@@ -69,7 +69,7 @@ demo(cartesian)
 demo(fallbacks_move_to)
 demo(ik_clearance_cost)
 demo(modular)
-demo(mtc_node_v1)
+demo(mtc_node)
 demo(pick_place_demo)
 
 # This line below links the pick_place_demo_parameters library (pick_place_demo_parameters.yaml/pick_place_demo_parameters.hpp)
