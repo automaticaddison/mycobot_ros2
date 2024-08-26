@@ -777,16 +777,10 @@ int main(int argc, char** argv)
 
   // Create the MTC task node
   auto mtc_task_node = std::make_shared<MTCTaskNode>(options);
-  RCLCPP_INFO(mtc_task_node->get_logger(), "MTC Task Node created");
 
-  // Set up a multi-threaded executor
-  rclcpp::executors::MultiThreadedExecutor executor;
+  // Set up a single-threaded executor
+  rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(mtc_task_node);
-
-  // Create a thread for spinning the executor
-  std::thread spin_thread([&executor]() {
-    executor.spin();
-  });
 
   // Set up the planning scene and execute the task
   try {
@@ -794,19 +788,15 @@ int main(int argc, char** argv)
     mtc_task_node->setupPlanningScene();
     RCLCPP_INFO(mtc_task_node->get_logger(), "Executing task");
     mtc_task_node->doTask();
+    RCLCPP_INFO(mtc_task_node->get_logger(), "Task execution completed. Keeping node alive for visualization. Press Ctrl+C to exit.");
   } catch (const std::exception& e) {
     RCLCPP_ERROR(mtc_task_node->get_logger(), "An error occurred: %s", e.what());
   }
 
-  // Signal the executor to stop
-  executor.cancel();
+  // Keep the node running
+  executor.spin();
 
-  // Wait for the spin thread to finish
-  RCLCPP_INFO(mtc_task_node->get_logger(), "Waiting for spin thread to finish");
-  spin_thread.join();
-
-  // Shut down ROS 2
-  RCLCPP_INFO(mtc_task_node->get_logger(), "Shutting down ROS 2");
+  // Cleanup
   rclcpp::shutdown();
 
   return 0;
