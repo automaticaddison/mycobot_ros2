@@ -18,6 +18,11 @@
 #include <moveit/task_constructor/solvers.h>
 #include <moveit/task_constructor/stages.h>
 
+// Other utilities
+#include <type_traits>
+#include <string>
+#include <vector>
+
 // Conditional includes for tf2 geometry messages and Eigen
 #include <Eigen/Geometry>
 #include <geometry_msgs/msg/pose.hpp>
@@ -61,7 +66,7 @@ namespace mtc = moveit::task_constructor;
 /**
  * @brief Class representing the MTC Task Node.
  */
-class MTCTaskNode : public rclcpp::Node, public std::enable_shared_from_this<MTCTaskNode>
+class MTCTaskNode : public rclcpp::Node
 {
 public:
   MTCTaskNode(const rclcpp::NodeOptions& options);
@@ -70,9 +75,8 @@ public:
   void setupPlanningScene();
 
 private:
-  mtc::Task createTask();
-
   mtc::Task task_;
+  mtc::Task createTask();
 };
 
 /**
@@ -82,10 +86,13 @@ private:
 MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
   : Node("mtc_node", options)
 {
-  auto declare_parameter = [this](const std::string& name, const auto& default_value, const std::string& description) {
+  auto declare_parameter = [this](const std::string& name, const auto& default_value, const std::string& description = "") {
     rcl_interfaces::msg::ParameterDescriptor descriptor;
     descriptor.description = description;
-    return this->declare_parameter(name, default_value, descriptor);
+      
+    if (!this->has_parameter(name)) {
+      this->declare_parameter(name, default_value, descriptor);
+    }
   };
 
   // General parameters
@@ -137,7 +144,7 @@ MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
   declare_parameter("move_to_place_timeout", 10.0, "Timeout for move to place stage (seconds)");
 
   // Grasp generation parameters
-  declare_parameter("grasp_pose_angle_delta", M_PI / 12, "Angular resolution for sampling grasp poses (radians)");
+  declare_parameter("grasp_pose_angle_delta", 0.2618, "Angular resolution for sampling grasp poses (radians)");
   declare_parameter("grasp_pose_max_ik_solutions", 8, "Maximum number of IK solutions for grasp pose generation");
   declare_parameter("grasp_pose_min_solution_distance", 1.0, "Minimum distance in joint-space units between IK solutions for grasp pose");
 
@@ -238,11 +245,11 @@ void MTCTaskNode::doTask()
 {
   RCLCPP_INFO(this->get_logger(), "Starting the pick and place task");
 
+  task_ = createTask();
+
   // Get parameters
   auto execute = this->get_parameter("execute").as_bool();
   auto max_solutions = this->get_parameter("max_solutions").as_int();
-
-  task_ = createTask();
 
   try
   {
@@ -303,7 +310,7 @@ mtc::Task MTCTaskNode::createTask()
   task.stages()->setName("pick_place_task");
   
   // Load the robot model into the task
-  task.loadRobotModel(std::enable_shared_from_this<MTCTaskNode>::shared_from_this());
+  task.loadRobotModel(shared_from_this(), "robot_description");
 
   // Get parameters
   // Robot configuration parameters
@@ -380,7 +387,7 @@ mtc::Task MTCTaskNode::createTask()
     {"ompl", arm_group_name + "[RRTConnectkConfigDefault]"}
   };
   auto ompl_planner_arm = std::make_shared<mtc::solvers::PipelinePlanner>(
-    std::enable_shared_from_this<MTCTaskNode>::shared_from_this(),
+    this->shared_from_this(),
     ompl_map_arm);
   RCLCPP_INFO(this->get_logger(), "OMPL planner created for the arm group");
 
@@ -439,8 +446,10 @@ mtc::Task MTCTaskNode::createTask()
   // Create a stage to move the arm to a pre-grasp position
   auto stage_move_to_pick = std::make_unique<mtc::stages::Connect>(
       "move to pick",
-       mtc::stages::Connect::GroupPlannerVector{{ arm_group_name, ompl_planner_arm },
-                                                { gripper_group_name, interpolation_planner }});
+      mtc::stages::Connect::GroupPlannerVector{
+        {arm_group_name, ompl_planner_arm},
+        {gripper_group_name, interpolation_planner}
+      });
   stage_move_to_pick->setTimeout(move_to_pick_timeout);
   stage_move_to_pick->properties().configureInitFrom(mtc::Stage::PARENT);
   task.add(std::move(stage_move_to_pick));
@@ -614,8 +623,10 @@ mtc::Task MTCTaskNode::createTask()
     // to where it will be placed.
     auto stage_move_to_place = std::make_unique<mtc::stages::Connect>(
       "move to place", 
-      mtc::stages::Connect::GroupPlannerVector{{ arm_group_name, ompl_planner_arm },
-                                         { gripper_group_name, interpolation_planner }});
+      mtc::stages::Connect::GroupPlannerVector{
+        {arm_group_name, ompl_planner_arm},
+        {gripper_group_name, interpolation_planner}
+      });
     stage_move_to_place->setTimeout(move_to_place_timeout);
     stage_move_to_place->properties().configureInitFrom(mtc::Stage::PARENT);
     task.add(std::move(stage_move_to_place));
