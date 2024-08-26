@@ -778,8 +778,8 @@ int main(int argc, char** argv)
   // Create the MTC task node
   auto mtc_task_node = std::make_shared<MTCTaskNode>(options);
 
-  // Set up a single-threaded executor
-  rclcpp::executors::SingleThreadedExecutor executor;
+  // Set up a multi-threaded executor
+  rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(mtc_task_node);
 
   // Set up the planning scene and execute the task
@@ -793,7 +793,7 @@ int main(int argc, char** argv)
     RCLCPP_ERROR(mtc_task_node->get_logger(), "An error occurred: %s", e.what());
   }
 
-  // Keep the node running
+  // Keep the node running until Ctrl+C is pressed
   executor.spin();
 
   // Cleanup
