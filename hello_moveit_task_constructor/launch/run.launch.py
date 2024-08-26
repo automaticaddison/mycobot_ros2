@@ -1,5 +1,5 @@
 # Author: Addison Sears-Collins
-# Date: August 15, 2024
+# Date: August 26, 2024
 # Description: ROS 2 launch file for MoveIt Task Constructor demo nodes.
 
 import os
@@ -15,10 +15,12 @@ def generate_launch_description():
     # Constants for paths to different files and folders
     package_name_gazebo = 'mycobot_gazebo'
     package_name_moveit_config = 'mycobot_moveit_config_manual_setup'
+    package_name_mtc = 'hello_moveit_task_constructor'
 
     # Set the path to different files and folders
     pkg_share_gazebo = FindPackageShare(package=package_name_gazebo).find(package_name_gazebo)
     pkg_share_moveit_config = FindPackageShare(package=package_name_moveit_config).find(package_name_moveit_config)
+    pkg_share_mtc = FindPackageShare(package=package_name_mtc).find(package_name_mtc)
 
     # Paths for various configuration files
     urdf_file_path = 'urdf/ros2_control/gazebo/mycobot_280.urdf.xacro'
@@ -28,6 +30,7 @@ def generate_launch_description():
     kinematics_file_path = 'config/kinematics.yaml'
     pilz_cartesian_limits_file_path = 'config/pilz_cartesian_limits.yaml'
     initial_positions_file_path = 'config/initial_positions.yaml'
+    mtc_node_params_file_path = 'config/mtc_node_params.yaml'
 
     # Set the full paths
     urdf_model_path = os.path.join(pkg_share_gazebo, urdf_file_path)
@@ -37,6 +40,7 @@ def generate_launch_description():
     kinematics_file_path = os.path.join(pkg_share_moveit_config, kinematics_file_path)
     pilz_cartesian_limits_file_path = os.path.join(pkg_share_moveit_config, pilz_cartesian_limits_file_path)
     initial_positions_file_path = os.path.join(pkg_share_moveit_config, initial_positions_file_path)
+    mtc_node_params_file_path = os.path.join(pkg_share_mtc, mtc_node_params_file_path)
 
     # Launch configuration variables
     use_sim_time = LaunchConfiguration('use_sim_time')
@@ -89,6 +93,7 @@ def generate_launch_description():
             moveit_config.pilz_cartesian_limits,
             moveit_config.planning_pipelines,
             {'use_sim_time': use_sim_time},
+            mtc_node_params_file_path,
         ],
     )
 
