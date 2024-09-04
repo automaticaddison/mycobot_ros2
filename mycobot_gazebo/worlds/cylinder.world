@@ -45,6 +45,13 @@
       <pose>0.22 0.12 0.0 0 0 0</pose>
     </include>
     
+    <!-- Include the cylinder model -->
+    <include>
+      <uri>model://hello_mtc_with_perception_cylinder</uri>
+      <name>hello_mtc_with_perception_cylinder</name>
+      <pose>0.22 0.12 0.175 0 0 0</pose>
+    </include>
+    
     <!-- Define scene properties -->
     <scene>
       <shadows>false</shadows>

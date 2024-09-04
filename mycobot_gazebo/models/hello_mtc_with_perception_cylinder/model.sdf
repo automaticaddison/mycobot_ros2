@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="hello_mtc_with_perception_cylinder">
+    <static>false</static>
+    <link name="link">
+      <inertial>
+        <mass>0.025</mass>
+        <inertia>
+          <ixx>0.000000102</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000000102</iyy>
+          <iyz>0</iyz>
+          <izz>0.000000020</izz>
+        </inertia>
+      </inertial>
+      <collision name="collision">
+        <geometry>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.35</length>
+          </cylinder>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>0.8</mu>
+              <mu2>0.8</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <cylinder>
+            <radius>0.0125</radius>
+            <length>0.35</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>1.0 0.0 0.0 1</ambient>
+          <diffuse>1.0 0.0 0.0 1</diffuse>
+          <specular>0.5 0.5 0.5 1</specular>
+          <emissive>0.1 0 0 1</emissive>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>
+
