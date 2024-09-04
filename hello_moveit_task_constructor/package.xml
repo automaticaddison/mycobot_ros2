@@ -4,7 +4,7 @@
   <name>hello_moveit_task_constructor</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="automaticaddison@gmail.com">ubuntu</maintainer>
+  <maintainer email="automaticaddison@todo.com">ubuntu</maintainer>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

@@ -4,7 +4,7 @@
   <name>mycobot_description</name>
   <version>0.0.0</version>
   <description>Contains the robot description files that define the physical aspects of a robot, including its geometry, kinematics, dynamics, and visual aspects.</description>
-  <maintainer email="ubuntu@todo.todo">ubuntu</maintainer>
+  <maintainer email="automaticaddison@todo.todo">ubuntu</maintainer>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

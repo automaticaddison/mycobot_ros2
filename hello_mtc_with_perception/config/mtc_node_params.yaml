@@ -1,0 +1,75 @@
+mtc_node:
+  ros__parameters:
+    # General parameters
+    execute: false
+    max_solutions: 10
+    spawn_table: true
+
+    # Controller parameters
+    controller_names: 
+      - "arm_controller"
+      - "grip_action_controller"
+
+    # Robot configuration parameters
+    arm_group_name: "arm"
+    gripper_group_name: "gripper"
+    gripper_frame: "link6_flange"
+    gripper_open_pose: "open"
+    gripper_close_pose: "half_closed"
+    arm_home_pose: "home"
+
+    # Scene frame parameters
+    world_frame: "base_link"
+
+    # Table parameters
+    table_name: "table"
+    table_reference_frame: "base_link"
+    table_dimensions: [0.10, 0.20, 0.03]
+    table_pose: [0.22, 0.12, 0.0, 0.0, 0.0, 0.0]
+
+    # Object parameters
+    object_name: "object"
+    object_reference_frame: "base_link"
+    object_dimensions: [0.35, 0.0125] 
+    object_pose: [0.22, 0.12, 0.0, 0.0, 0.0, 0.0]
+
+    # Grasp and place parameters
+    grasp_frame_transform: [0.0, 0.0, 0.096, 1.5708, 0.0, 0.0]
+    place_pose: [-0.183, -0.14, 0.0, 0.0, 0.0, 0.0]
+    place_surface_offset: -0.03
+
+    # Motion planning parameters
+    approach_object_min_dist: 0.0015
+    approach_object_max_dist: 0.3
+    lift_object_min_dist: 0.005
+    lift_object_max_dist: 0.3
+    lower_object_min_dist: 0.005
+    lower_object_max_dist: 0.4
+
+    # Timeout parameters
+    move_to_pick_timeout: 5.0
+    move_to_place_timeout: 10.0
+
+    # Grasp generation parameters
+    grasp_pose_angle_delta: 0.2618  # Approximately pi/12 in radians
+    grasp_pose_max_ik_solutions: 8
+    grasp_pose_min_solution_distance: 1.0
+
+    # Place generation parameters
+    place_pose_max_ik_solutions: 2
+
+    # Cartesian planner parameters
+    cartesian_max_velocity_scaling: 1.0
+    cartesian_max_acceleration_scaling: 1.0
+    cartesian_step_size: 0.00025
+
+    # Direction vector parameters
+    approach_object_direction_z: 1.0
+    lift_object_direction_z: 1.0
+    lower_object_direction_z: -1.0
+    retreat_direction_z: -1.0
+
+    # Other parameters
+    place_pose_z_offset_factor: 0.5
+    retreat_min_distance: 0.025
+    retreat_max_distance: 0.25
