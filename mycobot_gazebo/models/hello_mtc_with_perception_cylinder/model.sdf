@@ -24,19 +24,32 @@
         <surface>
           <friction>
             <ode>
-              <mu>1.0</mu>
-              <mu2>1.0</mu2>
+              <mu>0.8</mu>
+              <mu2>0.8</mu2>
               <fdir1>0 0 1</fdir1>
+              <slip1>0.001</slip1>
+              <slip2>0.001</slip2>
             </ode>
+            <torsional>
+              <coefficient>0.1</coefficient>
+              <surface_radius>0.015</surface_radius>
+              <use_patch_radius>true</use_patch_radius>
+            </torsional>
           </friction>
           <contact>
             <ode>
               <kp>1e5</kp>
-              <kd>1</kd>
+              <kd>10</kd>
               <max_vel>0.1</max_vel>
               <min_depth>0.001</min_depth>
+              <soft_cfm>0.01</soft_cfm>
+              <soft_erp>0.2</soft_erp>
             </ode>
           </contact>
+          <bounce>
+            <restitution_coefficient>0.2</restitution_coefficient>
+            <threshold>0.01</threshold>
+          </bounce>
         </surface>
       </collision>
       <visual name="visual">
@@ -56,4 +69,5 @@
     </link>
   </model>
 </sdf>
+
 
