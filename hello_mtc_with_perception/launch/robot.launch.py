@@ -24,7 +24,7 @@ def generate_launch_description():
   gazebo_models_path = 'models'
   rviz_config_file_path = 'rviz/mycobot_280_arduino_view_description.rviz'
   urdf_file_path = 'urdf/ros2_control/gazebo/mycobot_280.urdf.xacro'
-  world_file_path = 'worlds/empty.world' # e.g. 'world/empty.world', 'world/house.world'
+  world_file_path = 'worlds/cylinder.world' # e.g. 'world/empty.world', 'world/house.world'
 
   # Set the path to different files and folders.  
   pkg_ros_gz_sim = FindPackageShare(package='ros_gz_sim').find('ros_gz_sim')  

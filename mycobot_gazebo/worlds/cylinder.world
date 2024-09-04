@@ -1,0 +1,54 @@
+<?xml version="1.0" ?>
+
+<sdf version="1.6">
+  <world name="default">
+  
+    <!-- Plugin for simulating physics -->
+    <plugin
+      filename="gz-sim-physics-system"
+      name="gz::sim::systems::Physics">
+    </plugin>
+    
+    <!-- Plugin for handling user commands -->
+    <plugin
+      filename="gz-sim-user-commands-system"
+      name="gz::sim::systems::UserCommands">
+    </plugin>
+    
+    <!-- Plugin for broadcasting scene updates -->
+    <plugin
+      filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster">
+    </plugin>
+
+    <!-- To add realistic gravity, do: 0.0 0.0 -9.8, otherwise do 0.0 0.0 0.0 -->
+    <gravity>0.0 0.0 -9.8</gravity>
+    
+    <!-- Include a model of the Sun from an external URI -->
+    <include>
+      <uri>
+        https://fuel.gazebosim.org/1.0/OpenRobotics/models/Sun
+      </uri>
+    </include>
+
+    <!-- Include a model of the Ground Plane from an external URI -->
+    <include>
+      <uri>
+        https://fuel.gazebosim.org/1.0/OpenRobotics/models/Ground Plane
+      </uri>
+    </include>
+    
+    <!-- Include the table model -->
+    <include>
+      <uri>model://hello_mtc_with_perception_table</uri>
+      <name>hello_mtc_with_perception_table</name>
+      <pose>0.22 0.12 0.0 0 0 0</pose>
+    </include>
+    
+    <!-- Define scene properties -->
+    <scene>
+      <shadows>false</shadows>
+    </scene>
+    
+  </world>
+</sdf>
