@@ -38,7 +38,7 @@ set(dependencies
   tf2_eigen
 )
 
-# Include cpp "include" directory
+# Include cpp "include" directory to the include path
 include_directories(
   include
 )
@@ -50,10 +50,10 @@ ament_target_dependencies(mtc_node ${dependencies})
 # Copy folders into the install/ folder of the ROS 2 workspace
 install(
   DIRECTORY include/
-  DESTINATION include
+  DESTINATION include/${PROJECT_NAME}
 )
 install(
-  DIRECTORY config
+  DIRECTORY config launch
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -76,6 +76,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_export_include_directories(include)
+ament_export_include_directories(include/${PROJECT_NAME})
 
 ament_package()
+

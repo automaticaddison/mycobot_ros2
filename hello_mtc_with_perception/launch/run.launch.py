@@ -1,6 +1,6 @@
 # Author: Addison Sears-Collins
-# Date: August 26, 2024
-# Description: ROS 2 launch file for MoveIt Task Constructor demo nodes.
+# Date: September 4, 2024
+# Description: ROS 2 launch file for MoveIt Task Constructor pick and place with perception node.
 
 import os
 from launch import LaunchDescription
@@ -15,7 +15,7 @@ def generate_launch_description():
     # Constants for paths to different files and folders
     package_name_gazebo = 'mycobot_gazebo'
     package_name_moveit_config = 'mycobot_moveit_config_manual_setup'
-    package_name_mtc = 'hello_moveit_task_constructor'
+    package_name_mtc = 'hello_mtc_with_perception'
 
     # Set the path to different files and folders
     pkg_share_gazebo = FindPackageShare(package=package_name_gazebo).find(package_name_gazebo)
@@ -54,10 +54,9 @@ def generate_launch_description():
 
     declare_exe_cmd = DeclareLaunchArgument(
         name="exe",
-        default_value="pick_place_demo",
-        description="Which demo to run",
-        choices=["alternative_path_costs", "cartesian", "fallbacks_move_to", 
-                 "ik_clearance_cost", "modular", "mtc_node", "pick_place_demo"])
+        default_value="mtc_node",
+        description="Which node to run",
+        choices=["mtc_node"])
   
     # Load the robot configuration
     # Typically, you would also have this line in here: .robot_description(file_path=urdf_model_path)
@@ -82,7 +81,7 @@ def generate_launch_description():
     )
     
     node = Node(
-        package="hello_moveit_task_constructor",
+        package=package_name_mtc,
         executable=exe,
         output="screen",
         parameters=[
