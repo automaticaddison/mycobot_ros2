@@ -1,4 +1,83 @@
 <?xml version="1.0"?>
 <robot name="mycobot_280" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include filename="$(find mycobot_gazebo)/urdf/ros2_control/gazebo/mycobot_280.urdf.xacro"/>
+  
+  <link name="torso_link">
+    <inertial>
+      <origin xyz="0 0 0.20" />
+      <mass value="2.5" />
+      <inertia ixx="0.8" ixy="0.0" ixz="0.0" iyy="0.8" iyz="0.0" izz="0.8" />
+    </inertial>
+    <visual name="holder">
+      <origin xyz="0 0 0.20" rpy="0 0 0" />
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+      <geometry>
+        <cylinder radius="0.005" length="0.4"/>
+      </geometry>
+    </visual>
+    <visual name="base">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+      <geometry>
+        <box size="0.15 0.10 0.04" />
+      </geometry>
+    </visual>
+    <collision name="holder">
+      <origin xyz="0 0 0.20" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="0.005" length="0.4"/>
+      </geometry>
+    </collision>
+    <collision name="base">
+      <origin xyz="0 0 0.0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.15 0.10 0.04" />
+      </geometry>
+    </collision>
+  </link>
+
+
+  <joint name="base_link_to_torso_link" type="fixed">
+    <parent link="base_link"/>
+    <child link="torso_link"/>
+    <origin xyz="0.22 -0.25 0" rpy="0 0 0"/>
+  </joint>
+
+  
+  <gazebo reference="torso_link">
+    <visual>
+      <material>
+        <ambient>0.7 0.7 0.7 1</ambient>
+        <diffuse>0.7 0.7 0.7 1</diffuse>
+        <specular>0.1 0.1 0.1 1</specular>
+      </material>
+    </visual>
+  </gazebo>
+
+  
+  <gazebo reference="camera_head_link">
+    <sensor name="camera_head" type="rgbd_camera">
+      <topic>camera_head</topic>
+      <gz_frame_id>camera_head_link</gz_frame_id>
+      <update_rate>30</update_rate>
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <camera>
+        <optical_frame_id>camera_head_depth_optical_frame</optical_frame_id>
+        <horizontal_fov>1.5184</horizontal_fov>
+        <image>
+          <width>424</width>
+          <height>240</height>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>1.5</far>
+        </clip>
+      </camera>
+    </sensor>
+  </gazebo>
 </robot>
