@@ -145,13 +145,7 @@
 
   <gazebo reference="camera_head_link">
     <sensor name="camera_head" type="rgbd_camera">
-      <topic>camera_head</topic>
-      <gz_frame_id>camera_head_link</gz_frame_id>
-      <update_rate>30</update_rate>
-      <always_on>true</always_on>
-      <visualize>true</visualize>
       <camera>
-        <optical_frame_id>camera_head_depth_optical_frame</optical_frame_id>
         <horizontal_fov>1.5184</horizontal_fov>
         <image>
           <width>424</width>
@@ -162,6 +156,11 @@
           <far>1.5</far>
         </clip>
       </camera>
+      <topic>camera_head</topic>
+      <update_rate>30</update_rate>
+      <always_on>1</always_on>
+      <visualize>true</visualize>
+      <enable_metrics>true</enable_metrics>
     </sensor>
   </gazebo>
 </robot>
