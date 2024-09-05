@@ -20,13 +20,15 @@ def generate_launch_description():
     # Constants for paths to different files and folders
     package_name_gazebo = 'mycobot_gazebo'
     package_name_moveit_config = 'mycobot_moveit_config_manual_setup'
+    package_name_mtc = 'hello_mtc_with_perception'
 
     # Set the path to different files and folders
     pkg_share_gazebo = FindPackageShare(package=package_name_gazebo).find(package_name_gazebo)
     pkg_share_moveit_config = FindPackageShare(package=package_name_moveit_config).find(package_name_moveit_config)
+    pkg_share_mtc = FindPackageShare(package=package_name_mtc).find(package_name_mtc)
 
     # Paths for various configuration files
-    urdf_file_path = 'urdf/ros2_control/gazebo/mycobot_280.urdf.xacro'
+    urdf_file_path = 'urdf/mycobot_280.urdf.xacro'
     srdf_file_path = 'config/mycobot_280.srdf'
     moveit_controllers_file_path = 'config/moveit_controllers.yaml'
     joint_limits_file_path = 'config/joint_limits.yaml'
@@ -36,7 +38,7 @@ def generate_launch_description():
     rviz_config_file_path = 'rviz/mtc.rviz'
 
     # Set the full paths
-    urdf_model_path = os.path.join(pkg_share_gazebo, urdf_file_path)
+    urdf_model_path = os.path.join(pkg_share_mtc, urdf_file_path)
     srdf_model_path = os.path.join(pkg_share_moveit_config, srdf_file_path)
     moveit_controllers_file_path = os.path.join(pkg_share_moveit_config, moveit_controllers_file_path)
     joint_limits_file_path = os.path.join(pkg_share_moveit_config, joint_limits_file_path)

@@ -23,7 +23,7 @@ def generate_launch_description():
     pkg_share_mtc = FindPackageShare(package=package_name_mtc).find(package_name_mtc)
 
     # Paths for various configuration files
-    urdf_file_path = 'urdf/ros2_control/gazebo/mycobot_280.urdf.xacro'
+    urdf_file_path = 'urdf/mycobot_280.urdf.xacro'
     srdf_file_path = 'config/mycobot_280.srdf'
     moveit_controllers_file_path = 'config/moveit_controllers.yaml'
     joint_limits_file_path = 'config/joint_limits.yaml'
@@ -33,7 +33,7 @@ def generate_launch_description():
     mtc_node_params_file_path = 'config/mtc_node_params.yaml'
 
     # Set the full paths
-    urdf_model_path = os.path.join(pkg_share_gazebo, urdf_file_path)
+    urdf_model_path = os.path.join(pkg_share_mtc, urdf_file_path)
     srdf_model_path = os.path.join(pkg_share_moveit_config, srdf_file_path)
     moveit_controllers_file_path = os.path.join(pkg_share_moveit_config, moveit_controllers_file_path)
     joint_limits_file_path = os.path.join(pkg_share_moveit_config, joint_limits_file_path)

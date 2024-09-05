@@ -18,21 +18,23 @@ def generate_launch_description():
   # Constants for paths to different files and folders
   package_name_description = 'mycobot_description'
   package_name_gazebo = 'mycobot_gazebo'
+  package_name_mtc = 'hello_mtc_with_perception'
 
   default_robot_name = 'mycobot_280'
   gazebo_launch_file_path = 'launch'
   gazebo_models_path = 'models'
   rviz_config_file_path = 'rviz/mycobot_280_arduino_view_description.rviz'
-  urdf_file_path = 'urdf/ros2_control/gazebo/mycobot_280.urdf.xacro'
-  world_file_path = 'worlds/cylinder.world' # e.g. 'world/empty.world', 'world/house.world'
+  urdf_file_path = 'urdf/mycobot_280.urdf.xacro'
+  world_file_path = 'worlds/cylinder.world' 
 
   # Set the path to different files and folders.  
   pkg_ros_gz_sim = FindPackageShare(package='ros_gz_sim').find('ros_gz_sim')  
   pkg_share_description = FindPackageShare(package=package_name_description).find(package_name_description)
   pkg_share_gazebo = FindPackageShare(package=package_name_gazebo).find(package_name_gazebo)
+  pkg_share_mtc = FindPackageShare(package=package_name_mtc).find(package_name_mtc)
 
   default_rviz_config_path = os.path.join(pkg_share_description, rviz_config_file_path)  
-  default_urdf_model_path = os.path.join(pkg_share_gazebo, urdf_file_path)
+  default_urdf_model_path = os.path.join(pkg_share_mtc, urdf_file_path)
   gazebo_launch_file_path = os.path.join(pkg_share_gazebo, gazebo_launch_file_path)   
   gazebo_models_path = os.path.join(pkg_share_gazebo, gazebo_models_path)
   world_path = os.path.join(pkg_share_gazebo, world_file_path)

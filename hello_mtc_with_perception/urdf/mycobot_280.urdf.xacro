@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<robot name="mycobot_280" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find mycobot_gazebo)/urdf/ros2_control/gazebo/mycobot_280.urdf.xacro"/>
+</robot>
