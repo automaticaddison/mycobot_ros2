@@ -2,6 +2,18 @@
 <robot name="mycobot_280" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include filename="$(find mycobot_gazebo)/urdf/ros2_control/gazebo/mycobot_280.urdf.xacro"/>
   
+  <xacro:property name="M_PI" value="3.1415926535897931" />
+  
+  <xacro:property name="d435_cam_width" value="0.090"/>
+  <xacro:property name="d435_cam_height" value="0.025"/>
+  <xacro:property name="d435_cam_depth" value="0.02505"/>
+  
+  <xacro:property name="d435_cam_depth_to_infra1_offset" value="0.0"/>
+  <xacro:property name="d435_cam_depth_to_infra2_offset" value="-0.050"/>
+  <xacro:property name="d435_cam_depth_to_color_offset" value="0.015"/>
+  
+  <xacro:property name="camera_tilt_angle_deg" value="15"/>  
+
   <link name="torso_link">
     <inertial>
       <origin xyz="0 0 0.20" />
@@ -39,26 +51,98 @@
       </geometry>
     </collision>
   </link>
-
-
+  
   <joint name="base_link_to_torso_link" type="fixed">
     <parent link="base_link"/>
     <child link="torso_link"/>
     <origin xyz="0.22 -0.25 0" rpy="0 0 0"/>
   </joint>
-
   
-  <gazebo reference="torso_link">
+  <joint name="camera_head_joint" type="fixed">
+    <parent link="torso_link"/>
+    <child link="camera_head_link" />
+    <origin xyz="0 0.01 0.40" rpy="0.0 ${camera_tilt_angle_deg * M_PI / 180} ${M_PI/2}"/>
+  </joint>
+  
+  <link name="camera_head_link">
     <visual>
-      <material>
-        <ambient>0.7 0.7 0.7 1</ambient>
-        <diffuse>0.7 0.7 0.7 1</diffuse>
-        <specular>0.1 0.1 0.1 1</specular>
+      <origin xyz="0 0 0" rpy="${M_PI/2} 0.0 ${M_PI/2}"/>
+      <geometry>
+        <mesh filename="file://$(find hello_mtc_with_perception)/urdf/meshes/d435.stl" />
+      </geometry>
+      <material name="aluminum">
+        <color rgba="0.5 0.5 0.5 1"/>
       </material>
     </visual>
-  </gazebo>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${d435_cam_depth} ${d435_cam_width} ${d435_cam_height}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.072" />
+      <origin xyz="0 0 0" />
+      <inertia ixx="0.003881243" ixy="0.0" ixz="0.0" iyy="0.000498940" iyz="0.0" izz="0.003879257" />
+    </inertial>
+  </link>
 
-  
+  <joint name="camera_head_depth_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="camera_head_link"/>
+    <child link="camera_head_depth_frame" />
+  </joint>
+  <link name="camera_head_depth_frame"/>
+
+  <joint name="camera_head_depth_optical_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="${-M_PI/2} 0 ${-M_PI/2}" />
+    <parent link="camera_head_depth_frame" />
+    <child link="camera_head_depth_optical_frame" />
+  </joint>
+  <link name="camera_head_depth_optical_frame"/>
+
+  <joint name="camera_head_infra1_joint" type="fixed">
+    <origin xyz="0 ${d435_cam_depth_to_infra1_offset} 0" rpy="0 0 0" />
+    <parent link="camera_head_link" />
+    <child link="camera_head_infra1_frame" />
+  </joint>
+  <link name="camera_head_infra1_frame"/>
+
+  <joint name="camera_head_infra1_optical_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="${-M_PI/2} 0 ${-M_PI/2}" />
+    <parent link="camera_head_infra1_frame" />
+    <child link="camera_head_infra1_optical_frame" />
+  </joint>
+  <link name="camera_head_infra1_optical_frame"/>
+
+  <joint name="camera_head_infra2_joint" type="fixed">
+    <origin xyz="0 ${d435_cam_depth_to_infra2_offset} 0" rpy="0 0 0" />
+    <parent link="camera_head_link" />
+    <child link="camera_head_infra2_frame" />
+  </joint>
+  <link name="camera_head_infra2_frame"/>
+
+  <joint name="camera_head_infra2_optical_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="${-M_PI/2} 0 ${-M_PI/2}" />
+    <parent link="camera_head_infra2_frame" />
+    <child link="camera_head_infra2_optical_frame" />
+  </joint>
+  <link name="camera_head_infra2_optical_frame"/>
+
+  <joint name="camera_head_color_joint" type="fixed">
+    <origin xyz="0 ${d435_cam_depth_to_color_offset} 0" rpy="0 0 0" />
+    <parent link="camera_head_link" />
+    <child link="camera_head_color_frame" />
+  </joint>
+  <link name="camera_head_color_frame"/>
+
+  <joint name="camera_head_color_optical_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="${-M_PI/2} 0 ${-M_PI/2}" />
+    <parent link="camera_head_color_frame" />
+    <child link="camera_head_color_optical_frame" />
+  </joint>
+  <link name="camera_head_color_optical_frame"/>
+
   <gazebo reference="camera_head_link">
     <sensor name="camera_head" type="rgbd_camera">
       <topic>camera_head</topic>
@@ -81,3 +165,5 @@
     </sensor>
   </gazebo>
 </robot>
+
+
