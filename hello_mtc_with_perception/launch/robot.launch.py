@@ -23,6 +23,7 @@ def generate_launch_description():
   default_robot_name = 'mycobot_280'
   gazebo_launch_file_path = 'launch'
   gazebo_models_path = 'models'
+  ros_gz_bridge_config_file_path = 'config/ros_gz_bridge.yaml'
   rviz_config_file_path = 'rviz/mycobot_280_arduino_view_description.rviz'
   urdf_file_path = 'urdf/mycobot_280.urdf.xacro'
   world_file_path = 'worlds/cylinder.world' 
@@ -33,6 +34,7 @@ def generate_launch_description():
   pkg_share_gazebo = FindPackageShare(package=package_name_gazebo).find(package_name_gazebo)
   pkg_share_mtc = FindPackageShare(package=package_name_mtc).find(package_name_mtc)
 
+  default_ros_gz_bridge_config_file_path = os.path.join(pkg_share_mtc, ros_gz_bridge_config_file_path)
   default_rviz_config_path = os.path.join(pkg_share_description, rviz_config_file_path)  
   default_urdf_model_path = os.path.join(pkg_share_mtc, urdf_file_path)
   gazebo_launch_file_path = os.path.join(pkg_share_gazebo, gazebo_launch_file_path)   
@@ -133,6 +135,30 @@ def generate_launch_description():
     PythonLaunchDescriptionSource(
       os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')),
     launch_arguments=[('gz_args', [' -r -v 4 ', world])])
+
+  # Bridge ROS topics and Gazebo messages for establishing communication
+  start_gazebo_ros_bridge_cmd = Node(
+    package='ros_gz_bridge',
+    executable='parameter_bridge',
+    parameters=[{
+      'config_file': default_ros_gz_bridge_config_file_path,
+    }],
+    output='screen'
+  )  
+
+  # Includes optimizations to minimize latency and bandwidth when streaming image data
+  start_gazebo_ros_image_bridge_cmd = Node(
+    package='ros_gz_image',
+    executable='image_bridge',
+    arguments=[
+      '/camera_head/depth_image',
+      '/camera_head/image',
+    ],
+    remappings=[
+      ('/camera_head/depth_image', '/camera_head/depth/image_rect_raw'),
+      ('/camera_head/image', '/camera_head/color/image_raw'),
+    ],
+  )
 
   # Start gripper controller
   start_gripper_controller_cmd =  ExecuteProcess(
@@ -240,7 +266,9 @@ def generate_launch_description():
   ld.add_action(start_gazebo_cmd)
   ld.add_action(start_robot_state_publisher_cmd)
   ld.add_action(start_rviz_cmd)
-  
+
+  ld.add_action(start_gazebo_ros_bridge_cmd)  
+  ld.add_action(start_gazebo_ros_image_bridge_cmd)
   ld.add_action(start_gazebo_ros_spawner_cmd)
 
   ld.add_action(load_joint_state_broadcaster_cmd)
