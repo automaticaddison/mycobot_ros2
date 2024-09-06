@@ -160,7 +160,6 @@
       <update_rate>30</update_rate>
       <always_on>1</always_on>
       <visualize>true</visualize>
-      <enable_metrics>true</enable_metrics>
     </sensor>
   </gazebo>
 </robot>
