@@ -157,9 +157,10 @@
         </clip>
         <optical_frame_id>camera_head_depth_optical_frame</optical_frame_id>
       </camera>
-      <topic>camera_head</topic>
-      <update_rate>30</update_rate>
       <always_on>1</always_on>
+      <gz_frame_id>camera_head_depth_optical_frame</gz_frame_id>
+      <topic>camera_head</topic>
+      <update_rate>10</update_rate>
       <visualize>true</visualize>
     </sensor>
   </gazebo>
