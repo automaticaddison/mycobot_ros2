@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 
-<sdf version="1.6">
+<sdf version="1.7">
   <world name="default">
   
     <!-- Plugin for simulating physics -->

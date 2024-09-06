@@ -155,6 +155,7 @@
           <near>0.05</near>
           <far>1.5</far>
         </clip>
+        <optical_frame_id>camera_head_depth_optical_frame</optical_frame_id>
       </camera>
       <topic>camera_head</topic>
       <update_rate>30</update_rate>
