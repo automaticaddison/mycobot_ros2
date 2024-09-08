@@ -12,21 +12,21 @@
   <xacro:property name="d435_cam_depth_to_infra2_offset" value="-0.050"/>
   <xacro:property name="d435_cam_depth_to_color_offset" value="0.015"/>
   
-  <xacro:property name="camera_tilt_angle_deg" value="15"/>  
+  <xacro:property name="camera_tilt_angle_deg" value="45"/>  
 
   <link name="torso_link">
     <inertial>
-      <origin xyz="0 0 0.20" />
+      <origin xyz="0 0 0.50" />
       <mass value="2.5" />
       <inertia ixx="0.8" ixy="0.0" ixz="0.0" iyy="0.8" iyz="0.0" izz="0.8" />
     </inertial>
     <visual name="holder">
-      <origin xyz="0 0 0.20" rpy="0 0 0" />
+      <origin xyz="0 0 0.25" rpy="0 0 0" />
       <material name="LightGrey">
         <color rgba="0.7 0.7 0.7 1.0"/>
       </material>
       <geometry>
-        <cylinder radius="0.005" length="0.4"/>
+        <cylinder radius="0.005" length="0.5"/>
       </geometry>
     </visual>
     <visual name="base">
@@ -39,9 +39,9 @@
       </geometry>
     </visual>
     <collision name="holder">
-      <origin xyz="0 0 0.20" rpy="0 0 0" />
+      <origin xyz="0 0 0.25" rpy="0 0 0" />
       <geometry>
-        <cylinder radius="0.005" length="0.4"/>
+        <cylinder radius="0.005" length="0.6"/>
       </geometry>
     </collision>
     <collision name="base">
@@ -55,13 +55,13 @@
   <joint name="base_link_to_torso_link" type="fixed">
     <parent link="base_link"/>
     <child link="torso_link"/>
-    <origin xyz="0.22 -0.25 0" rpy="0 0 0"/>
+    <origin xyz="0.22 -0.30 0" rpy="0 0 0"/>
   </joint>
   
   <joint name="camera_head_joint" type="fixed">
     <parent link="torso_link"/>
     <child link="camera_head_link" />
-    <origin xyz="0 0.01 0.40" rpy="0.0 ${camera_tilt_angle_deg * M_PI / 180} ${M_PI/2}"/>
+    <origin xyz="0 0.01 0.50" rpy="0.0 ${camera_tilt_angle_deg * M_PI / 180} ${M_PI/2}"/>
   </joint>
   
   <link name="camera_head_link">
@@ -160,7 +160,7 @@
       <always_on>1</always_on>
       <gz_frame_id>camera_head_link</gz_frame_id>
       <topic>camera_head</topic>
-      <update_rate>5</update_rate>
+      <update_rate>10</update_rate>
       <visualize>true</visualize>
     </sensor>
   </gazebo>
