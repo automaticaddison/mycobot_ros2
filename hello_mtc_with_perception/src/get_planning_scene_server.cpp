@@ -233,46 +233,123 @@ class GetPlanningSceneServer : public rclcpp::Node {
   }
   
   void handleService(
-      [[maybe_unused]] const std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Request> request,
-      [[maybe_unused]] std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Response> response) {
+      const std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Request> request,
+      std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Response> response) {
     // TODO: Implement the main logic for processing the service request with error handling
     // 1. Initialize response success flag to false
+    response->success = false;
+
     // 2. Check if point cloud and RGB image data are available
     //    - If not, log an error and return early
+    if (!latest_point_cloud || !latest_rgb_image) {
+      RCLCPP_ERROR(this->get_logger(), "Point cloud or RGB image data not available");
+      return;
+    }
+
     // 3. Validate input parameters:
     //    - Check if target_shape is not empty
     //    - Check if target_dimensions is not empty
     //    - Verify that target_shape is one of the valid shapes (cylinder, box, cone, sphere)
     //    - If any validation fails, log an error and return early
+    if (request->target_shape.empty() || request->target_dimensions.empty()) {
+      RCLCPP_ERROR(this->get_logger(), "Invalid input parameters: target_shape or target_dimensions is empty");
+      return;
+    }
+
+    const std::vector<std::string> valid_shapes = {"cylinder", "box", "cone", "sphere"};
+    if (std::find(valid_shapes.begin(), valid_shapes.end(), request->target_shape) == valid_shapes.end()) {
+      RCLCPP_ERROR(this->get_logger(), "Invalid target_shape: %s", request->target_shape.c_str());
+      return;
+    }
+
     // 4. Convert PointCloud2 to PCL point cloud
     //    - Check if conversion was successful and resulting cloud is not empty
     //    - If conversion fails, log an error and return early
+
     // 5. Preprocess the point cloud
     //    - Check if preprocessing was successful and resulting cloud is not empty
     //    - If preprocessing fails, log an error and return early
+
     // 6. Perform plane segmentation
     //    - Check if segmentation was successful
     //    - If segmentation fails, log an error and return early
+
     // 7. Create CollisionObject for support surface
     //    - Check if support surface object creation was successful
     //    - If creation fails, log a warning
+
     // 8. Extract object clusters
     //    - Check if cluster extraction was successful and at least one cluster was found
     //    - If extraction fails or no clusters found, log an error and return early
+
     // 9. For each cluster:
     //    - Fit shapes and create CollisionObjects
     //    - Check if shape fitting was successful for at least one object
     //    - If no shapes could be fitted, log a warning
+
     // 10. Identify target object
     //    - Check if a target object was successfully identified
     //    - If no target found, log a warning
+
     // 11. Assemble PlanningSceneWorld
     //    - Check if assembly was successful
     //    - If assembly fails, log an error and return early
+
     // 12. Fill the response:
     //    - Set scene_world, full_cloud, rgb_image, and target_object_id
     //    - Set success flag to true if all critical steps were successful
+
+    // For now, we'll just create a dummy PlanningSceneWorld with a single object
+    moveit_msgs::msg::PlanningSceneWorld scene_world;
+    moveit_msgs::msg::CollisionObject object;
+    object.id = "dummy_object";
+    object.header.frame_id = target_frame;
+
+    shape_msgs::msg::SolidPrimitive primitive;
+    if (request->target_shape == "cylinder") {
+      primitive.type = shape_msgs::msg::SolidPrimitive::CYLINDER;
+      primitive.dimensions.resize(2);
+      primitive.dimensions[primitive.CYLINDER_HEIGHT] = request->target_dimensions[0];
+      primitive.dimensions[primitive.CYLINDER_RADIUS] = request->target_dimensions[1];
+    } else if (request->target_shape == "box") {
+      primitive.type = shape_msgs::msg::SolidPrimitive::BOX;
+      primitive.dimensions.resize(3);
+      primitive.dimensions[primitive.BOX_X] = request->target_dimensions[0];
+      primitive.dimensions[primitive.BOX_Y] = request->target_dimensions[1];
+      primitive.dimensions[primitive.BOX_Z] = request->target_dimensions[2];
+    } else if (request->target_shape == "sphere") {
+      primitive.type = shape_msgs::msg::SolidPrimitive::SPHERE;
+      primitive.dimensions.resize(1);
+      primitive.dimensions[primitive.SPHERE_RADIUS] = request->target_dimensions[0];
+    } else if (request->target_shape == "cone") {
+      primitive.type = shape_msgs::msg::SolidPrimitive::CONE;
+      primitive.dimensions.resize(2);
+      primitive.dimensions[primitive.CONE_HEIGHT] = request->target_dimensions[0];
+      primitive.dimensions[primitive.CONE_RADIUS] = request->target_dimensions[1];
+    } else {
+      RCLCPP_ERROR(this->get_logger(), "Unsupported shape: %s", request->target_shape.c_str());
+      return;
+    }
+
+    object.primitives.push_back(primitive);
+
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = 0.0;
+    pose.position.y = 0.0;
+    pose.position.z = 0.0;
+    pose.orientation.w = 1.0;
+    object.primitive_poses.push_back(pose);
+
+    scene_world.collision_objects.push_back(object);
+
+    response->scene_world = scene_world;
+    response->full_cloud = *latest_point_cloud;
+    response->rgb_image = *latest_rgb_image;
+    response->target_object_id = "dummy_object";
+    response->success = true;
+
     // 13. Log appropriate messages for successful operation or any warnings
+    RCLCPP_INFO(this->get_logger(), "Service call completed successfully");
   }
 };
 
