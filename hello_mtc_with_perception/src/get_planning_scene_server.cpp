@@ -121,8 +121,10 @@ class GetPlanningSceneServer : public rclcpp::Node {
     RCLCPP_INFO(this->get_logger(), "Get planning scene service created and ready to serve requests.");
   }
 
-  void pointCloudCallback([[maybe_unused]] const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
-    // TODO: Store the received point cloud message
+  void pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+    if (msg != nullptr && !msg->data.empty()) {
+      latest_point_cloud = msg;
+    }
   }
 
   void rgbImageCallback([[maybe_unused]] const sensor_msgs::msg::Image::SharedPtr msg) {
