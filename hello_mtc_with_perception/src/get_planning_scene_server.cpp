@@ -127,51 +127,10 @@ class GetPlanningSceneServer : public rclcpp::Node {
     }
   }
 
-  void rgbImageCallback([[maybe_unused]] const sensor_msgs::msg::Image::SharedPtr msg) {
-    // TODO: Store the received RGB image message
-  }
-
-  void handleService(
-      [[maybe_unused]] const std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Request> request,
-      [[maybe_unused]] std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Response> response) {
-    // TODO: Implement the main logic for processing the service request with error handling
-    // 1. Initialize response success flag to false
-    // 2. Check if point cloud and RGB image data are available
-    //    - If not, log an error and return early
-    // 3. Validate input parameters:
-    //    - Check if target_shape is not empty
-    //    - Check if target_dimensions is not empty
-    //    - Verify that target_shape is one of the valid shapes (cylinder, box, cone, sphere)
-    //    - If any validation fails, log an error and return early
-    // 4. Convert PointCloud2 to PCL point cloud
-    //    - Check if conversion was successful and resulting cloud is not empty
-    //    - If conversion fails, log an error and return early
-    // 5. Preprocess the point cloud
-    //    - Check if preprocessing was successful and resulting cloud is not empty
-    //    - If preprocessing fails, log an error and return early
-    // 6. Perform plane segmentation
-    //    - Check if segmentation was successful
-    //    - If segmentation fails, log an error and return early
-    // 7. Extract object clusters
-    //    - Check if cluster extraction was successful and at least one cluster was found
-    //    - If extraction fails or no clusters found, log an error and return early
-    // 8. For each cluster:
-    //    - Fit shapes and create CollisionObjects
-    //    - Check if shape fitting was successful for at least one object
-    //    - If no shapes could be fitted, log a warning
-    // 9. Create CollisionObject for support surface
-    //    - Check if support surface object creation was successful
-    //    - If creation fails, log a warning
-    // 10. Identify target object
-    //    - Check if a target object was successfully identified
-    //    - If no target found, log a warning
-    // 11. Assemble PlanningSceneWorld
-    //    - Check if assembly was successful
-    //    - If assembly fails, log an error and return early
-    // 12. Fill the response:
-    //    - Set scene_world, full_cloud, rgb_image, and target_object_id
-    //    - Set success flag to true if all critical steps were successful
-    // 13. Log appropriate messages for successful operation or any warnings
+  void rgbImageCallback(const sensor_msgs::msg::Image::SharedPtr msg) {
+    if (msg != nullptr && !msg->data.empty()) {
+      latest_rgb_image = msg;
+    }
   }
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr convertToPCL([[maybe_unused]] 
@@ -197,6 +156,21 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // 3. Extract inliers (plane) and outliers (objects)
     // 4. Remove the support surface points from the point cloud
     // 5. Store the support surface plane coefficients and inliers for later use
+  }
+  
+  moveit_msgs::msg::CollisionObject createSupportSurfaceObject(
+      [[maybe_unused]] pcl::ModelCoefficients::Ptr plane_coefficients,
+      [[maybe_unused]] const std::string& frame_id) {
+    // TODO: Implement support surface object creation
+    // 1. Create a shape_msgs::msg::Plane message with the coefficients
+    // 2. Calculate an appropriate pose for the plane based on its normal vector
+    // 3. Set up the CollisionObject:
+    //    - Set header.frame_id to the desired frame
+    //    - Set a unique id (e.g., "support_surface")
+    //    - Add the Plane to the planes array
+    //    - Set the calculated pose in the plane_poses array
+    //    - Set operation field to ADD (0)
+    return moveit_msgs::msg::CollisionObject();  // Placeholder return
   }
 
   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractClusters(
@@ -237,21 +211,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
     return moveit_msgs::msg::CollisionObject();  // Placeholder return
   }
 
-  moveit_msgs::msg::CollisionObject createSupportSurfaceObject(
-      [[maybe_unused]] pcl::ModelCoefficients::Ptr plane_coefficients,
-      [[maybe_unused]] const std::string& frame_id) {
-    // TODO: Implement support surface object creation
-    // 1. Create a shape_msgs::msg::Plane message with the coefficients
-    // 2. Calculate an appropriate pose for the plane based on its normal vector
-    // 3. Set up the CollisionObject:
-    //    - Set header.frame_id to the desired frame
-    //    - Set a unique id (e.g., "support_surface")
-    //    - Add the Plane to the planes array
-    //    - Set the calculated pose in the plane_poses array
-    //    - Set operation field to ADD (0)
-    return moveit_msgs::msg::CollisionObject();  // Placeholder return
-  }
-
   std::string identifyTargetObject(
       [[maybe_unused]] const std::vector<moveit_msgs::msg::CollisionObject>& objects,
       [[maybe_unused]] const std::string& target_shape,
@@ -271,6 +230,49 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // 2. Add all CollisionObjects to the collision_objects field of PlanningSceneWorld
     // 3. Ensure all CollisionObjects are in the desired frame (transform if necessary)
     return moveit_msgs::msg::PlanningSceneWorld();  // Placeholder return
+  }
+  
+  void handleService(
+      [[maybe_unused]] const std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Request> request,
+      [[maybe_unused]] std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Response> response) {
+    // TODO: Implement the main logic for processing the service request with error handling
+    // 1. Initialize response success flag to false
+    // 2. Check if point cloud and RGB image data are available
+    //    - If not, log an error and return early
+    // 3. Validate input parameters:
+    //    - Check if target_shape is not empty
+    //    - Check if target_dimensions is not empty
+    //    - Verify that target_shape is one of the valid shapes (cylinder, box, cone, sphere)
+    //    - If any validation fails, log an error and return early
+    // 4. Convert PointCloud2 to PCL point cloud
+    //    - Check if conversion was successful and resulting cloud is not empty
+    //    - If conversion fails, log an error and return early
+    // 5. Preprocess the point cloud
+    //    - Check if preprocessing was successful and resulting cloud is not empty
+    //    - If preprocessing fails, log an error and return early
+    // 6. Perform plane segmentation
+    //    - Check if segmentation was successful
+    //    - If segmentation fails, log an error and return early
+    // 7. Create CollisionObject for support surface
+    //    - Check if support surface object creation was successful
+    //    - If creation fails, log a warning
+    // 8. Extract object clusters
+    //    - Check if cluster extraction was successful and at least one cluster was found
+    //    - If extraction fails or no clusters found, log an error and return early
+    // 9. For each cluster:
+    //    - Fit shapes and create CollisionObjects
+    //    - Check if shape fitting was successful for at least one object
+    //    - If no shapes could be fitted, log a warning
+    // 10. Identify target object
+    //    - Check if a target object was successfully identified
+    //    - If no target found, log a warning
+    // 11. Assemble PlanningSceneWorld
+    //    - Check if assembly was successful
+    //    - If assembly fails, log an error and return early
+    // 12. Fill the response:
+    //    - Set scene_world, full_cloud, rgb_image, and target_object_id
+    //    - Set success flag to true if all critical steps were successful
+    // 13. Log appropriate messages for successful operation or any warnings
   }
 };
 
