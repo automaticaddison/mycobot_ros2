@@ -28,6 +28,7 @@ def generate_launch_description():
     pkg_share_mtc = FindPackageShare(package=package_name_mtc).find(package_name_mtc)
 
     # Paths for various configuration files
+    get_planning_scene_server_file_path = 'config/get_planning_scene_server.yaml'
     urdf_file_path = 'urdf/mycobot_280.urdf.xacro'
     srdf_file_path = 'config/mycobot_280.srdf'
     moveit_controllers_file_path = 'config/moveit_controllers.yaml'
@@ -38,6 +39,7 @@ def generate_launch_description():
     rviz_config_file_path = 'rviz/mtc.rviz'
 
     # Set the full paths
+    get_planning_scene_server_file_path = os.path.join(pkg_share_mtc, get_planning_scene_server_file_path)
     urdf_model_path = os.path.join(pkg_share_mtc, urdf_file_path)
     srdf_model_path = os.path.join(pkg_share_moveit_config, srdf_file_path)
     moveit_controllers_file_path = os.path.join(pkg_share_moveit_config, moveit_controllers_file_path)
@@ -100,6 +102,14 @@ def generate_launch_description():
         ],
     )
 
+    # Start the GetPlanningSceneServer node
+    start_get_planning_scene_server_cmd = Node(
+        package=package_name_mtc,
+        executable="get_planning_scene_server",
+        output="screen",
+        parameters=[get_planning_scene_server_file_path],
+    )
+    
     # RViz
     start_rviz_node_cmd = Node(
         condition=IfCondition(use_rviz),
@@ -134,6 +144,7 @@ def generate_launch_description():
 
     # Add any actions
     ld.add_action(start_move_group_node_cmd)
+    ld.add_action(start_get_planning_scene_server_cmd)
     ld.add_action(start_rviz_node_cmd)
     
     # Clean shutdown of RViz
