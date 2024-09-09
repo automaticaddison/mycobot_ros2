@@ -1,18 +1,21 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>hello_mtc_with_perception</name>
+  <name>mycobot_interfaces</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
   <maintainer email="automaticaddison@todo.com">ubuntu</maintainer>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
 
-  <depend>moveit_core</depend>
-  <depend>moveit_ros_planning_interface</depend>
-  <depend>moveit_task_constructor_core</depend>
-  <depend>mycobot_interfaces</depend>
+
+  <depend>moveit_msgs</depend>
+  <depend>sensor_msgs</depend>
   <depend>rclcpp</depend>
 
   <test_depend>ament_lint_auto</test_depend>
