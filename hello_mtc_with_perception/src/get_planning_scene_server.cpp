@@ -273,17 +273,27 @@ class GetPlanningSceneServer : public rclcpp::Node {
 };
 
 int main(int argc, char** argv) {
-  rclcpp::init(argc, argv);
+  try {
+    rclcpp::init(argc, argv);
+    
+    rclcpp::NodeOptions options;
+    options.automatically_declare_parameters_from_overrides(true);
+    
+    auto node = std::make_shared<GetPlanningSceneServer>(options);
+    
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(node);
+    executor.spin();
+    
+    rclcpp::shutdown();
+  } catch (const std::exception& e) {
+    RCLCPP_ERROR(rclcpp::get_logger("get_planning_scene_server"), "Caught exception: %s", e.what());
+    return 1;
+  } catch (...) {
+    RCLCPP_ERROR(rclcpp::get_logger("get_planning_scene_server"), "Caught unknown exception");
+    return 1;
+  }
   
-  rclcpp::NodeOptions options;
-  options.automatically_declare_parameters_from_overrides(true);
-  
-  auto node = std::make_shared<GetPlanningSceneServer>(options);
-  
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(node);
-  executor.spin();
-  
-  rclcpp::shutdown();
   return 0;
 }
+
