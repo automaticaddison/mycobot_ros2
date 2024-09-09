@@ -24,7 +24,12 @@ find_package(moveit_ros_planning REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_task_constructor_core REQUIRED)
 find_package(moveit_task_constructor_msgs REQUIRED)
+find_package(mycobot_interfaces REQUIRED)
+find_package(PCL REQUIRED)
+find_package(pcl_conversions REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(shape_msgs REQUIRED)
 find_package(tf2_eigen REQUIRED)
 
 # Set dependencies
@@ -34,7 +39,12 @@ set(dependencies
   moveit_ros_planning_interface
   moveit_task_constructor_core
   moveit_task_constructor_msgs
+  mycobot_interfaces
+  PCL
+  pcl_conversions
   rclcpp
+  sensor_msgs
+  shape_msgs
   tf2_eigen
 )
 
@@ -46,6 +56,9 @@ include_directories(
 # Create Cpp executables
 add_executable(mtc_node src/mtc_node.cpp)
 ament_target_dependencies(mtc_node ${dependencies})
+
+add_executable(get_planning_scene_server src/get_planning_scene_server.cpp)
+ament_target_dependencies(get_planning_scene_server ${dependencies})
 
 # Copy folders into the install/ folder of the ROS 2 workspace
 install(
@@ -60,6 +73,7 @@ install(
 # Install Cpp executables
 install(
   TARGETS
+  get_planning_scene_server
   mtc_node
   DESTINATION lib/${PROJECT_NAME}
 )
