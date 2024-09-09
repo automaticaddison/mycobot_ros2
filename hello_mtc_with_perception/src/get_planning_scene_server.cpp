@@ -31,6 +31,7 @@
  */
 
 #include <rclcpp/rclcpp.hpp>
+#include <rcl_interfaces/msg/parameter_descriptor.hpp>
 #include <mycobot_interfaces/srv/get_planning_scene.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/msg/image.hpp>
@@ -69,11 +70,24 @@ class GetPlanningSceneServer : public rclcpp::Node {
   sensor_msgs::msg::Image::SharedPtr latest_rgb_image;
 
   void declareParameters() {
-    // TODO: Declare and get parameters for point_cloud_topic, rgb_image_topic, and target_frame
-    // Default values:
-    // point_cloud_topic: "/camera_head/depth/color/points"
-    // rgb_image_topic: "/camera_head/color/image_raw"
-    // target_frame: "base_link"
+    auto declare_parameter = [this](const std::string& name, const auto& default_value, const std::string& description = "") {
+      rcl_interfaces::msg::ParameterDescriptor descriptor;
+      descriptor.description = description;
+      
+      if (!this->has_parameter(name)) {
+        this->declare_parameter(name, default_value, descriptor);
+      }
+    };
+
+    // Declare parameters with default values and descriptions
+    declare_parameter("point_cloud_topic", "/camera_head/depth/color/points", "Topic name for incoming point cloud data");
+    declare_parameter("rgb_image_topic", "/camera_head/color/image_raw", "Topic name for incoming RGB image data");
+    declare_parameter("target_frame", "base_link", "Target frame for the planning scene");
+
+    // Get parameter values
+    point_cloud_topic = this->get_parameter("point_cloud_topic").as_string();
+    rgb_image_topic = this->get_parameter("rgb_image_topic").as_string();
+    target_frame = this->get_parameter("target_frame").as_string();
   }
 
   void createSubscribers() {
