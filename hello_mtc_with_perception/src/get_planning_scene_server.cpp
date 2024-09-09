@@ -91,7 +91,22 @@ class GetPlanningSceneServer : public rclcpp::Node {
   }
 
   void createSubscribers() {
-    // TODO: Create subscribers for point_cloud_topic and rgb_image_topic
+    // Create subscriber for point cloud data
+    point_cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+      point_cloud_topic,
+      10,  // QoS depth
+      std::bind(&GetPlanningSceneServer::pointCloudCallback, this, std::placeholders::_1)
+    );
+
+    // Create subscriber for RGB image data
+    rgb_image_sub = this->create_subscription<sensor_msgs::msg::Image>(
+      rgb_image_topic,
+      10,  // QoS depth
+      std::bind(&GetPlanningSceneServer::rgbImageCallback, this, std::placeholders::_1)
+    );
+
+    RCLCPP_INFO(this->get_logger(), "Subscribed to point cloud topic: %s", point_cloud_topic.c_str());
+    RCLCPP_INFO(this->get_logger(), "Subscribed to RGB image topic: %s", rgb_image_topic.c_str());
   }
 
   void createService() {

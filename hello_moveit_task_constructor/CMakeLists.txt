@@ -85,7 +85,7 @@ target_link_libraries(${PROJECT_NAME}_pick_place_demo ${PROJECT_NAME}_pick_place
 #   - The pick_place_task library depends on the pick_place_demo_parameters library.
 #   - The pick_place_demo executable depends on the pick_place_task library.
 
-install(DIRECTORY config launch
+install(DIRECTORY config launch scripts
   DESTINATION share/${PROJECT_NAME}
 )
 
