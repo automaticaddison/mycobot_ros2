@@ -44,6 +44,8 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/segmentation/sac_segmentation.h>
 // Add other necessary PCL includes
 
 class GetPlanningSceneServer : public rclcpp::Node {
@@ -65,6 +67,11 @@ class GetPlanningSceneServer : public rclcpp::Node {
   double voxel_leaf_size;
   int sor_mean_k;
   double sor_stddev_mult;
+  
+  // Parameters for plane segmentation
+  int max_plane_segmentation_iterations;
+  double plane_segmentation_distance_threshold;
+  double plane_segmentation_threshold;
 
   // Subscribers
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_sub;
@@ -96,14 +103,24 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("voxel_leaf_size", 0.01, "Leaf size for VoxelGrid filter (in meters)"); // Decrease if you need more detail in the point cloud
     declare_parameter("sor_mean_k", 50, "Number of neighbors to analyze for each point in StatisticalOutlierRemoval"); // Increase if you need more detail in the point cloud
     declare_parameter("sor_stddev_mult", 1.0, "Standard deviation multiplier for StatisticalOutlierRemoval"); // Increase if you need more detail in the point cloud
+    
+    // Declare parameters for plane segmentation
+    declare_parameter("max_plane_segmentation_iterations", 1000, "Maximum iterations for plane segmentation RANSAC");
+    declare_parameter("plane_segmentation_distance_threshold", 0.01, "Distance threshold for plane segmentation (in meters)");  
+    declare_parameter("plane_segmentation_threshold", 0.1, "Threshold for considering a plane significant (percentage of total points)");
 
     // Get parameter values
     point_cloud_topic = this->get_parameter("point_cloud_topic").as_string();
     rgb_image_topic = this->get_parameter("rgb_image_topic").as_string();
     target_frame = this->get_parameter("target_frame").as_string();
+    
     voxel_leaf_size = this->get_parameter("voxel_leaf_size").as_double();
     sor_mean_k = this->get_parameter("sor_mean_k").as_int();
     sor_stddev_mult = this->get_parameter("sor_stddev_mult").as_double();
+    
+    max_plane_segmentation_iterations = this->get_parameter("max_plane_segmentation_iterations").as_int();
+    plane_segmentation_distance_threshold = this->get_parameter("plane_segmentation_distance_threshold").as_double();
+    plane_segmentation_threshold = this->get_parameter("plane_segmentation_threshold").as_double();
   }
 
   void createSubscribers() {
@@ -250,17 +267,60 @@ class GetPlanningSceneServer : public rclcpp::Node {
     return nullptr;
   }
 
+  bool segmentPlane(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
+                    pcl::ModelCoefficients::Ptr coefficients,
+                    pcl::PointIndices::Ptr inliers) {
+    if (!cloud || cloud->empty()) {
+      RCLCPP_ERROR(this->get_logger(), "Input cloud is null or empty in segmentPlane()");
+      return false;
+    }
 
+    RCLCPP_INFO(this->get_logger(), "Starting plane segmentation. Input cloud size: %zu points", cloud->size());
 
-  void segmentPlane([[maybe_unused]] pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
-                    [[maybe_unused]] pcl::ModelCoefficients::Ptr coefficients,
-                    [[maybe_unused]] pcl::PointIndices::Ptr inliers) {
-    // TODO: Implement plane segmentation using RANSAC
-    // 1. Set up RANSAC parameters (distance threshold, max iterations)
-    // 2. Perform segmentation to detect the dominant plane (support surface)
-    // 3. Extract inliers (plane) and outliers (objects)
-    // 4. Remove the support surface points from the point cloud
-    // 5. Store the support surface plane coefficients and inliers for later use
+    try {
+      // Create the segmentation object
+      pcl::SACSegmentation<pcl::PointXYZRGB> seg;
+      
+      // Set segmentation parameters
+      seg.setOptimizeCoefficients(true);
+      seg.setModelType(pcl::SACMODEL_PLANE);
+      seg.setMethodType(pcl::SAC_RANSAC);
+      seg.setMaxIterations(max_plane_segmentation_iterations);
+      seg.setDistanceThreshold(plane_segmentation_distance_threshold);
+
+      seg.setInputCloud(cloud);
+      seg.segment(*inliers, *coefficients);
+
+      if (inliers->indices.empty()) {
+        RCLCPP_WARN(this->get_logger(), "Could not estimate a planar model for the given dataset.");
+        return false;
+      }
+
+      RCLCPP_INFO(this->get_logger(), "Plane segmentation completed. Found %zu inliers.", inliers->indices.size());
+      RCLCPP_INFO(this->get_logger(), "Plane coefficients: a = %f, b = %f, c = %f, d = %f",
+                  coefficients->values[0], coefficients->values[1], 
+                  coefficients->values[2], coefficients->values[3]);
+
+      // Remove the planar inliers, extract the rest
+      pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+      extract.setInputCloud(cloud);
+      extract.setIndices(inliers);
+      extract.setNegative(true);
+      extract.filter(*cloud);
+
+      RCLCPP_INFO(this->get_logger(), "Remaining cloud after plane removal: %zu points.", cloud->size());
+
+      return true;
+    } catch (const pcl::PCLException& e) {
+      RCLCPP_ERROR(this->get_logger(), "PCL exception caught during plane segmentation: %s", e.what());
+      return false;
+    } catch (const std::exception& e) {
+      RCLCPP_ERROR(this->get_logger(), "Standard exception caught during plane segmentation: %s", e.what());
+      return false;
+    } catch (...) {
+      RCLCPP_ERROR(this->get_logger(), "Unknown exception caught during plane segmentation");
+      return false;
+    }
   }
   
   moveit_msgs::msg::CollisionObject createSupportSurfaceObject(
@@ -390,6 +450,23 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // 6. Perform plane segmentation
     //    - Check if segmentation was successful
     //    - If segmentation fails, log an error and return early
+    pcl::ModelCoefficients::Ptr plane_coefficients(new pcl::ModelCoefficients);
+    pcl::PointIndices::Ptr plane_inliers(new pcl::PointIndices);
+
+    bool plane_segmented = segmentPlane(preprocessed_cloud, plane_coefficients, plane_inliers);
+
+    if (!plane_segmented) {
+      RCLCPP_ERROR(this->get_logger(), "Plane segmentation failed");
+      return;
+    }
+
+    RCLCPP_INFO(this->get_logger(), "Plane segmentation successful");
+
+    // Check if the segmented plane is significant enough
+    double plane_percentage = static_cast<double>(plane_inliers->indices.size()) / preprocessed_cloud->size();
+    if (plane_percentage < plane_segmentation_threshold) { 
+      RCLCPP_WARN(this->get_logger(), "Segmented plane is small (%.2f%% of points). It might not be the dominant plane.", plane_percentage * 100);
+    }
 
     // 7. Create CollisionObject for support surface
     //    - Check if support surface object creation was successful
