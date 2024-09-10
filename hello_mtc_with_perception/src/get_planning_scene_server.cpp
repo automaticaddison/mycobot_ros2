@@ -133,10 +133,41 @@ class GetPlanningSceneServer : public rclcpp::Node {
     }
   }
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr convertToPCL([[maybe_unused]] 
-      const sensor_msgs::msg::PointCloud2::SharedPtr& cloud_msg) {
-    // TODO: Implement conversion from PointCloud2 to PCL point cloud
-    return nullptr;  // Placeholder return
+  // Conversion from PointCloud2 to PCL point cloud
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr convertToPCL(
+    const sensor_msgs::msg::PointCloud2::SharedPtr& cloud_msg) {
+    RCLCPP_INFO(this->get_logger(), "Converting PointCloud2 to PCL PointCloud");
+    
+    auto pcl_cloud = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+    
+    try {
+        if (!cloud_msg) {
+            throw std::runtime_error("Input PointCloud2 message is null");
+        }
+        if (cloud_msg->data.empty()) {
+            throw std::runtime_error("Input PointCloud2 message has no data");
+        }
+        
+        pcl::fromROSMsg(*cloud_msg, *pcl_cloud);
+        
+        if (pcl_cloud->empty()) {
+            throw std::runtime_error("Resulting PCL cloud is empty after conversion");
+        }
+        
+        RCLCPP_INFO(this->get_logger(), "PointCloud2 successfully converted to PCL PointCloud with %zu points", 
+            pcl_cloud->size());
+    } catch (const pcl::PCLException& e) {
+        RCLCPP_ERROR(this->get_logger(), "PCL error in convertToPCL: %s", e.what());
+        return nullptr;
+    } catch (const std::exception& e) {
+        RCLCPP_ERROR(this->get_logger(), "Error in convertToPCL: %s", e.what());
+        return nullptr;
+    } catch (...) {
+        RCLCPP_ERROR(this->get_logger(), "Unknown error occurred in convertToPCL");
+        return nullptr;
+    }
+    
+    return pcl_cloud;
   }
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr preprocessPointCloud([[maybe_unused]] 
@@ -265,6 +296,11 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // 4. Convert PointCloud2 to PCL point cloud
     //    - Check if conversion was successful and resulting cloud is not empty
     //    - If conversion fails, log an error and return early
+    auto pcl_cloud = convertToPCL(latest_point_cloud);
+    if (!pcl_cloud) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to convert PointCloud2 to PCL format");
+      return;
+    }
 
     // 5. Preprocess the point cloud
     //    - Check if preprocessing was successful and resulting cloud is not empty
