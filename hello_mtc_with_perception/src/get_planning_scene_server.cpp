@@ -39,6 +39,8 @@
 #include <moveit_msgs/msg/planning_scene_world.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <shape_msgs/msg/plane.hpp>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -54,10 +56,15 @@ class GetPlanningSceneServer : public rclcpp::Node {
   }
 
  private:
-  // Parameters
+  // Parameters for inputs
   std::string point_cloud_topic;
   std::string rgb_image_topic;
   std::string target_frame;
+  
+  // Parameters for point cloud preprocessing
+  double voxel_leaf_size;
+  int sor_mean_k;
+  double sor_stddev_mult;
 
   // Subscribers
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_sub;
@@ -84,11 +91,19 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("point_cloud_topic", "/camera_head/depth/color/points", "Topic name for incoming point cloud data");
     declare_parameter("rgb_image_topic", "/camera_head/color/image_raw", "Topic name for incoming RGB image data");
     declare_parameter("target_frame", "base_link", "Target frame for the planning scene");
+    
+    // Declare parameters for point cloud preprocessing
+    declare_parameter("voxel_leaf_size", 0.01, "Leaf size for VoxelGrid filter (in meters)"); // Decrease if you need more detail in the point cloud
+    declare_parameter("sor_mean_k", 50, "Number of neighbors to analyze for each point in StatisticalOutlierRemoval"); // Increase if you need more detail in the point cloud
+    declare_parameter("sor_stddev_mult", 1.0, "Standard deviation multiplier for StatisticalOutlierRemoval"); // Increase if you need more detail in the point cloud
 
     // Get parameter values
     point_cloud_topic = this->get_parameter("point_cloud_topic").as_string();
     rgb_image_topic = this->get_parameter("rgb_image_topic").as_string();
     target_frame = this->get_parameter("target_frame").as_string();
+    voxel_leaf_size = this->get_parameter("voxel_leaf_size").as_double();
+    sor_mean_k = this->get_parameter("sor_mean_k").as_int();
+    sor_stddev_mult = this->get_parameter("sor_stddev_mult").as_double();
   }
 
   void createSubscribers() {
@@ -170,13 +185,72 @@ class GetPlanningSceneServer : public rclcpp::Node {
     return pcl_cloud;
   }
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr preprocessPointCloud([[maybe_unused]] 
-      pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud) {
-    // TODO: Implement point cloud preprocessing
-    // 1. Apply VoxelGrid filter for downsampling to reduce computational load
-    // 2. Apply StatisticalOutlierRemoval to clean the point cloud and remove noise
-    return nullptr;  // Placeholder return
+  std::shared_ptr<pcl::PointCloud<pcl::PointXYZRGB>> preprocessPointCloud(
+      const std::shared_ptr<pcl::PointCloud<pcl::PointXYZRGB>>& cloud) {
+    
+    // Error handling for input cloud
+    if (!cloud || cloud->empty()) {
+      RCLCPP_ERROR(this->get_logger(), "Input point cloud is null or empty");
+      return nullptr;
+    }
+
+    RCLCPP_INFO(this->get_logger(), "Starting point cloud preprocessing. Input cloud size: %zu points", cloud->size());
+
+    auto cloud_filtered = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+
+    try {
+      // Get the current parameter values
+      double voxel_leaf_size = this->get_parameter("voxel_leaf_size").as_double();
+      int sor_mean_k = this->get_parameter("sor_mean_k").as_int();
+      double sor_stddev_mult = this->get_parameter("sor_stddev_mult").as_double();
+
+      // 1. Apply VoxelGrid filter for downsampling
+      pcl::VoxelGrid<pcl::PointXYZRGB> vox;
+      vox.setInputCloud(cloud);
+      vox.setLeafSize(voxel_leaf_size, voxel_leaf_size, voxel_leaf_size);
+      vox.filter(*cloud_filtered);
+
+      RCLCPP_INFO(this->get_logger(), "VoxelGrid filter applied. Cloud size after downsampling: %zu points", cloud_filtered->size());
+
+      if (cloud_filtered->empty()) {
+        RCLCPP_WARN(this->get_logger(), "VoxelGrid filter resulted in an empty cloud. Adjusting leaf size may be necessary.");
+        return nullptr;
+      }
+
+      // 2. Apply StatisticalOutlierRemoval to clean the point cloud and remove noise
+      pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
+      sor.setInputCloud(cloud_filtered);
+      sor.setMeanK(sor_mean_k);
+      sor.setStddevMulThresh(sor_stddev_mult);
+      
+      auto cloud_filtered_sor = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+      sor.filter(*cloud_filtered_sor);
+
+      RCLCPP_INFO(this->get_logger(), "StatisticalOutlierRemoval applied. Cloud size after statistical outlier removal: %zu points", cloud_filtered_sor->size());
+
+      if (cloud_filtered_sor->empty()) {
+        RCLCPP_WARN(this->get_logger(), "StatisticalOutlierRemoval resulted in an empty cloud. Adjusting parameters may be necessary.");
+        return nullptr;
+      }
+
+      // Calculate point reduction percentage
+      double reduction_percentage = ((cloud->size() - cloud_filtered_sor->size()) / static_cast<double>(cloud->size())) * 100.0;
+      RCLCPP_INFO(this->get_logger(), "Total point reduction: %.2f%%", reduction_percentage);
+
+      return cloud_filtered_sor;
+
+    } catch (const pcl::PCLException& e) {
+      RCLCPP_ERROR(this->get_logger(), "PCL exception caught during preprocessing: %s", e.what());
+    } catch (const std::exception& e) {
+      RCLCPP_ERROR(this->get_logger(), "Standard exception caught during preprocessing: %s", e.what());
+    } catch (...) {
+      RCLCPP_ERROR(this->get_logger(), "Unknown exception caught during preprocessing");
+    }
+
+    return nullptr;
   }
+
+
 
   void segmentPlane([[maybe_unused]] pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
                     [[maybe_unused]] pcl::ModelCoefficients::Ptr coefficients,
@@ -305,6 +379,13 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // 5. Preprocess the point cloud
     //    - Check if preprocessing was successful and resulting cloud is not empty
     //    - If preprocessing fails, log an error and return early
+    auto preprocessed_cloud = preprocessPointCloud(pcl_cloud);
+    if (!preprocessed_cloud || preprocessed_cloud->empty()) {
+      RCLCPP_ERROR(this->get_logger(), "Point cloud preprocessing failed or resulted in an empty cloud");
+      return;
+    }
+
+    RCLCPP_INFO(this->get_logger(), "Point cloud preprocessing successful. Preprocessed cloud size: %zu points", preprocessed_cloud->size());
 
     // 6. Perform plane segmentation
     //    - Check if segmentation was successful
