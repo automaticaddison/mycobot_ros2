@@ -43,10 +43,13 @@
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/common/transforms.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/segmentation/sac_segmentation.h>
-// Add other necessary PCL includes
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 class GetPlanningSceneServer : public rclcpp::Node {
  public:
@@ -55,6 +58,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declareParameters();
     createSubscribers();
     createService();
+    tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   }
 
  private:
@@ -83,6 +88,10 @@ class GetPlanningSceneServer : public rclcpp::Node {
   // Latest data storage
   sensor_msgs::msg::PointCloud2::SharedPtr latest_point_cloud;
   sensor_msgs::msg::Image::SharedPtr latest_rgb_image;
+
+  // TF2 objects
+  std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
   void declareParameters() {
     auto declare_parameter = [this](const std::string& name, const auto& default_value, const std::string& description = "") {
@@ -163,6 +172,52 @@ class GetPlanningSceneServer : public rclcpp::Node {
     if (msg != nullptr && !msg->data.empty()) {
       latest_rgb_image = msg;
     }
+  }
+  
+  sensor_msgs::msg::PointCloud2::SharedPtr transformPointCloud(
+      const sensor_msgs::msg::PointCloud2::SharedPtr& cloud_msg,
+      const std::string& target_frame) {
+    RCLCPP_INFO(this->get_logger(), "Transforming point cloud from %s to %s",
+      cloud_msg->header.frame_id.c_str(), target_frame.c_str());
+
+    if (cloud_msg->header.frame_id == target_frame) {
+      RCLCPP_INFO(this->get_logger(), "Point cloud is already in the target frame");
+      return cloud_msg;
+    }
+
+    geometry_msgs::msg::TransformStamped transform_stamped;
+    try {
+      // Look up the transformation from the cloud's frame to the target frame
+      transform_stamped = tf_buffer_->lookupTransform(
+        target_frame, cloud_msg->header.frame_id,
+        tf2::TimePointZero);
+    } catch (tf2::TransformException& ex) {
+      RCLCPP_ERROR(this->get_logger(), "Could not transform point cloud: %s", ex.what());
+      return nullptr;
+    }
+
+    // Convert ROS PointCloud2 to PCL PointCloud
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcl_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::fromROSMsg(*cloud_msg, *pcl_cloud);
+
+    // Create transformation matrix from transform_stamped
+    Eigen::Affine3d transform_eigen;
+    transform_eigen = tf2::transformToEigen(transform_stamped);
+
+    // Transform the PCL cloud
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::transformPointCloud(*pcl_cloud, *transformed_cloud, transform_eigen);
+
+    // Convert back to ROS PointCloud2
+    sensor_msgs::msg::PointCloud2::SharedPtr cloud_out(new sensor_msgs::msg::PointCloud2);
+    pcl::toROSMsg(*transformed_cloud, *cloud_out);
+
+    // Update the frame_id and timestamp of the transformed cloud
+    cloud_out->header.frame_id = target_frame;
+    cloud_out->header.stamp = this->now();
+
+    RCLCPP_INFO(this->get_logger(), "Point cloud transformed successfully");
+    return cloud_out;
   }
 
   // Conversion from PointCloud2 to PCL point cloud
@@ -324,18 +379,61 @@ class GetPlanningSceneServer : public rclcpp::Node {
   }
   
   moveit_msgs::msg::CollisionObject createSupportSurfaceObject(
-      [[maybe_unused]] pcl::ModelCoefficients::Ptr plane_coefficients,
-      [[maybe_unused]] const std::string& frame_id) {
-    // TODO: Implement support surface object creation
-    // 1. Create a shape_msgs::msg::Plane message with the coefficients
-    // 2. Calculate an appropriate pose for the plane based on its normal vector
-    // 3. Set up the CollisionObject:
-    //    - Set header.frame_id to the desired frame
-    //    - Set a unique id (e.g., "support_surface")
-    //    - Add the Plane to the planes array
-    //    - Set the calculated pose in the plane_poses array
-    //    - Set operation field to ADD (0)
-    return moveit_msgs::msg::CollisionObject();  // Placeholder return
+    pcl::ModelCoefficients::Ptr plane_coefficients,
+    const std::string& frame_id) {
+    RCLCPP_INFO(this->get_logger(), "Creating support surface object");
+    
+    moveit_msgs::msg::CollisionObject support_surface;
+    
+    try {
+      // Validate input parameters
+      if (!plane_coefficients || plane_coefficients->values.size() != 4) {
+        throw std::invalid_argument("Invalid plane coefficients");
+    }
+    if (frame_id.empty()) {
+      throw std::invalid_argument("Empty frame_id");
+    }
+    
+    // Create a shape_msgs::msg::Plane message with the coefficients
+    shape_msgs::msg::Plane plane;
+    for (size_t i = 0; i < 4; ++i) {
+      plane.coef[i] = static_cast<double>(plane_coefficients->values[i]);
+    }
+    // Calculate an appropriate pose for the plane based on its normal vector
+    geometry_msgs::msg::Pose plane_pose;
+    Eigen::Vector3d normal(plane.coef[0], plane.coef[1], plane.coef[2]);
+    normal.normalize();
+    
+    // Calculate rotation to align the plane normal with the z-axis
+    Eigen::Quaterniond rotation;
+    rotation.setFromTwoVectors(Eigen::Vector3d::UnitZ(), normal);
+    
+    // Set the pose
+    plane_pose.position.x = 0;  // Adjust as needed
+    plane_pose.position.y = 0;  // Adjust as needed
+    plane_pose.position.z = -plane.coef[3] / normal.norm();  // Distance from origin
+    plane_pose.orientation.x = rotation.x();
+    plane_pose.orientation.y = rotation.y();
+    plane_pose.orientation.z = rotation.z();
+    plane_pose.orientation.w = rotation.w();
+    
+    // Set up the CollisionObject
+    support_surface.header.frame_id = frame_id;
+    support_surface.id = "support_surface";
+    support_surface.planes.push_back(plane);
+    support_surface.plane_poses.push_back(plane_pose);
+    support_surface.operation = moveit_msgs::msg::CollisionObject::ADD;
+    RCLCPP_INFO(this->get_logger(), "Support surface object created successfully");
+    RCLCPP_INFO(this->get_logger(), "Support surface normal: [%.2f, %.2f, %.2f]", 
+                 normal.x(), normal.y(), normal.z());
+    RCLCPP_INFO(this->get_logger(), "Support surface position: [%.2f, %.2f, %.2f]",
+                 plane_pose.position.x, plane_pose.position.y, plane_pose.position.z);
+    } catch (const std::exception& e) {
+      RCLCPP_ERROR(this->get_logger(), "Error creating support surface object: %s", e.what());
+    } catch (...) {
+      RCLCPP_ERROR(this->get_logger(), "Unknown error occurred while creating support surface object");
+    }
+    return support_surface;
   }
 
   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractClusters(
@@ -426,11 +524,21 @@ class GetPlanningSceneServer : public rclcpp::Node {
       RCLCPP_ERROR(this->get_logger(), "Invalid target_shape: %s", request->target_shape.c_str());
       return;
     }
+    
+    // Store the original point cloud frame
+    std::string original_cloud_frame = latest_point_cloud->header.frame_id;
+    
+    // Transform the point cloud to the target frame for processing
+    auto transformed_cloud = transformPointCloud(latest_point_cloud, target_frame);
+    if (!transformed_cloud) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to transform point cloud to target frame");
+      return;
+    }
 
     // 4. Convert PointCloud2 to PCL point cloud
     //    - Check if conversion was successful and resulting cloud is not empty
     //    - If conversion fails, log an error and return early
-    auto pcl_cloud = convertToPCL(latest_point_cloud);
+    auto pcl_cloud = convertToPCL(transformed_cloud);
     if (!pcl_cloud) {
       RCLCPP_ERROR(this->get_logger(), "Failed to convert PointCloud2 to PCL format");
       return;
@@ -471,6 +579,15 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // 7. Create CollisionObject for support surface
     //    - Check if support surface object creation was successful
     //    - If creation fails, log a warning
+    moveit_msgs::msg::CollisionObject support_surface = createSupportSurfaceObject(plane_coefficients, target_frame);
+    
+    if (support_surface.id.empty()) {
+      RCLCPP_WARN(this->get_logger(), "Support surface object creation failed or resulted in an invalid object");
+    } else {
+      RCLCPP_INFO(this->get_logger(), "Support surface object created successfully");      
+      // Add the support surface to the planning scene
+      response->scene_world.collision_objects.push_back(support_surface);
+    }
 
     // 8. Extract object clusters
     //    - Check if cluster extraction was successful and at least one cluster was found
@@ -544,6 +661,56 @@ class GetPlanningSceneServer : public rclcpp::Node {
 
     // 13. Log appropriate messages for successful operation or any warnings
     RCLCPP_INFO(this->get_logger(), "Service call completed successfully");
+
+    RCLCPP_INFO(this->get_logger(), "Success: %s", response->success ? "true" : "false");
+    RCLCPP_INFO(this->get_logger(), "Target object ID: %s", response->target_object_id.c_str());
+  
+    // Point cloud information
+    RCLCPP_INFO(this->get_logger(), "Full cloud frame ID: %s", response->full_cloud.header.frame_id.c_str());
+    RCLCPP_INFO(this->get_logger(), "Full cloud size: %d x %d", 
+      response->full_cloud.width, response->full_cloud.height);
+  
+    // RGB image information
+    RCLCPP_INFO(this->get_logger(), "RGB image frame ID: %s", response->rgb_image.header.frame_id.c_str());
+    RCLCPP_INFO(this->get_logger(), "RGB image size: %d x %d", 
+      response->rgb_image.width, response->rgb_image.height);
+      
+    // Collision objects information
+    RCLCPP_INFO(this->get_logger(), "Number of collision objects: %zu", 
+      response->scene_world.collision_objects.size());
+    for (const auto& obj : response->scene_world.collision_objects) {
+      RCLCPP_INFO(this->get_logger(), "  Object ID: %s, Frame ID: %s", 
+      obj.id.c_str(), obj.header.frame_id.c_str());
+      RCLCPP_INFO(this->get_logger(), "    Number of primitives: %zu", obj.primitives.size());
+      for (size_t i = 0; i < obj.primitives.size(); ++i) {
+        RCLCPP_INFO(this->get_logger(), "    Primitive type: %d", obj.primitives[i].type);
+        RCLCPP_INFO(this->get_logger(), "    Pose: [%.2f, %.2f, %.2f] [%.2f, %.2f, %.2f, %.2f]",
+          obj.primitive_poses[i].position.x, obj.primitive_poses[i].position.y, obj.primitive_poses[i].position.z,
+          obj.primitive_poses[i].orientation.x, obj.primitive_poses[i].orientation.y, 
+          obj.primitive_poses[i].orientation.z, obj.primitive_poses[i].orientation.w);
+      }
+    }  
+    
+    // Support surface information (if available)
+    auto it = std::find_if(response->scene_world.collision_objects.begin(),
+      response->scene_world.collision_objects.end(),
+      [](const moveit_msgs::msg::CollisionObject& obj) { return obj.id == "support_surface"; });
+    if (it != response->scene_world.collision_objects.end()) {
+      RCLCPP_INFO(this->get_logger(), "Support surface detected:");
+      RCLCPP_INFO(this->get_logger(), "  Frame ID: %s", it->header.frame_id.c_str());
+      if (!it->planes.empty()) {
+        RCLCPP_INFO(this->get_logger(), "  Plane coefficients: [%.3f, %.3f, %.3f, %.3f]",
+          it->planes[0].coef[0], it->planes[0].coef[1], it->planes[0].coef[2], it->planes[0].coef[3]);
+      }
+    } else {
+      RCLCPP_INFO(this->get_logger(), "No support surface detected in the scene.");
+    }
+
+    // Additional processing information
+    RCLCPP_INFO(this->get_logger(), "Original point cloud frame: %s", latest_point_cloud->header.frame_id.c_str());
+    RCLCPP_INFO(this->get_logger(), "Target frame used for processing: %s", target_frame.c_str());
+  
+    RCLCPP_INFO(this->get_logger(), "Service response logging completed.");
   }
 };
 
@@ -554,7 +721,8 @@ int main(int argc, char** argv) {
     rclcpp::NodeOptions options;
     options.automatically_declare_parameters_from_overrides(true);
     
-    auto node = std::make_shared<GetPlanningSceneServer>(options);
+    auto node = std::make_shared<GetPlanningSceneServer>(options)
+    ;
     
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(node);
