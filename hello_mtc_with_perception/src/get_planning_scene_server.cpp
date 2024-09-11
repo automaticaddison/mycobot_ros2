@@ -27,7 +27,7 @@
  *     success (bool): Indicates if the operation was successful
  *
  * @author Addison Sears-Collins
- * @date September 9, 2024
+ * @date September 11, 2024
  */
 
 #include <rclcpp/rclcpp.hpp>
@@ -39,7 +39,9 @@
 #include <moveit_msgs/msg/planning_scene_world.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <shape_msgs/msg/plane.hpp>
+#include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
+#include <pcl/features/normal_3d.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/filter.h>
 #include <pcl/filters/voxel_grid.h>
@@ -85,6 +87,14 @@ class GetPlanningSceneServer : public rclcpp::Node {
   double cluster_tolerance;
   int min_cluster_size;
   int max_cluster_size;
+  
+  // Shape fitting parameters
+  int shape_fitting_max_iterations;
+  double shape_fitting_distance_threshold;
+  double shape_fitting_min_radius;
+  double shape_fitting_max_radius;
+  double shape_fitting_normal_distance_weight;
+  double shape_fitting_normal_search_radius;
 
   // Subscribers
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_sub;
@@ -130,7 +140,15 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("cluster_tolerance", 0.02, "Spatial cluster tolerance in meters");
     declare_parameter("min_cluster_size", 100, "Minimum number of points to consider as a cluster");
     declare_parameter("max_cluster_size", 25000, "Maximum number of points to consider as a cluster");
-
+    
+    // Declare parameters for shape fitting
+    declare_parameter("shape_fitting_max_iterations", 1000, "Maximum iterations for shape fitting RANSAC");
+    declare_parameter("shape_fitting_distance_threshold", 0.01, "Distance threshold for shape fitting (in meters)");
+    declare_parameter("shape_fitting_min_radius", 0.01, "Minimum radius for cylinder and cone fitting (in meters)");
+    declare_parameter("shape_fitting_max_radius", 0.1, "Maximum radius for cylinder and cone fitting (in meters)");
+    declare_parameter("shape_fitting_normal_distance_weight", 0.1, "Normal distance weight for cylinder and cone fitting");
+    declare_parameter("shape_fitting_normal_search_radius", 0.05, "Search radius for normal estimation in shape fitting (in meters)");
+    
     // Get parameter values
     point_cloud_topic = this->get_parameter("point_cloud_topic").as_string();
     rgb_image_topic = this->get_parameter("rgb_image_topic").as_string();
@@ -150,6 +168,14 @@ class GetPlanningSceneServer : public rclcpp::Node {
     cluster_tolerance = this->get_parameter("cluster_tolerance").as_double();
     min_cluster_size = this->get_parameter("min_cluster_size").as_int();
     max_cluster_size = this->get_parameter("max_cluster_size").as_int();
+    
+    // Get shape fitting parameter values
+    shape_fitting_max_iterations = this->get_parameter("shape_fitting_max_iterations").as_int();
+    shape_fitting_distance_threshold = this->get_parameter("shape_fitting_distance_threshold").as_double();
+    shape_fitting_min_radius = this->get_parameter("shape_fitting_min_radius").as_double();
+    shape_fitting_max_radius = this->get_parameter("shape_fitting_max_radius").as_double();
+    shape_fitting_normal_distance_weight = this->get_parameter("shape_fitting_normal_distance_weight").as_double();
+    shape_fitting_normal_search_radius = this->get_parameter("shape_fitting_normal_search_radius").as_double();
   }
 
   void createSubscribers() {
@@ -524,28 +550,246 @@ class GetPlanningSceneServer : public rclcpp::Node {
   }
 
   moveit_msgs::msg::CollisionObject fitShapeToCluster(
-      [[maybe_unused]] pcl::PointCloud<pcl::PointXYZRGB>::Ptr cluster,
-      [[maybe_unused]] const std::string& frame_id,
-      [[maybe_unused]] int index) {
-    // TODO: Implement shape fitting
-    // 1. Attempt to fit multiple primitive shapes (box, sphere, cylinder, cone) using RANSAC
-    //    For each shape type:
-    //    - Set up RANSAC parameters
-    //    - Perform RANSAC fitting
-    //    - Evaluate fit quality (inliers, fitness score)
-    // 2. Compare fitted shapes based on:
-    //    - Number of inliers
-    //    - Fitness score (e.g., sum of squared distances from points to the model)
-    //    - Similarity to target object dimensions (if applicable)
-    // 3. Select the shape with the best fit
-    // 4. Create and return a CollisionObject for the best-fitting shape:
-    //    - Set header.frame_id to the desired frame
-    //    - Set id field to a unique string: "<shape_type>_<number>", e.g., "cylinder_1"
-    //    - Create a shape_msgs::msg::SolidPrimitive with appropriate type and dimensions
-    //    - Set the pose based on the cluster's centroid and orientation
-    //    - Set operation field to ADD (0)
-  
-    return moveit_msgs::msg::CollisionObject();  // Placeholder return
+      const std::shared_ptr<pcl::PointCloud<pcl::PointXYZRGB>>& cluster,
+      const std::string& frame_id,
+      int index) {
+    RCLCPP_INFO(this->get_logger(), "Fitting shape to cluster %d", index);
+
+    moveit_msgs::msg::CollisionObject collision_object;
+    collision_object.header.frame_id = frame_id;
+    collision_object.id = "object_" + std::to_string(index);
+
+    if (cluster->empty()) {
+      RCLCPP_WARN(this->get_logger(), "Empty cluster. Skipping shape fitting.");
+      return collision_object;
+    }
+
+    // Structure to store fitting results
+    struct FitResult {
+      std::string shape_type;
+      std::shared_ptr<pcl::ModelCoefficients> coefficients;
+      std::shared_ptr<pcl::PointIndices> inliers;
+      double fitness_score;
+    };
+
+    std::vector<FitResult> fit_results;
+
+    // 1. Attempt to fit multiple primitive shapes using RANSAC
+    // Box fitting
+    {
+      auto seg = std::make_shared<pcl::SACSegmentation<pcl::PointXYZRGB>>();
+      seg->setOptimizeCoefficients(true);
+      seg->setModelType(pcl::SACMODEL_PARALLEL_PLANE);
+      seg->setMethodType(pcl::SAC_RANSAC);
+      seg->setMaxIterations(shape_fitting_max_iterations);
+      seg->setDistanceThreshold(shape_fitting_distance_threshold);
+
+      FitResult box_fit;
+      box_fit.shape_type = "box";
+      box_fit.coefficients = std::make_shared<pcl::ModelCoefficients>();
+      box_fit.inliers = std::make_shared<pcl::PointIndices>();
+
+      seg->setInputCloud(cluster);
+      seg->segment(*(box_fit.inliers), *(box_fit.coefficients));
+
+      if (box_fit.inliers->indices.size() > 0) {
+        auto box_cloud = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+        pcl::copyPointCloud(*cluster, box_fit.inliers->indices, *box_cloud);
+        box_fit.fitness_score = static_cast<double>(box_fit.inliers->indices.size()) / cluster->size();
+        fit_results.push_back(box_fit);
+      }
+    }
+
+    // Sphere fitting
+    {
+      auto seg = std::make_shared<pcl::SACSegmentation<pcl::PointXYZRGB>>();
+      seg->setOptimizeCoefficients(true);
+      seg->setModelType(pcl::SACMODEL_SPHERE);
+      seg->setMethodType(pcl::SAC_RANSAC);
+      seg->setMaxIterations(shape_fitting_max_iterations);
+      seg->setDistanceThreshold(shape_fitting_distance_threshold);
+
+      FitResult sphere_fit;
+      sphere_fit.shape_type = "sphere";
+      sphere_fit.coefficients = std::make_shared<pcl::ModelCoefficients>();
+      sphere_fit.inliers = std::make_shared<pcl::PointIndices>();
+
+      seg->setInputCloud(cluster);
+      seg->segment(*(sphere_fit.inliers), *(sphere_fit.coefficients));
+
+      if (sphere_fit.inliers->indices.size() > 0) {
+        sphere_fit.fitness_score = static_cast<double>(sphere_fit.inliers->indices.size()) / cluster->size();
+        fit_results.push_back(sphere_fit);
+      }
+    }
+
+    // Cylinder fitting
+    {
+      auto seg = std::make_shared<pcl::SACSegmentationFromNormals<pcl::PointXYZRGB, pcl::Normal>>();
+      seg->setOptimizeCoefficients(true);
+      seg->setModelType(pcl::SACMODEL_CYLINDER);
+      seg->setMethodType(pcl::SAC_RANSAC);
+      seg->setMaxIterations(shape_fitting_max_iterations);
+      seg->setDistanceThreshold(shape_fitting_distance_threshold);
+      seg->setRadiusLimits(shape_fitting_min_radius, shape_fitting_max_radius);
+      seg->setNormalDistanceWeight(shape_fitting_normal_distance_weight);
+
+      auto ne = std::make_shared<pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal>>();
+      auto cloud_normals = std::make_shared<pcl::PointCloud<pcl::Normal>>();
+      auto tree = std::make_shared<pcl::search::KdTree<pcl::PointXYZRGB>>();
+      ne->setSearchMethod(tree);
+      ne->setInputCloud(cluster);
+      ne->setRadiusSearch(shape_fitting_normal_search_radius);
+      ne->compute(*cloud_normals);
+
+      seg->setInputCloud(cluster);
+      seg->setInputNormals(cloud_normals);
+
+      FitResult cylinder_fit;
+      cylinder_fit.shape_type = "cylinder";
+      cylinder_fit.coefficients = std::make_shared<pcl::ModelCoefficients>();
+      cylinder_fit.inliers = std::make_shared<pcl::PointIndices>();
+
+      seg->segment(*(cylinder_fit.inliers), *(cylinder_fit.coefficients));
+
+      if (cylinder_fit.inliers->indices.size() > 0) {
+        cylinder_fit.fitness_score = static_cast<double>(cylinder_fit.inliers->indices.size()) / cluster->size();
+        fit_results.push_back(cylinder_fit);
+      }
+    }
+
+    // Cone fitting
+    {
+      auto seg = std::make_shared<pcl::SACSegmentationFromNormals<pcl::PointXYZRGB, pcl::Normal>>();
+      seg->setOptimizeCoefficients(true);
+      seg->setModelType(pcl::SACMODEL_CONE);
+      seg->setMethodType(pcl::SAC_RANSAC);
+      seg->setMaxIterations(shape_fitting_max_iterations);
+      seg->setDistanceThreshold(shape_fitting_distance_threshold);
+      seg->setRadiusLimits(shape_fitting_min_radius, shape_fitting_max_radius);
+      seg->setNormalDistanceWeight(shape_fitting_normal_distance_weight);
+
+      auto ne = std::make_shared<pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal>>();
+      auto cloud_normals = std::make_shared<pcl::PointCloud<pcl::Normal>>();
+      auto tree = std::make_shared<pcl::search::KdTree<pcl::PointXYZRGB>>();
+      ne->setSearchMethod(tree);
+      ne->setInputCloud(cluster);
+      ne->setRadiusSearch(shape_fitting_normal_search_radius);
+      ne->compute(*cloud_normals);
+
+      seg->setInputCloud(cluster);
+      seg->setInputNormals(cloud_normals);
+
+      FitResult cone_fit;
+      cone_fit.shape_type = "cone";
+      cone_fit.coefficients = std::make_shared<pcl::ModelCoefficients>();
+      cone_fit.inliers = std::make_shared<pcl::PointIndices>();
+
+      seg->segment(*(cone_fit.inliers), *(cone_fit.coefficients));
+
+      if (cone_fit.inliers->indices.size() > 0) {
+        cone_fit.fitness_score = static_cast<double>(cone_fit.inliers->indices.size()) / cluster->size();
+        fit_results.push_back(cone_fit);
+      }
+    }
+
+    // 2. Compare fitted shapes and select the best fit
+    FitResult best_fit;
+    double best_score = 0.0;
+    for (const auto& fit : fit_results) {
+      if (fit.fitness_score > best_score) {
+        best_score = fit.fitness_score;
+        best_fit = fit;
+      }
+    }
+
+    if (best_fit.shape_type.empty()) {
+      RCLCPP_WARN(this->get_logger(), "No shape could be fitted to the cluster.");
+      return collision_object;
+    }
+
+    // 3. Create CollisionObject for the best-fitting shape
+    shape_msgs::msg::SolidPrimitive primitive;
+    geometry_msgs::msg::Pose pose;
+
+    if (best_fit.shape_type == "box") {
+      primitive.type = shape_msgs::msg::SolidPrimitive::BOX;
+      primitive.dimensions.resize(3);
+      // Calculate box dimensions from point cloud
+      Eigen::Vector4f min_pt, max_pt;
+      pcl::getMinMax3D(*cluster, min_pt, max_pt);
+      primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_X] = max_pt[0] - min_pt[0];
+      primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Y] = max_pt[1] - min_pt[1];
+      primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Z] = max_pt[2] - min_pt[2];
+      pose.position.x = (min_pt[0] + max_pt[0]) / 2;
+      pose.position.y = (min_pt[1] + max_pt[1]) / 2;
+      pose.position.z = (min_pt[2] + max_pt[2]) / 2;
+    } else if (best_fit.shape_type == "sphere") {
+      primitive.type = shape_msgs::msg::SolidPrimitive::SPHERE;
+      primitive.dimensions.resize(1);
+      primitive.dimensions[shape_msgs::msg::SolidPrimitive::SPHERE_RADIUS] = best_fit.coefficients->values[3];
+      pose.position.x = best_fit.coefficients->values[0];
+      pose.position.y = best_fit.coefficients->values[1];
+      pose.position.z = best_fit.coefficients->values[2];
+    } else if (best_fit.shape_type == "cylinder") {
+      primitive.type = shape_msgs::msg::SolidPrimitive::CYLINDER;
+      primitive.dimensions.resize(2);
+      Eigen::Vector3f axis(best_fit.coefficients->values[3], best_fit.coefficients->values[4], best_fit.coefficients->values[5]);
+      Eigen::Vector3f center(best_fit.coefficients->values[0], best_fit.coefficients->values[1], best_fit.coefficients->values[2]);
+      primitive.dimensions[shape_msgs::msg::SolidPrimitive::CYLINDER_RADIUS] = best_fit.coefficients->values[6];
+      
+      // Calculate cylinder height
+      Eigen::Vector4f min_pt, max_pt;
+      pcl::getMinMax3D(*cluster, min_pt, max_pt);
+      Eigen::Vector3f min_vec = min_pt.head<3>();
+      Eigen::Vector3f max_vec = max_pt.head<3>();
+      Eigen::Vector3f diff = max_vec - min_vec;
+      primitive.dimensions[shape_msgs::msg::SolidPrimitive::CYLINDER_HEIGHT] = diff.dot(axis.normalized());
+
+      Eigen::Quaternionf quat = Eigen::Quaternionf::FromTwoVectors(Eigen::Vector3f::UnitZ(), axis);
+      pose.position.x = center[0];
+      pose.position.y = center[1];
+      pose.position.z = center[2];
+      pose.orientation.x = quat.x();
+      pose.orientation.y = quat.y();
+      pose.orientation.z = quat.z();
+      pose.orientation.w = quat.w();
+    } else if (best_fit.shape_type == "cone") {
+      primitive.type = shape_msgs::msg::SolidPrimitive::CONE;
+      primitive.dimensions.resize(2);
+      Eigen::Vector3f axis(best_fit.coefficients->values[3], best_fit.coefficients->values[4], best_fit.coefficients->values[5]);
+      Eigen::Vector3f apex(best_fit.coefficients->values[0], best_fit.coefficients->values[1], best_fit.coefficients->values[2]);
+      float opening_angle = best_fit.coefficients->values[6];
+
+      // Calculate cone height and radius
+      Eigen::Vector4f min_pt, max_pt;
+      pcl::getMinMax3D(*cluster, min_pt, max_pt);
+      Eigen::Vector3f min_vec = min_pt.head<3>();
+      Eigen::Vector3f max_vec = max_pt.head<3>();
+      Eigen::Vector3f diff = max_vec - min_vec;
+      float height = diff.dot(axis.normalized());
+      primitive.dimensions[shape_msgs::msg::SolidPrimitive::CONE_HEIGHT] = height;
+      primitive.dimensions[shape_msgs::msg::SolidPrimitive::CONE_RADIUS] = height * std::tan(opening_angle);
+
+      Eigen::Quaternionf quat = Eigen::Quaternionf::FromTwoVectors(Eigen::Vector3f::UnitZ(), axis);
+      pose.position.x = apex[0];
+      pose.position.y = apex[1];
+      pose.position.z = apex[2];
+      pose.orientation.x = quat.x();
+      pose.orientation.y = quat.y();
+      pose.orientation.z = quat.z();
+      pose.orientation.w = quat.w();
+    }
+
+    collision_object.id = best_fit.shape_type + "_" + std::to_string(index);
+    collision_object.primitives.push_back(primitive);
+    collision_object.primitive_poses.push_back(pose);
+    collision_object.operation = moveit_msgs::msg::CollisionObject::ADD;
+
+    RCLCPP_INFO(this->get_logger(), "Fitted %s to cluster %d with score %.2f",
+                best_fit.shape_type.c_str(), index, best_score);
+
+    return collision_object;
   }
 
   std::string identifyTargetObject(
@@ -638,7 +882,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
 
     if (!plane_segmented) {
       RCLCPP_ERROR(this->get_logger(), "Plane segmentation failed");
-      return;
     }
 
     RCLCPP_INFO(this->get_logger(), "Plane segmentation successful");
@@ -668,8 +911,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
     auto clusters = extractClusters(preprocessed_cloud);
     if (clusters.empty()) {
       RCLCPP_ERROR(this->get_logger(), "No object clusters found in the point cloud");
-      response->success = false;  // Set the response success flag to false
-      return;
     }
     RCLCPP_INFO(this->get_logger(), "Successfully extracted %zu object clusters", clusters.size());
     
@@ -677,7 +918,28 @@ class GetPlanningSceneServer : public rclcpp::Node {
     //    - Fit shapes and create CollisionObjects
     //    - Check if shape fitting was successful for at least one object
     //    - If no shapes could be fitted, log a warning
-    // TODO
+    bool any_shape_fitted = false;
+    size_t shapes_fitted = 0;
+    RCLCPP_INFO(this->get_logger(), "Processing %zu clusters for shape fitting", clusters.size());
+
+    for (size_t i = 0; i < clusters.size(); ++i) {
+      auto collision_object = fitShapeToCluster(clusters[i], target_frame, i);
+      if (!collision_object.primitives.empty()) {
+        response->scene_world.collision_objects.push_back(collision_object);
+        any_shape_fitted = true;
+        shapes_fitted++;
+        RCLCPP_INFO(this->get_logger(), "Fitted shape for cluster %zu: %s", i, collision_object.id.c_str());
+      } else {
+        RCLCPP_INFO(this->get_logger(), "Failed to fit shape for cluster %zu", i);
+      }
+    }
+
+    if (!any_shape_fitted) {
+      RCLCPP_WARN(this->get_logger(), "No shapes could be fitted to any of the clusters");
+    } else {
+      RCLCPP_INFO(this->get_logger(), "Successfully fitted shapes to %zu out of %zu clusters", 
+        shapes_fitted, clusters.size());
+    }
     
     // 10. Identify target object
     //    - Check if a target object was successfully identified

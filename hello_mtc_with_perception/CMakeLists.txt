@@ -31,6 +31,7 @@ find_package(PCL REQUIRED COMPONENTS
   kdtree
   search
   segmentation
+  features
 )
 find_package(pcl_conversions REQUIRED)
 find_package(rclcpp REQUIRED)
