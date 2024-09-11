@@ -39,14 +39,17 @@
 #include <moveit_msgs/msg/planning_scene_world.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <shape_msgs/msg/plane.hpp>
+#include <pcl/common/transforms.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/filter.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
-#include <pcl/common/transforms.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl/filters/extract_indices.h>
+#include <pcl/search/kdtree.h>
+#include <pcl/segmentation/extract_clusters.h>
 #include <pcl/segmentation/sac_segmentation.h>
+#include <pcl_conversions/pcl_conversions.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_eigen/tf2_eigen.hpp>
@@ -77,6 +80,11 @@ class GetPlanningSceneServer : public rclcpp::Node {
   int max_plane_segmentation_iterations;
   double plane_segmentation_distance_threshold;
   double plane_segmentation_threshold;
+  
+  // Parameters for cluster extraction 
+  double cluster_tolerance;
+  int min_cluster_size;
+  int max_cluster_size;
 
   // Subscribers
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_sub;
@@ -118,18 +126,30 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("plane_segmentation_distance_threshold", 0.01, "Distance threshold for plane segmentation (in meters)");  
     declare_parameter("plane_segmentation_threshold", 0.1, "Threshold for considering a plane significant (percentage of total points)");
 
+    // Declare parameters for cluster extraction
+    declare_parameter("cluster_tolerance", 0.02, "Spatial cluster tolerance in meters");
+    declare_parameter("min_cluster_size", 100, "Minimum number of points to consider as a cluster");
+    declare_parameter("max_cluster_size", 25000, "Maximum number of points to consider as a cluster");
+
     // Get parameter values
     point_cloud_topic = this->get_parameter("point_cloud_topic").as_string();
     rgb_image_topic = this->get_parameter("rgb_image_topic").as_string();
     target_frame = this->get_parameter("target_frame").as_string();
     
+    // Get parameters for point cloud preprocessing
     voxel_leaf_size = this->get_parameter("voxel_leaf_size").as_double();
     sor_mean_k = this->get_parameter("sor_mean_k").as_int();
     sor_stddev_mult = this->get_parameter("sor_stddev_mult").as_double();
     
+    // Get parameters for plane segmentation
     max_plane_segmentation_iterations = this->get_parameter("max_plane_segmentation_iterations").as_int();
     plane_segmentation_distance_threshold = this->get_parameter("plane_segmentation_distance_threshold").as_double();
     plane_segmentation_threshold = this->get_parameter("plane_segmentation_threshold").as_double();
+
+    // Get cluster extraction parameter values
+    cluster_tolerance = this->get_parameter("cluster_tolerance").as_double();
+    min_cluster_size = this->get_parameter("min_cluster_size").as_int();
+    max_cluster_size = this->get_parameter("max_cluster_size").as_int();
   }
 
   void createSubscribers() {
@@ -437,21 +457,70 @@ class GetPlanningSceneServer : public rclcpp::Node {
   }
 
   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractClusters(
-      [[maybe_unused]] pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud) {
-    // TODO: Implement cluster extraction using Euclidean Cluster Extraction
-    // 1. Set up clustering parameters
-    // 2. Perform clustering
-    // 3. Apply RANSAC iteratively to fit multiple geometric primitives
-    // 4. For each RANSAC iteration:
-    //    - Attempt to fit different shape models (cylinder, sphere, cone, box)
-    //    - Select the best-fitting model based on inliers and fit quality
-    //    - Extract the inliers of the best-fitting model as a distinct object
-    //    - Remove the inliers from the point cloud and repeat the process
-    // 5. Adjust RANSAC parameters based on expected object size and complexity
-    // 6. Continue until a specified percentage of points are assigned to objects or max objects reached
-    //    (e.g., 90% of points assigned or maximum of 10 objects detected)
-    // 7. Return vector of clusters
-    return {};  // Placeholder return
+      const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud) {
+    
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clusters;
+    if (!cloud || cloud->empty()) {
+      RCLCPP_ERROR(this->get_logger(), "Input cloud is null or empty in extractClusters()");
+      return clusters;
+    }
+    RCLCPP_INFO(this->get_logger(), "Starting cluster extraction. Input cloud size: %zu points", cloud->size());
+    try {
+      // Remove NaN and Inf points
+      auto cloud_filtered = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+      std::vector<int> indices;
+      pcl::removeNaNFromPointCloud(*cloud, *cloud_filtered, indices);
+      
+      // Additional check for remaining invalid points
+      auto cloud_valid = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+      cloud_valid->points.reserve(cloud_filtered->points.size());
+      for (const auto& point : cloud_filtered->points) {
+        if (pcl::isFinite(point)) {
+          cloud_valid->points.push_back(point);
+        }
+      }
+      cloud_valid->width = cloud_valid->points.size();
+      cloud_valid->height = 1;
+      cloud_valid->is_dense = true;
+      RCLCPP_INFO(this->get_logger(), "Removed invalid points. Filtered cloud size: %zu points", cloud_valid->size());
+      if (cloud_valid->empty()) {
+        RCLCPP_ERROR(this->get_logger(), "All points were invalid. Cannot proceed with clustering.");
+        return clusters;
+      }
+      // Clustering
+      auto tree = std::make_shared<pcl::search::KdTree<pcl::PointXYZRGB>>();
+      tree->setInputCloud(cloud_valid);
+      std::vector<pcl::PointIndices> cluster_indices;
+      pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
+      ec.setClusterTolerance(cluster_tolerance);
+      ec.setMinClusterSize(min_cluster_size);
+      ec.setMaxClusterSize(max_cluster_size);
+      ec.setSearchMethod(tree);
+      ec.setInputCloud(cloud_valid);
+      ec.extract(cluster_indices);
+      RCLCPP_INFO(this->get_logger(), "Found %zu initial clusters", cluster_indices.size());
+      // Process clusters
+      for (const auto& indices : cluster_indices) {
+        auto cluster = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+        cluster->points.reserve(indices.indices.size());
+        for (const auto& index : indices.indices) {
+          cluster->points.push_back((*cloud_valid)[index]);
+        }
+        cluster->width = static_cast<uint32_t>(cluster->points.size());
+        cluster->height = 1;
+        cluster->is_dense = true;
+        clusters.push_back(cluster);
+        RCLCPP_INFO(this->get_logger(), "Extracted cluster with %zu points", cluster->points.size());
+      }
+      RCLCPP_INFO(this->get_logger(), "Extraction complete. Returning %zu clusters", clusters.size());
+    } catch (const pcl::PCLException& e) {
+      RCLCPP_ERROR(this->get_logger(), "PCL exception caught during cluster extraction: %s", e.what());
+    } catch (const std::exception& e) {
+      RCLCPP_ERROR(this->get_logger(), "Standard exception caught during cluster extraction: %s", e.what());
+    } catch (...) {
+      RCLCPP_ERROR(this->get_logger(), "Unknown exception caught during cluster extraction");
+    }
+    return clusters;
   }
 
   moveit_msgs::msg::CollisionObject fitShapeToCluster(
@@ -460,10 +529,14 @@ class GetPlanningSceneServer : public rclcpp::Node {
       [[maybe_unused]] int index) {
     // TODO: Implement shape fitting
     // 1. Attempt to fit multiple primitive shapes (box, sphere, cylinder, cone) using RANSAC
+    //    For each shape type:
+    //    - Set up RANSAC parameters
+    //    - Perform RANSAC fitting
+    //    - Evaluate fit quality (inliers, fitness score)
     // 2. Compare fitted shapes based on:
     //    - Number of inliers
     //    - Fitness score (e.g., sum of squared distances from points to the model)
-    //    - Similarity to target object dimensions
+    //    - Similarity to target object dimensions (if applicable)
     // 3. Select the shape with the best fit
     // 4. Create and return a CollisionObject for the best-fitting shape:
     //    - Set header.frame_id to the desired frame
@@ -471,6 +544,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     //    - Create a shape_msgs::msg::SolidPrimitive with appropriate type and dimensions
     //    - Set the pose based on the cluster's centroid and orientation
     //    - Set operation field to ADD (0)
+  
     return moveit_msgs::msg::CollisionObject();  // Placeholder return
   }
 
@@ -498,7 +572,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
   void handleService(
       const std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Request> request,
       std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Response> response) {
-    // TODO: Implement the main logic for processing the service request with error handling
     // 1. Initialize response success flag to false
     response->success = false;
 
@@ -592,23 +665,34 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // 8. Extract object clusters
     //    - Check if cluster extraction was successful and at least one cluster was found
     //    - If extraction fails or no clusters found, log an error and return early
-
+    auto clusters = extractClusters(preprocessed_cloud);
+    if (clusters.empty()) {
+      RCLCPP_ERROR(this->get_logger(), "No object clusters found in the point cloud");
+      response->success = false;  // Set the response success flag to false
+      return;
+    }
+    RCLCPP_INFO(this->get_logger(), "Successfully extracted %zu object clusters", clusters.size());
+    
     // 9. For each cluster:
     //    - Fit shapes and create CollisionObjects
     //    - Check if shape fitting was successful for at least one object
     //    - If no shapes could be fitted, log a warning
-
+    // TODO
+    
     // 10. Identify target object
     //    - Check if a target object was successfully identified
     //    - If no target found, log a warning
-
+    // TODO
+    
     // 11. Assemble PlanningSceneWorld
     //    - Check if assembly was successful
     //    - If assembly fails, log an error and return early
-
+    // TODO
+    
     // 12. Fill the response:
     //    - Set scene_world, full_cloud, rgb_image, and target_object_id
     //    - Set success flag to true if all critical steps were successful
+    // TODO
 
     // For now, we'll just create a dummy PlanningSceneWorld with a single object
     moveit_msgs::msg::PlanningSceneWorld scene_world;

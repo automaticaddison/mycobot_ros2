@@ -25,7 +25,13 @@ find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_task_constructor_core REQUIRED)
 find_package(moveit_task_constructor_msgs REQUIRED)
 find_package(mycobot_interfaces REQUIRED)
-find_package(PCL REQUIRED)
+find_package(PCL REQUIRED COMPONENTS
+  common
+  filters
+  kdtree
+  search
+  segmentation
+)
 find_package(pcl_conversions REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -66,7 +72,7 @@ install(
   DESTINATION include/${PROJECT_NAME}
 )
 install(
-  DIRECTORY config launch urdf
+  DIRECTORY config launch scripts urdf 
   DESTINATION share/${PROJECT_NAME}
 )
 
