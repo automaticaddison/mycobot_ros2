@@ -38,6 +38,10 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(shape_msgs REQUIRED)
 find_package(tf2_eigen REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_eigen REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+
 
 # Set dependencies
 set(dependencies
@@ -53,6 +57,7 @@ set(dependencies
   sensor_msgs
   shape_msgs
   tf2_eigen
+  tf2_geometry_msgs
 )
 
 # Include cpp "include" directory to the include path

@@ -36,6 +36,7 @@
 #include <mycobot_interfaces/srv/get_planning_scene.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/msg/image.hpp>
+#include <moveit_msgs/msg/collision_object.hpp>
 #include <moveit_msgs/msg/planning_scene_world.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <shape_msgs/msg/plane.hpp>
@@ -43,7 +44,6 @@
 #include <pcl/common/transforms.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/extract_indices.h>
-#include <pcl/filters/filter.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/point_types.h>
@@ -52,6 +52,7 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_eigen/tf2_eigen.hpp>
@@ -872,14 +873,30 @@ class GetPlanningSceneServer : public rclcpp::Node {
   }
 
   moveit_msgs::msg::PlanningSceneWorld assemblePlanningSceneWorld(
-      [[maybe_unused]] const std::vector<moveit_msgs::msg::CollisionObject>& collision_objects) {
-    // TODO: Implement PlanningSceneWorld assembly
-    // 1. Create a moveit_msgs::msg::PlanningSceneWorld message
-    // 2. Add all CollisionObjects to the collision_objects field of PlanningSceneWorld
-    // 3. Ensure all CollisionObjects are in the desired frame (transform if necessary)
-    return moveit_msgs::msg::PlanningSceneWorld();  // Placeholder return
+    const std::vector<moveit_msgs::msg::CollisionObject>& collision_objects) {
+    
+    RCLCPP_INFO(this->get_logger(), "Assembling PlanningSceneWorld");
+    
+    moveit_msgs::msg::PlanningSceneWorld planning_scene_world;
+    
+    for (const auto& object : collision_objects) {
+      planning_scene_world.collision_objects.push_back(object);
+      
+      if (object.header.frame_id != target_frame) {
+        RCLCPP_WARN(this->get_logger(), 
+                    "CollisionObject '%s' is in frame '%s', not in target frame '%s'. "
+                    "This may cause issues in planning.",
+                    object.id.c_str(), object.header.frame_id.c_str(), target_frame.c_str());
+      }
+    }
+    
+    RCLCPP_INFO(this->get_logger(), 
+                "Assembled PlanningSceneWorld successfully with %zu collision objects", 
+                planning_scene_world.collision_objects.size());
+    
+    return planning_scene_world;
   }
-  
+
   void handleService(
       const std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Request> request,
       std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Response> response) {
@@ -967,7 +984,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     if (support_surface.id.empty()) {
       RCLCPP_WARN(this->get_logger(), "Support surface object creation failed or resulted in an invalid object");
     } else {
-      RCLCPP_INFO(this->get_logger(), "Support surface object created successfully");      
+      RCLCPP_INFO(this->get_logger(), "Adding support surface to the planning scene");      
       // Add the support surface to the planning scene
       response->scene_world.collision_objects.push_back(support_surface);
     }
@@ -1018,72 +1035,35 @@ class GetPlanningSceneServer : public rclcpp::Node {
 
     if (!target_object_id.empty()) {
       response->target_object_id = target_object_id;
-    } else {
-      RCLCPP_WARN(this->get_logger(), "No matching target object found in the scene");
-    }
+    } 
     
     // 11. Assemble PlanningSceneWorld
     //    - Check if assembly was successful
     //    - If assembly fails, log an error and return early
-    // TODO
-    
-    // 12. Fill the response:
-    //    - Set scene_world, full_cloud, rgb_image, and target_object_id
-    //    - Set success flag to true if all critical steps were successful
-    // TODO
-
-    // For now, we'll just create a dummy PlanningSceneWorld with a single object
-    moveit_msgs::msg::PlanningSceneWorld scene_world;
-    moveit_msgs::msg::CollisionObject object;
-    object.id = "dummy_object";
-    object.header.frame_id = target_frame;
-
-    shape_msgs::msg::SolidPrimitive primitive;
-    if (request->target_shape == "cylinder") {
-      primitive.type = shape_msgs::msg::SolidPrimitive::CYLINDER;
-      primitive.dimensions.resize(2);
-      primitive.dimensions[primitive.CYLINDER_HEIGHT] = request->target_dimensions[0];
-      primitive.dimensions[primitive.CYLINDER_RADIUS] = request->target_dimensions[1];
-    } else if (request->target_shape == "box") {
-      primitive.type = shape_msgs::msg::SolidPrimitive::BOX;
-      primitive.dimensions.resize(3);
-      primitive.dimensions[primitive.BOX_X] = request->target_dimensions[0];
-      primitive.dimensions[primitive.BOX_Y] = request->target_dimensions[1];
-      primitive.dimensions[primitive.BOX_Z] = request->target_dimensions[2];
-    } else if (request->target_shape == "sphere") {
-      primitive.type = shape_msgs::msg::SolidPrimitive::SPHERE;
-      primitive.dimensions.resize(1);
-      primitive.dimensions[primitive.SPHERE_RADIUS] = request->target_dimensions[0];
-    } else if (request->target_shape == "cone") {
-      primitive.type = shape_msgs::msg::SolidPrimitive::CONE;
-      primitive.dimensions.resize(2);
-      primitive.dimensions[primitive.CONE_HEIGHT] = request->target_dimensions[0];
-      primitive.dimensions[primitive.CONE_RADIUS] = request->target_dimensions[1];
-    } else {
-      RCLCPP_ERROR(this->get_logger(), "Unsupported shape: %s", request->target_shape.c_str());
+    try {
+      response->scene_world = assemblePlanningSceneWorld(response->scene_world.collision_objects);
+      
+      if (response->scene_world.collision_objects.empty()) {
+        RCLCPP_ERROR(this->get_logger(), "PlanningSceneWorld assembly resulted in no collision objects");
+        return;
+      }
+      
+    } catch (const std::exception& e) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to assemble PlanningSceneWorld: %s", e.what());
+      return;
+    } catch (...) {
+      RCLCPP_ERROR(this->get_logger(), "Unknown error occurred while assembling PlanningSceneWorld");
       return;
     }
-
-    object.primitives.push_back(primitive);
-
-    geometry_msgs::msg::Pose pose;
-    pose.position.x = 0.0;
-    pose.position.y = 0.0;
-    pose.position.z = 0.0;
-    pose.orientation.w = 1.0;
-    object.primitive_poses.push_back(pose);
-
-    scene_world.collision_objects.push_back(object);
-
-    response->scene_world = scene_world;
-    response->full_cloud = *latest_point_cloud;
+    
+    // 12. Fill the rest of the response:
+    //    - Set full_cloud, rgb_image, and target_object_id
+    //    - Set success flag to true if all critical steps were successful
+    response->full_cloud = *latest_point_cloud;  // Use the transformed cloud
     response->rgb_image = *latest_rgb_image;
-    response->target_object_id = "dummy_object";
-    response->success = true;
+    response->target_object_id = target_object_id;
 
-    // 13. Log appropriate messages for successful operation or any warnings
-    RCLCPP_INFO(this->get_logger(), "Service call completed successfully");
-
+  
     RCLCPP_INFO(this->get_logger(), "Success: %s", response->success ? "true" : "false");
     RCLCPP_INFO(this->get_logger(), "Target object ID: %s", response->target_object_id.c_str());
   
@@ -1131,6 +1111,30 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // Additional processing information
     RCLCPP_INFO(this->get_logger(), "Original point cloud frame: %s", latest_point_cloud->header.frame_id.c_str());
     RCLCPP_INFO(this->get_logger(), "Target frame used for processing: %s", target_frame.c_str());
+    
+    // Check if all critical steps were successful
+    if (!response->scene_world.collision_objects.empty() &&
+        !response->full_cloud.data.empty() &&
+        !response->rgb_image.data.empty() &&
+        !response->target_object_id.empty()) {
+      response->success = true;
+      RCLCPP_INFO(this->get_logger(), "Service response filled successfully");
+    } else {
+      response->success = false;
+      RCLCPP_WARN(this->get_logger(), "Service response incomplete or invalid. Here is an explanation:");
+      if (response->scene_world.collision_objects.empty()) {
+        RCLCPP_WARN(this->get_logger(), "  No collision objects in the scene");
+      }
+      if (response->full_cloud.data.empty()) {
+        RCLCPP_WARN(this->get_logger(), "  Empty point cloud data");
+      }
+      if (response->rgb_image.data.empty()) {
+        RCLCPP_WARN(this->get_logger(), "  Empty RGB image data");
+      }
+      if (response->target_object_id.empty()) {
+        RCLCPP_WARN(this->get_logger(), "  The target object was not found in the input point cloud");
+      }
+    }
   
     RCLCPP_INFO(this->get_logger(), "Service response logging completed.");
   }
