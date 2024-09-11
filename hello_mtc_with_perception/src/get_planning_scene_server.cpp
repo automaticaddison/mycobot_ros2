@@ -793,15 +793,82 @@ class GetPlanningSceneServer : public rclcpp::Node {
   }
 
   std::string identifyTargetObject(
-      [[maybe_unused]] const std::vector<moveit_msgs::msg::CollisionObject>& objects,
-      [[maybe_unused]] const std::string& target_shape,
-      [[maybe_unused]] const std::vector<double>& target_dimensions) {
-    // TODO: Implement target object identification
-    // 1. For each fitted shape, compare its dimensions to the input target dimensions
-    // 2. Calculate a similarity score based on the shape type and dimension differences
-    // 3. Select the object with the highest similarity score as the target object
-    // 4. Return the ID of the best matching object
-    return "";  // Placeholder return
+      const std::vector<moveit_msgs::msg::CollisionObject>& objects,
+      const std::string& target_shape,
+      const std::vector<double>& target_dimensions) {
+    
+    double best_score = 0.0;
+    std::string best_match_id;
+
+    for (const auto& object : objects) {
+      if (object.primitives.empty()) continue;
+
+      const auto& primitive = object.primitives[0];
+      double shape_score = 0.0;
+      double dimension_score = 0.0;
+
+      // Compare shape types
+      if ((target_shape == "cylinder" && primitive.type == shape_msgs::msg::SolidPrimitive::CYLINDER) ||
+          (target_shape == "box" && primitive.type == shape_msgs::msg::SolidPrimitive::BOX) ||
+          (target_shape == "sphere" && primitive.type == shape_msgs::msg::SolidPrimitive::SPHERE) ||
+          (target_shape == "cone" && primitive.type == shape_msgs::msg::SolidPrimitive::CONE)) {
+        shape_score = 1.0;
+      } else {
+        continue; // Skip to next object if shape doesn't match
+      }
+
+      // Compare dimensions
+      std::vector<double> object_dimensions;
+      switch (primitive.type) {
+        case shape_msgs::msg::SolidPrimitive::CYLINDER:
+          object_dimensions = {primitive.dimensions[primitive.CYLINDER_HEIGHT],
+                               primitive.dimensions[primitive.CYLINDER_RADIUS]};
+          break;
+        case shape_msgs::msg::SolidPrimitive::BOX:
+          object_dimensions = {primitive.dimensions[primitive.BOX_X],
+                               primitive.dimensions[primitive.BOX_Y],
+                               primitive.dimensions[primitive.BOX_Z]};
+          break;
+        case shape_msgs::msg::SolidPrimitive::SPHERE:
+          object_dimensions = {primitive.dimensions[primitive.SPHERE_RADIUS]};
+          break;
+        case shape_msgs::msg::SolidPrimitive::CONE:
+          object_dimensions = {primitive.dimensions[primitive.CONE_HEIGHT],
+                               primitive.dimensions[primitive.CONE_RADIUS]};
+          break;
+      }
+
+      // Calculate dimension similarity score
+      if (object_dimensions.size() == target_dimensions.size()) {
+        double total_diff = 0.0;
+        for (size_t i = 0; i < object_dimensions.size(); ++i) {
+          double diff = std::abs(object_dimensions[i] - target_dimensions[i]);
+          total_diff += diff / target_dimensions[i]; // Normalize the difference
+        }
+        dimension_score = 1.0 - (total_diff / object_dimensions.size()); // Average normalized similarity
+        dimension_score = std::max(0.0, dimension_score); // Ensure non-negative score
+      }
+
+      // Calculate overall similarity score
+      double similarity_score = 0.7 * shape_score + 0.3 * dimension_score;
+
+      // Update best match if this object has a higher similarity score
+      if (similarity_score > best_score) {
+        best_score = similarity_score;
+        best_match_id = object.id;
+      }
+    }
+
+    if (!best_match_id.empty()) {
+      RCLCPP_INFO(this->get_logger(),
+                  "Best matching object found: %s with similarity score: %.2f",
+                  best_match_id.c_str(), best_score);
+    } else {
+      RCLCPP_WARN(this->get_logger(),
+                  "No matching object found for the target shape and dimensions");
+    }
+
+    return best_match_id;
   }
 
   moveit_msgs::msg::PlanningSceneWorld assemblePlanningSceneWorld(
@@ -944,7 +1011,16 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // 10. Identify target object
     //    - Check if a target object was successfully identified
     //    - If no target found, log a warning
-    // TODO
+    std::string target_object_id = identifyTargetObject(
+      response->scene_world.collision_objects,
+      request->target_shape,
+      request->target_dimensions);
+
+    if (!target_object_id.empty()) {
+      response->target_object_id = target_object_id;
+    } else {
+      RCLCPP_WARN(this->get_logger(), "No matching target object found in the scene");
+    }
     
     // 11. Assemble PlanningSceneWorld
     //    - Check if assembly was successful

@@ -15,7 +15,7 @@ trap 'cleanup' SIGINT;
 ros2 launch hello_mtc_with_perception robot.launch.py use_rviz:=false &
 sleep 10
 ros2 launch hello_mtc_with_perception demo.launch.py &
-sleep 15
-ros2 launch hello_mtc_with_perception run.launch.py &
-sleep 30
-ros2 launch hello_mtc_with_perception get_planning_scene_server.launch.py
+sleep 10
+ros2 launch hello_mtc_with_perception get_planning_scene_server.launch.py &
+sleep 5
+ros2 launch hello_mtc_with_perception run.launch.py
