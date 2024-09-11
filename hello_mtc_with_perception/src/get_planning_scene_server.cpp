@@ -46,6 +46,7 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/search/kdtree.h>
@@ -97,6 +98,10 @@ class GetPlanningSceneServer : public rclcpp::Node {
   double shape_fitting_normal_distance_weight;
   double shape_fitting_normal_search_radius;
 
+  // For output pcd (point cloud) files
+  std::string output_directory;
+  std::string debug_pcd_filename;
+  
   // Subscribers
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_sub;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr rgb_image_sub;
@@ -150,6 +155,11 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("shape_fitting_normal_distance_weight", 0.1, "Normal distance weight for cylinder and cone fitting");
     declare_parameter("shape_fitting_normal_search_radius", 0.05, "Search radius for normal estimation in shape fitting (in meters)");
     
+    // Output directory for point clouds. Useful for debugging
+    // ros2 run pcl_ros pcd_to_pointcloud --ros-args -p file_name:=/home/ubuntu/Downloads/my_debug_cloud.pcd -p frame_id:=base_link -p interval:=1.0
+    declare_parameter("output_directory", "/home/ubuntu/Downloads/", "Directory to save output PCD files");    
+    declare_parameter("debug_pcd_filename", "debug_cloud.pcd", "Filename for debug PCD output");
+    
     // Get parameter values
     point_cloud_topic = this->get_parameter("point_cloud_topic").as_string();
     rgb_image_topic = this->get_parameter("rgb_image_topic").as_string();
@@ -177,6 +187,10 @@ class GetPlanningSceneServer : public rclcpp::Node {
     shape_fitting_max_radius = this->get_parameter("shape_fitting_max_radius").as_double();
     shape_fitting_normal_distance_weight = this->get_parameter("shape_fitting_normal_distance_weight").as_double();
     shape_fitting_normal_search_radius = this->get_parameter("shape_fitting_normal_search_radius").as_double();
+    
+    // Output directory for point cloud files
+    output_directory = this->get_parameter("output_directory").as_string();
+    debug_pcd_filename = this->get_parameter("debug_pcd_filename").as_string();
   }
 
   void createSubscribers() {
@@ -896,6 +910,19 @@ class GetPlanningSceneServer : public rclcpp::Node {
     
     return planning_scene_world;
   }
+  
+  // Used for debugging to see the point cloud at interim steps
+  void savePointCloudToPCD(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud, const std::string& filename) {
+    std::string full_path = output_directory + filename;
+    if (pcl::io::savePCDFileBinary(full_path, *cloud) == -1)
+    {
+      RCLCPP_ERROR(this->get_logger(), "Failed to save %s", full_path.c_str());
+    }
+    else
+    {
+      RCLCPP_INFO(this->get_logger(), "Saved %s with %zu points.", full_path.c_str(), cloud->size());
+    }
+  }  
 
   void handleService(
       const std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Request> request,
@@ -944,6 +971,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
       RCLCPP_ERROR(this->get_logger(), "Failed to convert PointCloud2 to PCL format");
       return;
     }
+    //  Used for debugging TODO
+    savePointCloudToPCD(pcl_cloud, debug_pcd_filename);
 
     // 5. Preprocess the point cloud
     //    - Check if preprocessing was successful and resulting cloud is not empty

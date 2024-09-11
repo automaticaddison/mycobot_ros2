@@ -28,12 +28,14 @@ find_package(mycobot_interfaces REQUIRED)
 find_package(PCL REQUIRED COMPONENTS
   common
   filters
+  io
   kdtree
   search
   segmentation
   features
 )
 find_package(pcl_conversions REQUIRED)
+find_package(pcl_ros REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(shape_msgs REQUIRED)

@@ -11,6 +11,7 @@
 
   <depend>libpcl-all-dev</depend>
   <depend>pcl_conversions</depend>
+  <depend>pcl_ros</depend>
   <depend>moveit_core</depend>
   <depend>moveit_ros_planning_interface</depend>
   <depend>moveit_task_constructor_core</depend>
