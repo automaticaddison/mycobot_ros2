@@ -1,5 +1,5 @@
 # Request
-string target_shape          # e.g., "box", "sphere", "cylinder", "cone"
+string target_shape          # e.g., "box", "sphere", "cylinder"
 float64[] target_dimensions  # Approximate dimensions for identification
 
 ---

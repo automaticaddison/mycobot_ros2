@@ -16,7 +16,7 @@
  *     [rgb_image_topic] (sensor_msgs/Image): Input RGB image data
  *
  * Service Input:
- *     target_shape (string): Target object shape (e.g., "cylinder", "box", "cone", "sphere")
+ *     target_shape (string): Target object shape (e.g., "cylinder", "box", "sphere")
  *     target_dimensions (vector<double>): Approximate target object dimensions
  *
  * Service Output:
@@ -150,9 +150,9 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // Declare parameters for shape fitting
     declare_parameter("shape_fitting_max_iterations", 1000, "Maximum iterations for shape fitting RANSAC");
     declare_parameter("shape_fitting_distance_threshold", 0.01, "Distance threshold for shape fitting (in meters)");
-    declare_parameter("shape_fitting_min_radius", 0.01, "Minimum radius for cylinder and cone fitting (in meters)");
-    declare_parameter("shape_fitting_max_radius", 0.1, "Maximum radius for cylinder and cone fitting (in meters)");
-    declare_parameter("shape_fitting_normal_distance_weight", 0.1, "Normal distance weight for cylinder and cone fitting");
+    declare_parameter("shape_fitting_min_radius", 0.01, "Minimum radius for cylinder fitting (in meters)");
+    declare_parameter("shape_fitting_max_radius", 0.1, "Maximum radius for cylinder fitting (in meters)");
+    declare_parameter("shape_fitting_normal_distance_weight", 0.1, "Normal distance weight for cylinder fitting");
     declare_parameter("shape_fitting_normal_search_radius", 0.05, "Search radius for normal estimation in shape fitting (in meters)");
     
     // Output directory for point clouds. Useful for debugging
@@ -673,41 +673,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
       }
     }
 
-    // Cone fitting
-    {
-      auto seg = std::make_shared<pcl::SACSegmentationFromNormals<pcl::PointXYZRGB, pcl::Normal>>();
-      seg->setOptimizeCoefficients(true);
-      seg->setModelType(pcl::SACMODEL_CONE);
-      seg->setMethodType(pcl::SAC_RANSAC);
-      seg->setMaxIterations(shape_fitting_max_iterations);
-      seg->setDistanceThreshold(shape_fitting_distance_threshold);
-      seg->setRadiusLimits(shape_fitting_min_radius, shape_fitting_max_radius);
-      seg->setNormalDistanceWeight(shape_fitting_normal_distance_weight);
-
-      auto ne = std::make_shared<pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal>>();
-      auto cloud_normals = std::make_shared<pcl::PointCloud<pcl::Normal>>();
-      auto tree = std::make_shared<pcl::search::KdTree<pcl::PointXYZRGB>>();
-      ne->setSearchMethod(tree);
-      ne->setInputCloud(cluster);
-      ne->setRadiusSearch(shape_fitting_normal_search_radius);
-      ne->compute(*cloud_normals);
-
-      seg->setInputCloud(cluster);
-      seg->setInputNormals(cloud_normals);
-
-      FitResult cone_fit;
-      cone_fit.shape_type = "cone";
-      cone_fit.coefficients = std::make_shared<pcl::ModelCoefficients>();
-      cone_fit.inliers = std::make_shared<pcl::PointIndices>();
-
-      seg->segment(*(cone_fit.inliers), *(cone_fit.coefficients));
-
-      if (cone_fit.inliers->indices.size() > 0) {
-        cone_fit.fitness_score = static_cast<double>(cone_fit.inliers->indices.size()) / cluster->size();
-        fit_results.push_back(cone_fit);
-      }
-    }
-
     // 2. Compare fitted shapes and select the best fit
     FitResult best_fit;
     double best_score = 0.0;
@@ -769,32 +734,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
       pose.orientation.y = quat.y();
       pose.orientation.z = quat.z();
       pose.orientation.w = quat.w();
-    } else if (best_fit.shape_type == "cone") {
-      primitive.type = shape_msgs::msg::SolidPrimitive::CONE;
-      primitive.dimensions.resize(2);
-      Eigen::Vector3f axis(best_fit.coefficients->values[3], best_fit.coefficients->values[4], best_fit.coefficients->values[5]);
-      Eigen::Vector3f apex(best_fit.coefficients->values[0], best_fit.coefficients->values[1], best_fit.coefficients->values[2]);
-      float opening_angle = best_fit.coefficients->values[6];
-
-      // Calculate cone height and radius
-      Eigen::Vector4f min_pt, max_pt;
-      pcl::getMinMax3D(*cluster, min_pt, max_pt);
-      Eigen::Vector3f min_vec = min_pt.head<3>();
-      Eigen::Vector3f max_vec = max_pt.head<3>();
-      Eigen::Vector3f diff = max_vec - min_vec;
-      float height = diff.dot(axis.normalized());
-      primitive.dimensions[shape_msgs::msg::SolidPrimitive::CONE_HEIGHT] = height;
-      primitive.dimensions[shape_msgs::msg::SolidPrimitive::CONE_RADIUS] = height * std::tan(opening_angle);
-
-      Eigen::Quaternionf quat = Eigen::Quaternionf::FromTwoVectors(Eigen::Vector3f::UnitZ(), axis);
-      pose.position.x = apex[0];
-      pose.position.y = apex[1];
-      pose.position.z = apex[2];
-      pose.orientation.x = quat.x();
-      pose.orientation.y = quat.y();
-      pose.orientation.z = quat.z();
-      pose.orientation.w = quat.w();
-    }
+    } 
 
     collision_object.id = best_fit.shape_type + "_" + std::to_string(index);
     collision_object.primitives.push_back(primitive);
@@ -825,8 +765,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
       // Compare shape types
       if ((target_shape == "cylinder" && primitive.type == shape_msgs::msg::SolidPrimitive::CYLINDER) ||
           (target_shape == "box" && primitive.type == shape_msgs::msg::SolidPrimitive::BOX) ||
-          (target_shape == "sphere" && primitive.type == shape_msgs::msg::SolidPrimitive::SPHERE) ||
-          (target_shape == "cone" && primitive.type == shape_msgs::msg::SolidPrimitive::CONE)) {
+          (target_shape == "sphere" && primitive.type == shape_msgs::msg::SolidPrimitive::SPHERE)) {
         shape_score = 1.0;
       } else {
         continue; // Skip to next object if shape doesn't match
@@ -846,10 +785,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
           break;
         case shape_msgs::msg::SolidPrimitive::SPHERE:
           object_dimensions = {primitive.dimensions[primitive.SPHERE_RADIUS]};
-          break;
-        case shape_msgs::msg::SolidPrimitive::CONE:
-          object_dimensions = {primitive.dimensions[primitive.CONE_HEIGHT],
-                               primitive.dimensions[primitive.CONE_RADIUS]};
           break;
       }
 
@@ -941,14 +876,14 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // 3. Validate input parameters:
     //    - Check if target_shape is not empty
     //    - Check if target_dimensions is not empty
-    //    - Verify that target_shape is one of the valid shapes (cylinder, box, cone, sphere)
+    //    - Verify that target_shape is one of the valid shapes (cylinder, box, sphere)
     //    - If any validation fails, log an error and return early
     if (request->target_shape.empty() || request->target_dimensions.empty()) {
       RCLCPP_ERROR(this->get_logger(), "Invalid input parameters: target_shape or target_dimensions is empty");
       return;
     }
 
-    const std::vector<std::string> valid_shapes = {"cylinder", "box", "cone", "sphere"};
+    const std::vector<std::string> valid_shapes = {"cylinder", "box", "sphere"};
     if (std::find(valid_shapes.begin(), valid_shapes.end(), request->target_shape) == valid_shapes.end()) {
       RCLCPP_ERROR(this->get_logger(), "Invalid target_shape: %s", request->target_shape.c_str());
       return;
