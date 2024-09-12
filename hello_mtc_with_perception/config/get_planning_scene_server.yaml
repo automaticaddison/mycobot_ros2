@@ -17,9 +17,7 @@ get_planning_scene_server:
     crop_max_z: inf
 
     # Point cloud preprocessing
-    voxel_leaf_size: 0.01
-    sor_mean_k: 50
-    sor_stddev_mult: 1.0
+    voxel_leaf_size: 0.0025
 
     # Plane segmentation
     max_plane_segmentation_iterations: 1000
