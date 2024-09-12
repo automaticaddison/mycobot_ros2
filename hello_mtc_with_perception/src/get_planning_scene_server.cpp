@@ -927,6 +927,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
   void handleService(
       const std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Request> request,
       std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Response> response) {
+      
     // 1. Initialize response success flag to false
     response->success = false;
 
@@ -971,8 +972,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
       RCLCPP_ERROR(this->get_logger(), "Failed to convert PointCloud2 to PCL format");
       return;
     }
-    //  Used for debugging TODO
-    savePointCloudToPCD(pcl_cloud, debug_pcd_filename);
+    //  Used for debugging and visualization
+    savePointCloudToPCD(pcl_cloud, "4_convertToPCL_" + debug_pcd_filename);
 
     // 5. Preprocess the point cloud
     //    - Check if preprocessing was successful and resulting cloud is not empty

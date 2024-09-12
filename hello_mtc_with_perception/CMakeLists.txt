@@ -80,7 +80,7 @@ install(
   DESTINATION include/${PROJECT_NAME}
 )
 install(
-  DIRECTORY config launch scripts urdf 
+  DIRECTORY config launch rviz scripts urdf 
   DESTINATION share/${PROJECT_NAME}
 )
 
