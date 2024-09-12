@@ -43,6 +43,7 @@
 #include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
 #include <pcl/features/normal_3d.h>
+#include <pcl/filters/crop_box.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
@@ -74,6 +75,15 @@ class GetPlanningSceneServer : public rclcpp::Node {
   std::string point_cloud_topic;
   std::string rgb_image_topic;
   std::string target_frame;
+  
+  // Cropping parameters
+  bool enable_cropping;
+  double crop_min_x;
+  double crop_max_x;
+  double crop_min_y;
+  double crop_max_y;
+  double crop_min_z;
+  double crop_max_z;
   
   // Parameters for point cloud preprocessing
   double voxel_leaf_size;
@@ -132,6 +142,15 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("rgb_image_topic", "/camera_head/color/image_raw", "Topic name for incoming RGB image data");
     declare_parameter("target_frame", "base_link", "Target frame for the planning scene");
     
+    // Declare cropping parameters
+    declare_parameter("enable_cropping", true, "Enable or disable point cloud cropping");
+    declare_parameter("crop_min_x", 0.10, "Minimum X value for crop box");
+    declare_parameter("crop_max_x", 0.50, "Maximum X value for crop box");
+    declare_parameter("crop_min_y", 0.00, "Minimum Y value for crop box");
+    declare_parameter("crop_max_y", 0.50, "Maximum Y value for crop box");
+    declare_parameter("crop_min_z", -std::numeric_limits<double>::infinity(), "Minimum Z value for crop box");
+    declare_parameter("crop_max_z", std::numeric_limits<double>::infinity(), "Maximum Z value for crop box");
+    
     // Declare parameters for point cloud preprocessing
     declare_parameter("voxel_leaf_size", 0.01, "Leaf size for VoxelGrid filter (in meters)"); // Decrease if you need more detail in the point cloud
     declare_parameter("sor_mean_k", 50, "Number of neighbors to analyze for each point in StatisticalOutlierRemoval"); // Increase if you need more detail in the point cloud
@@ -164,6 +183,15 @@ class GetPlanningSceneServer : public rclcpp::Node {
     point_cloud_topic = this->get_parameter("point_cloud_topic").as_string();
     rgb_image_topic = this->get_parameter("rgb_image_topic").as_string();
     target_frame = this->get_parameter("target_frame").as_string();
+    
+    // Get parameters for cropping
+    enable_cropping = this->get_parameter("enable_cropping").as_bool();
+    crop_min_x = this->get_parameter("crop_min_x").as_double();
+    crop_max_x = this->get_parameter("crop_max_x").as_double();
+    crop_min_y = this->get_parameter("crop_min_y").as_double();
+    crop_max_y = this->get_parameter("crop_max_y").as_double();
+    crop_min_z = this->get_parameter("crop_min_z").as_double();
+    crop_max_z = this->get_parameter("crop_max_z").as_double();
     
     // Get parameters for point cloud preprocessing
     voxel_leaf_size = this->get_parameter("voxel_leaf_size").as_double();
@@ -243,7 +271,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
 
     if (cloud_msg->header.frame_id == target_frame) {
       RCLCPP_INFO(this->get_logger(), "Point cloud is already in the target frame");
-      return cloud_msg;
     }
 
     geometry_msgs::msg::TransformStamped transform_stamped;
@@ -268,6 +295,25 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // Transform the PCL cloud
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::transformPointCloud(*pcl_cloud, *transformed_cloud, transform_eigen);
+    
+    if (enable_cropping) {
+      RCLCPP_INFO(this->get_logger(), "Cropping is enabled. Applying crop box filter.");
+      
+      // Crop the transformed cloud
+      pcl::CropBox<pcl::PointXYZRGB> crop_box;
+      crop_box.setInputCloud(transformed_cloud);
+    
+      crop_box.setMin(Eigen::Vector4f(crop_min_x, crop_min_y, crop_min_z, 1.0));
+      crop_box.setMax(Eigen::Vector4f(crop_max_x, crop_max_y, crop_max_z, 1.0));
+
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr cropped_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+      crop_box.filter(*cropped_cloud);
+
+      transformed_cloud = cropped_cloud;
+      RCLCPP_INFO(this->get_logger(), "Point cloud cropped. New size: %zu points", transformed_cloud->size());
+    } else {
+      RCLCPP_INFO(this->get_logger(), "Cropping is disabled. Using full transformed point cloud.");
+    }
 
     // Convert back to ROS PointCloud2
     sensor_msgs::msg::PointCloud2::SharedPtr cloud_out(new sensor_msgs::msg::PointCloud2);
@@ -873,11 +919,13 @@ class GetPlanningSceneServer : public rclcpp::Node {
       return;
     }
 
-    // 3. Validate input parameters:
-    //    - Check if target_shape is not empty
-    //    - Check if target_dimensions is not empty
+    // 3. Validate input parameters and prepare point cloud:
+    //    - Check if target_shape and target_dimensions are not empty
     //    - Verify that target_shape is one of the valid shapes (cylinder, box, sphere)
-    //    - If any validation fails, log an error and return early
+    //    - Store the original point cloud frame for reference
+    //    - Transform the point cloud to the target frame for consistent processing
+    //    - Apply optional clipping (cropping) to the point cloud based on parameters
+    //    - If any validation or transformation fails, log an error and return early
     if (request->target_shape.empty() || request->target_dimensions.empty()) {
       RCLCPP_ERROR(this->get_logger(), "Invalid input parameters: target_shape or target_dimensions is empty");
       return;
