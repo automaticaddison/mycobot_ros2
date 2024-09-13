@@ -35,7 +35,7 @@
         <color rgba="0.7 0.7 0.7 1.0"/>
       </material>
       <geometry>
-        <box size="0.15 0.10 0.04" />
+        <box size="0.15 0.10 0.06" />
       </geometry>
     </visual>
     <collision name="holder">
@@ -47,7 +47,7 @@
     <collision name="base">
       <origin xyz="0 0 0.0" rpy="0 0 0" />
       <geometry>
-        <box size="0.15 0.10 0.04" />
+        <box size="0.15 0.10 0.06" />
       </geometry>
     </collision>
   </link>

@@ -46,13 +46,6 @@
       </uri>
     </include>
     
-    <!-- Include the table model -->
-    <include>
-      <uri>model://hello_mtc_with_perception_table</uri>
-      <name>hello_mtc_with_perception_table</name>
-      <pose>0.22 0.12 0.0 0 0 0</pose>
-    </include>
-    
     <!-- Include the cylinder model -->
     <include>
       <uri>model://hello_mtc_with_perception_cylinder</uri>
@@ -61,21 +54,25 @@
     </include>  
     
     <!-- Include the other objects -->
-
    
     <include>
       <uri>model://mustard</uri>
-      <pose>0.7 0.35 0.08 0 0 0</pose>
+      <pose>0.7 0.15 0.08 0 0 0</pose>
     </include>
-
+    
     <include>
       <uri>model://cheezit_big_original</uri>
-      <pose>0.64 0.43 0.17 1.571 0 0</pose>
+      <pose>0.64 0.23 0.17 1.571 0 0</pose>
+    </include>
+    
+    <include>
+      <uri>model://cardboard_box</uri>
+      <pose>0.65 0.60 0.3 0 0 0.5</pose>
     </include>
     
     <include>
       <uri>model://coke_can</uri>
-      <pose>0.5 0.35 0.15 0 0 2.3</pose>
+      <pose>0.5 0.15 0.15 0 0 2.3</pose>
     </include>
     
     <!-- Define scene properties -->
