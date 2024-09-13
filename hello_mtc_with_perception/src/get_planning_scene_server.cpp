@@ -85,9 +85,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
   double crop_min_z;
   double crop_max_z;
   
-  // Parameters for point cloud preprocessing
-  double voxel_leaf_size;
-  
+ 
   // Parameters for plane segmentation
   int max_plane_segmentation_iterations;
   double plane_segmentation_distance_threshold;
@@ -143,14 +141,11 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // Declare cropping parameters
     declare_parameter("enable_cropping", true, "Enable or disable point cloud cropping");
     declare_parameter("crop_min_x", 0.10, "Minimum X value for crop box");
-    declare_parameter("crop_max_x", 0.50, "Maximum X value for crop box");
+    declare_parameter("crop_max_x", 1.1, "Maximum X value for crop box");
     declare_parameter("crop_min_y", 0.00, "Minimum Y value for crop box");
-    declare_parameter("crop_max_y", 0.50, "Maximum Y value for crop box");
+    declare_parameter("crop_max_y", 0.90, "Maximum Y value for crop box");
     declare_parameter("crop_min_z", -std::numeric_limits<double>::infinity(), "Minimum Z value for crop box");
     declare_parameter("crop_max_z", std::numeric_limits<double>::infinity(), "Maximum Z value for crop box");
-    
-    // Declare parameters for point cloud preprocessing
-    declare_parameter("voxel_leaf_size", 0.0025, "Leaf size for VoxelGrid filter (in meters)"); // Decrease if you need more detail in the point cloud
     
     // Declare parameters for plane segmentation
     declare_parameter("max_plane_segmentation_iterations", 1000, "Maximum iterations for plane segmentation RANSAC");
@@ -188,9 +183,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
     crop_max_y = this->get_parameter("crop_max_y").as_double();
     crop_min_z = this->get_parameter("crop_min_z").as_double();
     crop_max_z = this->get_parameter("crop_max_z").as_double();
-    
-    // Get parameters for point cloud preprocessing
-    voxel_leaf_size = this->get_parameter("voxel_leaf_size").as_double();
     
     // Get parameters for plane segmentation
     max_plane_segmentation_iterations = this->get_parameter("max_plane_segmentation_iterations").as_int();
@@ -358,46 +350,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
     return pcl_cloud;
   }
 
-  std::shared_ptr<pcl::PointCloud<pcl::PointXYZRGB>> preprocessPointCloud(
-      const std::shared_ptr<pcl::PointCloud<pcl::PointXYZRGB>>& cloud) {
-    
-    // Error handling for input cloud
-    if (!cloud || cloud->empty()) {
-      RCLCPP_ERROR(this->get_logger(), "Input point cloud is null or empty");
-      return nullptr;
-    }
-
-    RCLCPP_INFO(this->get_logger(), "Starting point cloud preprocessing. Input cloud size: %zu points", cloud->size());
-
-    auto cloud_filtered = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
-
-    try {
-      // Apply VoxelGrid filter for downsampling
-      pcl::VoxelGrid<pcl::PointXYZRGB> vox;
-      vox.setInputCloud(cloud);
-      vox.setLeafSize(voxel_leaf_size, voxel_leaf_size, voxel_leaf_size);
-      vox.filter(*cloud_filtered);
-
-      RCLCPP_INFO(this->get_logger(), "VoxelGrid filter applied. Cloud size after downsampling: %zu points", cloud_filtered->size());
-
-      if (cloud_filtered->empty()) {
-        RCLCPP_WARN(this->get_logger(), "VoxelGrid filter resulted in an empty cloud. Adjusting leaf size may be necessary.");
-        return nullptr;
-      }
-      
-      return cloud_filtered;
-      
-    } catch (const pcl::PCLException& e) {
-      RCLCPP_ERROR(this->get_logger(), "PCL exception caught during preprocessing: %s", e.what());
-    } catch (const std::exception& e) {
-      RCLCPP_ERROR(this->get_logger(), "Standard exception caught during preprocessing: %s", e.what());
-    } catch (...) {
-      RCLCPP_ERROR(this->get_logger(), "Unknown exception caught during preprocessing");
-    }
-
-    return nullptr;
-  }
-  
   // TODO
   bool segmentPlane(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
                     pcl::ModelCoefficients::Ptr coefficients,
@@ -896,29 +848,15 @@ class GetPlanningSceneServer : public rclcpp::Node {
     //  Used for debugging and visualization
     savePointCloudToPCD(pcl_cloud, "4_convertToPCL_" + debug_pcd_filename);
 
-    // 5. Preprocess the point cloud
-    //    - Apply VoxelGrid filter for downsampling
-    //    - Check if preprocessing was successful and resulting cloud is not empty
-    //    - Calculate and log the point reduction percentage
-    //    - If preprocessing fails or results in an empty cloud, log an error and return early
-    auto preprocessed_cloud = preprocessPointCloud(pcl_cloud);
-    if (!preprocessed_cloud || preprocessed_cloud->empty()) {
-      RCLCPP_ERROR(this->get_logger(), "Point cloud preprocessing failed or resulted in an empty cloud");
-      return;
-    }
-    RCLCPP_INFO(this->get_logger(), "Point cloud preprocessing successful. Preprocessed cloud size: %zu points", preprocessed_cloud->size());
-    
-    //  Used for debugging and visualization
-    savePointCloudToPCD(preprocessed_cloud, "5_preprocessPointCloud_" + debug_pcd_filename);
-
     // TODO
+    
     // 6. Perform plane segmentation
     //    - Check if segmentation was successful
     //    - If segmentation fails, log an error and return early
     pcl::ModelCoefficients::Ptr plane_coefficients(new pcl::ModelCoefficients);
     pcl::PointIndices::Ptr plane_inliers(new pcl::PointIndices);
 
-    bool plane_segmented = segmentPlane(preprocessed_cloud, plane_coefficients, plane_inliers);
+    bool plane_segmented = segmentPlane(pcl_cloud, plane_coefficients, plane_inliers);
 
     if (!plane_segmented) {
       RCLCPP_ERROR(this->get_logger(), "Plane segmentation failed");
@@ -927,7 +865,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     RCLCPP_INFO(this->get_logger(), "Plane segmentation successful");
 
     // Check if the segmented plane is significant enough
-    double plane_percentage = static_cast<double>(plane_inliers->indices.size()) / preprocessed_cloud->size();
+    double plane_percentage = static_cast<double>(plane_inliers->indices.size()) / pcl_cloud->size();
     if (plane_percentage < plane_segmentation_threshold) { 
       RCLCPP_WARN(this->get_logger(), "Segmented plane is small (%.2f%% of points). It might not be the dominant plane.", plane_percentage * 100);
     }
@@ -948,7 +886,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // 8. Extract object clusters
     //    - Check if cluster extraction was successful and at least one cluster was found
     //    - If extraction fails or no clusters found, log an error and return early
-    auto clusters = extractClusters(preprocessed_cloud);
+    auto clusters = extractClusters(pcl_cloud);
     if (clusters.empty()) {
       RCLCPP_ERROR(this->get_logger(), "No object clusters found in the point cloud");
     }

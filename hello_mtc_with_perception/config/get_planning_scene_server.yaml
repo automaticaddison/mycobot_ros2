@@ -10,14 +10,11 @@ get_planning_scene_server:
     # Cropping settings
     enable_cropping: true
     crop_min_x: 0.10
-    crop_max_x: 0.50
+    crop_max_x: 1.1
     crop_min_y: 0.00
-    crop_max_y: 0.50
+    crop_max_y: 0.90
     crop_min_z: -inf
     crop_max_z: inf
-
-    # Point cloud preprocessing
-    voxel_leaf_size: 0.0025
 
     # Plane segmentation
     max_plane_segmentation_iterations: 1000

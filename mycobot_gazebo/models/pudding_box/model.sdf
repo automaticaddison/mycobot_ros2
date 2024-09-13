@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<sdf version="1.7">
+	<model name="pudding_box">
+		<link name="base">
+			<visual name="pudding_box_visual">
+				<pose>0.55 -0.1 0.395 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<scale>1 1 1</scale>
+						<uri>meshes/textured.obj</uri>
+					</mesh>
+				</geometry>
+			</visual>
+		</link>
+	</model>
+</sdf>

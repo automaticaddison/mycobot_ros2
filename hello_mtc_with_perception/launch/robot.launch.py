@@ -26,7 +26,7 @@ def generate_launch_description():
   ros_gz_bridge_config_file_path = 'config/ros_gz_bridge.yaml'
   rviz_config_file_path = 'rviz/mycobot_280_arduino_view_description.rviz'
   urdf_file_path = 'urdf/mycobot_280.urdf.xacro'
-  world_file_path = 'worlds/cylinder.world' 
+  world_file_path = 'worlds/cylinder_perception.world' 
 
   # Set the path to different files and folders.  
   pkg_ros_gz_sim = FindPackageShare(package='ros_gz_sim').find('ros_gz_sim')  

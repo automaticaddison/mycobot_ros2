@@ -1,0 +1,51 @@
+<?xml version="1.0" ?>
+<sdf version="1.4">
+  <model name="cheezit_big_original">
+    <link name="cheezit_big_original_link">
+      <inertial>
+        <pose>0.0 0.0 0.0 0 0 0</pose>
+        <mass>0.5</mass>
+<!--         <inertia>
+          <ixx>0.0017708</ixx>
+          <ixy>0.001</ixy>
+          <ixz>0.001</ixz>
+          <izz>0.00104</izz>
+          <iyz>0.001</iyz>
+          <iyy>0.02604</iyy>
+        </inertia> -->
+      </inertial>
+
+      <visual name="cheezit_big_original_visual">
+        <pose>0 0 0 0 0 0 </pose>
+        <geometry>
+          <mesh>
+            <uri>model://cheezit_big_original/meshes/cheezit_big_original.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+
+
+      <collision name="cheezit_big_original_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://cheezit_big_original/meshes/cheezit_big_original.dae</uri>
+          </mesh>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
+              <fdir1>0.0 0.0 0.0</fdir1>
+              <slip1>1.0</slip1>
+              <slip2>1.0</slip2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+
+    </link>
+    <static>false</static>
+  </model>
+</sdf>
