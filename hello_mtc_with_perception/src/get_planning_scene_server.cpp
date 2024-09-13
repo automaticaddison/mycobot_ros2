@@ -16,7 +16,7 @@
  *     [rgb_image_topic] (sensor_msgs/Image): Input RGB image data
  *
  * Service Input:
- *     target_shape (string): Target object shape (e.g., "cylinder", "box", "sphere")
+ *     target_shape (string): Target object shape (e.g., "cylinder", "box")
  *     target_dimensions (vector<double>): Approximate target object dimensions
  *
  * Service Output:
@@ -631,29 +631,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
       }
     }
 
-    // Sphere fitting
-    {
-      auto seg = std::make_shared<pcl::SACSegmentation<pcl::PointXYZRGB>>();
-      seg->setOptimizeCoefficients(true);
-      seg->setModelType(pcl::SACMODEL_SPHERE);
-      seg->setMethodType(pcl::SAC_RANSAC);
-      seg->setMaxIterations(shape_fitting_max_iterations);
-      seg->setDistanceThreshold(shape_fitting_distance_threshold);
-
-      FitResult sphere_fit;
-      sphere_fit.shape_type = "sphere";
-      sphere_fit.coefficients = std::make_shared<pcl::ModelCoefficients>();
-      sphere_fit.inliers = std::make_shared<pcl::PointIndices>();
-
-      seg->setInputCloud(cluster);
-      seg->segment(*(sphere_fit.inliers), *(sphere_fit.coefficients));
-
-      if (sphere_fit.inliers->indices.size() > 0) {
-        sphere_fit.fitness_score = static_cast<double>(sphere_fit.inliers->indices.size()) / cluster->size();
-        fit_results.push_back(sphere_fit);
-      }
-    }
-
     // Cylinder fitting
     {
       auto seg = std::make_shared<pcl::SACSegmentationFromNormals<pcl::PointXYZRGB, pcl::Normal>>();
@@ -720,13 +697,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
       pose.position.x = (min_pt[0] + max_pt[0]) / 2;
       pose.position.y = (min_pt[1] + max_pt[1]) / 2;
       pose.position.z = (min_pt[2] + max_pt[2]) / 2;
-    } else if (best_fit.shape_type == "sphere") {
-      primitive.type = shape_msgs::msg::SolidPrimitive::SPHERE;
-      primitive.dimensions.resize(1);
-      primitive.dimensions[shape_msgs::msg::SolidPrimitive::SPHERE_RADIUS] = best_fit.coefficients->values[3];
-      pose.position.x = best_fit.coefficients->values[0];
-      pose.position.y = best_fit.coefficients->values[1];
-      pose.position.z = best_fit.coefficients->values[2];
     } else if (best_fit.shape_type == "cylinder") {
       primitive.type = shape_msgs::msg::SolidPrimitive::CYLINDER;
       primitive.dimensions.resize(2);
@@ -780,8 +750,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
 
       // Compare shape types
       if ((target_shape == "cylinder" && primitive.type == shape_msgs::msg::SolidPrimitive::CYLINDER) ||
-          (target_shape == "box" && primitive.type == shape_msgs::msg::SolidPrimitive::BOX) ||
-          (target_shape == "sphere" && primitive.type == shape_msgs::msg::SolidPrimitive::SPHERE)) {
+          (target_shape == "box" && primitive.type == shape_msgs::msg::SolidPrimitive::BOX)) {
         shape_score = 1.0;
       } else {
         continue; // Skip to next object if shape doesn't match
@@ -799,9 +768,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
                                primitive.dimensions[primitive.BOX_Y],
                                primitive.dimensions[primitive.BOX_Z]};
           break;
-        case shape_msgs::msg::SolidPrimitive::SPHERE:
-          object_dimensions = {primitive.dimensions[primitive.SPHERE_RADIUS]};
-          break;
+        default:
+          continue; // Skip to next object if shape is neither cylinder nor box
       }
 
       // Calculate dimension similarity score
@@ -891,7 +859,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
 
     // 3. Validate input parameters and prepare point cloud:
     //    - Check if target_shape and target_dimensions are not empty
-    //    - Verify that target_shape is one of the valid shapes (cylinder, box, sphere)
+    //    - Verify that target_shape is one of the valid shapes (cylinder, box)
     //    - Store the original point cloud frame for reference
     //    - Transform the point cloud to the target frame for consistent processing
     //    - Apply optional clipping (cropping) to the point cloud based on parameters
@@ -901,7 +869,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
       return;
     }
 
-    const std::vector<std::string> valid_shapes = {"cylinder", "box", "sphere"};
+    const std::vector<std::string> valid_shapes = {"cylinder", "box"};
     if (std::find(valid_shapes.begin(), valid_shapes.end(), request->target_shape) == valid_shapes.end()) {
       RCLCPP_ERROR(this->get_logger(), "Invalid target_shape: %s", request->target_shape.c_str());
       return;
