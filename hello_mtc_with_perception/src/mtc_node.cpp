@@ -7,7 +7,7 @@
  * to pick up an object from one location and place it in another.
  *
  * @author Addison Sears-Collins
- * @date August 26, 2024
+ * @date September 14, 2024
  */
  
 // Include necessary ROS 2 and MoveIt headers
@@ -97,7 +97,7 @@ MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
 
   // General parameters
   declare_parameter("execute", false, "Whether to execute the planned task");
-  declare_parameter("max_solutions", 10, "Maximum number of solutions to compute");
+  declare_parameter("max_solutions", 25, "Maximum number of solutions to compute");
   declare_parameter("spawn_table", true, "Whether to spawn a table in the planning scene");
 
   // Controller parameters
@@ -140,16 +140,16 @@ MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
   declare_parameter("lower_object_max_dist", 0.4, "Maximum distance for lowering object");
 
   // Timeout parameters
-  declare_parameter("move_to_pick_timeout", 5.0, "Timeout for move to pick stage (seconds)");
+  declare_parameter("move_to_pick_timeout", 10.0, "Timeout for move to pick stage (seconds)");
   declare_parameter("move_to_place_timeout", 10.0, "Timeout for move to place stage (seconds)");
 
   // Grasp generation parameters
-  declare_parameter("grasp_pose_angle_delta", 0.2618, "Angular resolution for sampling grasp poses (radians)");
-  declare_parameter("grasp_pose_max_ik_solutions", 8, "Maximum number of IK solutions for grasp pose generation");
-  declare_parameter("grasp_pose_min_solution_distance", 1.0, "Minimum distance in joint-space units between IK solutions for grasp pose");
+  declare_parameter("grasp_pose_angle_delta", 0.1309, "Angular resolution for sampling grasp poses (radians)");
+  declare_parameter("grasp_pose_max_ik_solutions", 10, "Maximum number of IK solutions for grasp pose generation");
+  declare_parameter("grasp_pose_min_solution_distance", 0.8, "Minimum distance in joint-space units between IK solutions for grasp pose");
 
   // Place generation parameters
-  declare_parameter("place_pose_max_ik_solutions", 2, "Maximum number of IK solutions for place pose generation");
+  declare_parameter("place_pose_max_ik_solutions", 10, "Maximum number of IK solutions for place pose generation");
 
   // Cartesian planner parameters
   declare_parameter("cartesian_max_velocity_scaling", 1.0, "Max velocity scaling factor for Cartesian planner");
@@ -218,8 +218,7 @@ void MTCTaskNode::setupPlanningScene()
 
   // Create a cylinder collision object
   geometry_msgs::msg::Pose cylinder_pose = vectorToPose(object_pose_param);
-  auto place_pose_z_offset_factor = this->get_parameter("place_pose_z_offset_factor").as_double();
-  cylinder_pose.position.z += place_pose_z_offset_factor * object_dimensions[0]; // Adjust z position before creating the object
+   cylinder_pose.position.z += 0.50 * object_dimensions[0]; 
   moveit_msgs::msg::CollisionObject cylinder_object;
   cylinder_object.id = object_name;
   cylinder_object.header.frame_id = object_reference_frame;
