@@ -98,7 +98,7 @@ MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
   // General parameters
   declare_parameter("execute", false, "Whether to execute the planned task");
   declare_parameter("max_solutions", 25, "Maximum number of solutions to compute");
-  declare_parameter("spawn_table", true, "Whether to spawn a table in the planning scene");
+  declare_parameter("spawn_table", false, "Whether to spawn a table in the planning scene");
 
   // Controller parameters
   declare_parameter("controller_names", std::vector<std::string>{"arm_controller", "grip_action_controller"}, "Names of the controllers to use");
