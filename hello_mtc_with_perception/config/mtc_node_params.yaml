@@ -3,7 +3,7 @@ mtc_node:
     # General parameters
     execute: false
     max_solutions: 25
-    spawn_table: true
+    spawn_table: false
 
     # Controller parameters
     controller_names: 
@@ -36,7 +36,7 @@ mtc_node:
     # Grasp and place parameters
     grasp_frame_transform: [0.0, 0.0, 0.096, 1.5708, 0.0, 0.0]
     place_pose: [-0.183, -0.14, 0.0, 0.0, 0.0, 0.0]
-    place_surface_offset: -0.03 
+    place_surface_offset: 0.0 
 
     # Motion planning parameters
     approach_object_min_dist: 0.0015
