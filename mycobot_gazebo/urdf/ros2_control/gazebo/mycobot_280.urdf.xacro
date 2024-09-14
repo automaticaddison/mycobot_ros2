@@ -5,7 +5,7 @@
 
 	<link name="world"/>
 
-	<xacro:property name="effort" value="5.0"/>
+	<xacro:property name="effort" value="56.0"/>
 	<xacro:property name="velocity" value="2.792527"/>
 
 	<link name="base_link">
