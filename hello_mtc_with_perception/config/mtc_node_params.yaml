@@ -3,7 +3,6 @@ mtc_node:
     # General parameters
     execute: false
     max_solutions: 25
-    spawn_table: false
 
     # Controller parameters
     controller_names: 
@@ -20,12 +19,6 @@ mtc_node:
 
     # Scene frame parameters
     world_frame: "base_link"
-
-    # Table parameters
-    table_name: "table"
-    table_reference_frame: "base_link"
-    table_dimensions: [0.10, 0.20, 0.03] 
-    table_pose: [0.22, 0.12, 0.0, 0.0, 0.0, 0.0]
 
     # Object parameters
     object_name: "object"
