@@ -1,5 +1,5 @@
 # Author: Addison Sears-Collins
-# Date: July 30, 2024
+# Date: September 14, 2024
 # Description: Launch a robotic arm in Gazebo 
 import os
 from launch import LaunchDescription
@@ -100,7 +100,7 @@ def generate_launch_description():
     
   declare_z_cmd = DeclareLaunchArgument(
     name='z',
-    default_value='0.03',
+    default_value='0.0',
     description='z component of initial position, meters')
     
   declare_roll_cmd = DeclareLaunchArgument(
