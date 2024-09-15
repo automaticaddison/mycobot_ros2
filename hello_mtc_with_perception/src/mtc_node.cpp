@@ -122,7 +122,6 @@ MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
   // Grasp and place parameters
   declare_parameter("grasp_frame_transform", std::vector<double>{0.0, 0.0, 0.096, 1.5708, 0.0, 0.0}, "Transform from gripper frame to grasp frame [x, y, z, roll, pitch, yaw]");
   declare_parameter("place_pose", std::vector<double>{-0.183, -0.14, 0.0, 0.0, 0.0, 0.0}, "Pose where the object should be placed [x, y, z, roll, pitch, yaw]");
-  declare_parameter("place_surface_offset", -0.03, "Offset from the surface when placing the object");
 
   // Motion planning parameters
   declare_parameter("approach_object_min_dist", 0.0015, "Minimum approach distance to the object");
@@ -298,7 +297,6 @@ mtc::Task MTCTaskNode::createTask()
   // Grasp and place parameters
   auto grasp_frame_transform = this->get_parameter("grasp_frame_transform").as_double_array();
   auto place_pose = this->get_parameter("place_pose").as_double_array();
-  auto place_surface_offset = this->get_parameter("place_surface_offset").as_double();
 
   // Motion planning parameters
   auto approach_object_min_dist = this->get_parameter("approach_object_min_dist").as_double();
@@ -612,7 +610,7 @@ mtc::Task MTCTaskNode::createTask()
       geometry_msgs::msg::PoseStamped target_pose_msg;
       target_pose_msg.header.frame_id = world_frame;
       target_pose_msg.pose = vectorToPose(place_pose);
-      target_pose_msg.pose.position.z += place_pose_z_offset_factor * object_dimensions[0] + place_surface_offset;
+      target_pose_msg.pose.position.z += place_pose_z_offset_factor * object_dimensions[0];
       stage->setPose(target_pose_msg);
       stage->setMonitoredStage(attach_object_stage);  // hook into successful pick solutions
 
