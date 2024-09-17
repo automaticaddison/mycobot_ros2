@@ -1,52 +1,31 @@
 cmake_minimum_required(VERSION 3.8)
+
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
+
 project(hello_mtc_with_perception)
 
-# Set the build type if not specified
+# Set build type and C++ standard
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Add compiler warnings
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
+# Find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(generate_parameter_library REQUIRED)
 find_package(moveit_common REQUIRED)
 moveit_package()
-find_package(moveit_core REQUIRED)
-find_package(moveit_ros_planning REQUIRED)
-find_package(moveit_ros_planning_interface REQUIRED)
-find_package(moveit_task_constructor_core REQUIRED)
-find_package(moveit_task_constructor_msgs REQUIRED)
-find_package(mycobot_interfaces REQUIRED)
-find_package(PCL REQUIRED COMPONENTS
-  common
-  filters
-  io
-  kdtree
-  search
-  segmentation
-  features
-)
-find_package(pcl_conversions REQUIRED)
-find_package(pcl_ros REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(shape_msgs REQUIRED)
-find_package(tf2_eigen REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-find_package(tf2_eigen REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
 
-
-# Set dependencies
-set(dependencies
+set(REQUIRED_PACKAGES
   moveit_core
   moveit_ros_planning
   moveit_ros_planning_interface
@@ -55,6 +34,7 @@ set(dependencies
   mycobot_interfaces
   PCL
   pcl_conversions
+  pcl_ros
   rclcpp
   sensor_msgs
   shape_msgs
@@ -62,49 +42,50 @@ set(dependencies
   tf2_geometry_msgs
 )
 
-# Include cpp "include" directory to the include path
-include_directories(
-  include
+foreach(package ${REQUIRED_PACKAGES})
+  find_package(${package} REQUIRED)
+endforeach()
+
+# Find PCL components
+find_package(PCL REQUIRED COMPONENTS common filters io kdtree search segmentation features)
+
+# Set dependencies
+set(dependencies ${REQUIRED_PACKAGES})
+
+# Include directories
+include_directories(include ${PCL_INCLUDE_DIRS})
+
+# Define targets and link libraries
+set(TARGETS mtc_node get_planning_scene_server)
+foreach(target ${TARGETS})
+  add_executable(${target} src/${target}.cpp)
+  ament_target_dependencies(${target} ${dependencies})
+endforeach()
+
+# Create plane_segmentation as a shared library
+add_library(plane_segmentation SHARED src/plane_segmentation.cpp)
+target_link_libraries(plane_segmentation ${PCL_LIBRARIES})
+target_include_directories(plane_segmentation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+ament_target_dependencies(plane_segmentation ${dependencies})
+
+# Install targets
+install(TARGETS ${TARGETS} plane_segmentation
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
 )
 
-# Create Cpp executables
-add_executable(mtc_node src/mtc_node.cpp)
-ament_target_dependencies(mtc_node ${dependencies})
+# Install directories
+install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
+install(DIRECTORY config launch rviz scripts urdf DESTINATION share/${PROJECT_NAME})
 
-add_executable(get_planning_scene_server src/get_planning_scene_server.cpp)
-ament_target_dependencies(get_planning_scene_server ${dependencies})
-
-# Copy folders into the install/ folder of the ROS 2 workspace
-install(
-  DIRECTORY include/
-  DESTINATION include/${PROJECT_NAME}
-)
-install(
-  DIRECTORY config launch rviz scripts urdf 
-  DESTINATION share/${PROJECT_NAME}
-)
-
-# Install Cpp executables
-install(
-  TARGETS
-  get_planning_scene_server
-  mtc_node
-  DESTINATION lib/${PROJECT_NAME}
-)
-
+# Testing
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
   set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when
-  # a copyright and license is added to all source files
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
-
 ament_package()
-
