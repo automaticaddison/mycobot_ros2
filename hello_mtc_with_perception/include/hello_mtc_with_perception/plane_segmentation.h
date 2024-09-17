@@ -1,6 +1,18 @@
 #ifndef PLANE_SEGMENTATION_H
 #define PLANE_SEGMENTATION_H
 
+/**
+ * @file plane_segmentation.h
+ * @brief Segment support plane and objects from a point cloud.
+ *
+ * This file contains a function to segment the support plane and objects from a given point cloud.
+ * It uses surface normal estimation, Euclidean clustering, and RANSAC plane fitting to identify
+ * the support surface and separate objects above it.
+ *
+ * @author Addison Sears-Collins
+ * @date September 17, 2024
+ */
+
 #include <algorithm>
 #include <iostream> 
 #include <memory>
@@ -14,7 +26,7 @@
 #include <pcl/common/common.h>
 #include <pcl/kdtree/kdtree.h>
 
-// Simple logging macros
+// Logging macros
 #define LOG_INFO(x) std::cout << "INFO: " << x << std::endl
 #define LOG_ERROR(x) std::cerr << "ERROR: " << x << std::endl
 
@@ -60,14 +72,14 @@ segmentPlaneAndObjects(
     double crop_min_z = -std::numeric_limits<double>::max(),
     double crop_max_z = std::numeric_limits<double>::max(),
     int max_iterations = 100,
-    double distance_threshold = 0.02,
-    double z_tolerance = 0.05,
-    double angle_tolerance = cos(5.0 * M_PI / 180.0),
+    double distance_threshold = 0.01,
+    double z_tolerance = 0.03,
+    double angle_tolerance = cos(2.5 * M_PI / 180.0),
     int min_cluster_size = 100,
     int max_cluster_size = 25000,
     double cluster_tolerance = 0.02,
     int normal_estimation_k = 30,
-    double plane_segmentation_threshold = 0.02,
+    double plane_segmentation_threshold = 0.001,
     double w_inliers = 1.0,
     double w_size = 1.0,
     double w_distance = 1.0,

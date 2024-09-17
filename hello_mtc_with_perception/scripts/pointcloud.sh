@@ -14,4 +14,6 @@ cleanup() {
 trap 'cleanup' SIGINT;
 ros2 launch hello_mtc_with_perception robot.launch.py use_rviz:=false &
 sleep 10
-ros2 launch hello_mtc_with_perception point_cloud_viewer.launch.py file_name:=/home/ubuntu/Downloads/4_convertToPCL_debug_cloud.pcd
+#ros2 launch hello_mtc_with_perception point_cloud_viewer.launch.py file_name:=/home/ubuntu/Downloads/4_convertToPCL_debug_cloud.pcd
+#ros2 launch hello_mtc_with_perception point_cloud_viewer.launch.py file_name:=/home/ubuntu/Downloads/5_support_plane_debug_cloud.pcd
+ros2 launch hello_mtc_with_perception point_cloud_viewer.launch.py file_name:=/home/ubuntu/Downloads/5_objects_cloud_debug_cloud.pcd

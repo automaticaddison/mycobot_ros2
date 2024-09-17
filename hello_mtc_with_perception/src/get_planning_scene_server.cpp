@@ -27,7 +27,7 @@
  *     success (bool): Indicates if the operation was successful
  *
  * @author Addison Sears-Collins
- * @date September 11, 2024
+ * @date September 17, 2024
  */
  
  #include "hello_mtc_with_perception/plane_segmentation.h"
@@ -152,10 +152,10 @@ class GetPlanningSceneServer : public rclcpp::Node {
 
     // Declare parameters for plane and object segmentation
     declare_parameter("max_iterations", 100, "Maximum iterations for RANSAC");
-    declare_parameter("distance_threshold", 0.02, "Distance threshold for RANSAC");
-    declare_parameter("z_tolerance", 0.05, "Tolerance for z-coordinate of the support plane");
-    declare_parameter("angle_tolerance", 0.996194698, "Angle tolerance for surface normals"); 
-    declare_parameter("plane_segmentation_threshold", 0.02, "Threshold for plane segmentation");
+    declare_parameter("distance_threshold", 0.01, "Distance threshold for RANSAC");
+    declare_parameter("z_tolerance", 0.03, "Tolerance for z-coordinate of the support plane");
+    declare_parameter("angle_tolerance", 0.9990482216, "Angle tolerance for surface normals"); 
+    declare_parameter("plane_segmentation_threshold", 0.001, "Threshold for plane segmentation");
     declare_parameter("min_cluster_size", 100, "Minimum size of a cluster");
     declare_parameter("max_cluster_size", 25000, "Maximum size of a cluster");
     declare_parameter("cluster_tolerance", 0.02, "Tolerance for Euclidean clustering");
