@@ -29,6 +29,8 @@
  * @author Addison Sears-Collins
  * @date September 11, 2024
  */
+ 
+ #include "hello_mtc_with_perception/plane_segmentation.h"
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/qos.hpp>
@@ -40,19 +42,12 @@
 #include <moveit_msgs/msg/planning_scene_world.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <shape_msgs/msg/plane.hpp>
-#include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
-#include <pcl/features/normal_3d.h>
 #include <pcl/filters/crop_box.h>
-#include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
 #include <pcl/search/kdtree.h>
-#include <pcl/segmentation/extract_clusters.h>
-#include <pcl/segmentation/sac_segmentation.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/buffer.h>
@@ -85,18 +80,26 @@ class GetPlanningSceneServer : public rclcpp::Node {
   double crop_min_z;
   double crop_max_z;
   
- 
-  // Parameters for plane segmentation
-  int max_plane_segmentation_iterations;
-  double plane_segmentation_distance_threshold;
+  // Parameters for plane and object segmentation
+  int max_iterations;
+  double distance_threshold;
+  double z_tolerance;
+  double angle_tolerance;
   double plane_segmentation_threshold;
-  
-  // Parameters for cluster extraction 
-  double cluster_tolerance;
   int min_cluster_size;
   int max_cluster_size;
+  double cluster_tolerance;
+  int normal_estimation_k;
+  double w_inliers;
+  double w_size;
+  double w_distance;
+  double w_orientation;
   
-  // Shape fitting parameters
+  // Legacy...remove later Parameters for plane segmentation
+  int max_plane_segmentation_iterations;
+  double plane_segmentation_distance_threshold;
+  
+  // Legacy...remove later Shape fitting parameters
   int shape_fitting_max_iterations;
   double shape_fitting_distance_threshold;
   double shape_fitting_min_radius;
@@ -146,18 +149,28 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("crop_max_y", 0.90, "Maximum Y value for crop box");
     declare_parameter("crop_min_z", -std::numeric_limits<double>::infinity(), "Minimum Z value for crop box");
     declare_parameter("crop_max_z", std::numeric_limits<double>::infinity(), "Maximum Z value for crop box");
-    
-    // Declare parameters for plane segmentation
+
+    // Declare parameters for plane and object segmentation
+    declare_parameter("max_iterations", 100, "Maximum iterations for RANSAC");
+    declare_parameter("distance_threshold", 0.02, "Distance threshold for RANSAC");
+    declare_parameter("z_tolerance", 0.05, "Tolerance for z-coordinate of the support plane");
+    declare_parameter("angle_tolerance", 0.996194698, "Angle tolerance for surface normals"); 
+    declare_parameter("plane_segmentation_threshold", 0.02, "Threshold for plane segmentation");
+    declare_parameter("min_cluster_size", 100, "Minimum size of a cluster");
+    declare_parameter("max_cluster_size", 25000, "Maximum size of a cluster");
+    declare_parameter("cluster_tolerance", 0.02, "Tolerance for Euclidean clustering");
+    declare_parameter("normal_estimation_k", 30, "Number of neighbors for normal estimation");
+    declare_parameter("w_inliers", 1.0, "Weight for inlier score in plane model selection");
+    declare_parameter("w_size", 1.0, "Weight for size score in plane model selection");
+    declare_parameter("w_distance", 1.0, "Weight for distance score in plane model selection");
+    declare_parameter("w_orientation", 1.0, "Weight for orientation score in plane model selection");
+  
+    // Legacy...remove these later
     declare_parameter("max_plane_segmentation_iterations", 1000, "Maximum iterations for plane segmentation RANSAC");
     declare_parameter("plane_segmentation_distance_threshold", 0.01, "Distance threshold for plane segmentation (in meters)");  
-    declare_parameter("plane_segmentation_threshold", 0.1, "Threshold for considering a plane significant (percentage of total points)");
 
-    // Declare parameters for cluster extraction
-    declare_parameter("cluster_tolerance", 0.02, "Spatial cluster tolerance in meters");
-    declare_parameter("min_cluster_size", 100, "Minimum number of points to consider as a cluster");
-    declare_parameter("max_cluster_size", 25000, "Maximum number of points to consider as a cluster");
-    
-    // Declare parameters for shape fitting
+   
+    // Legacy...remove these later
     declare_parameter("shape_fitting_max_iterations", 1000, "Maximum iterations for shape fitting RANSAC");
     declare_parameter("shape_fitting_distance_threshold", 0.01, "Distance threshold for shape fitting (in meters)");
     declare_parameter("shape_fitting_min_radius", 0.01, "Minimum radius for cylinder fitting (in meters)");
@@ -184,17 +197,26 @@ class GetPlanningSceneServer : public rclcpp::Node {
     crop_min_z = this->get_parameter("crop_min_z").as_double();
     crop_max_z = this->get_parameter("crop_max_z").as_double();
     
-    // Get parameters for plane segmentation
-    max_plane_segmentation_iterations = this->get_parameter("max_plane_segmentation_iterations").as_int();
-    plane_segmentation_distance_threshold = this->get_parameter("plane_segmentation_distance_threshold").as_double();
-    plane_segmentation_threshold = this->get_parameter("plane_segmentation_threshold").as_double();
-
-    // Get cluster extraction parameter values
-    cluster_tolerance = this->get_parameter("cluster_tolerance").as_double();
+    // Get parameters for plane and object segmentation
+    max_iterations = this->get_parameter("max_iterations").as_int();
+    distance_threshold = this->get_parameter("distance_threshold").as_double();
+    z_tolerance = this->get_parameter("z_tolerance").as_double();
+    angle_tolerance = this->get_parameter("angle_tolerance").as_double();
+    plane_segmentation_threshold = this->get_parameter("plane_segmentation_threshold").as_double();  
     min_cluster_size = this->get_parameter("min_cluster_size").as_int();
     max_cluster_size = this->get_parameter("max_cluster_size").as_int();
+    cluster_tolerance = this->get_parameter("cluster_tolerance").as_double();  
+    normal_estimation_k = this->get_parameter("normal_estimation_k").as_int();  
+    w_inliers = this->get_parameter("w_inliers").as_double();
+    w_size = this->get_parameter("w_size").as_double();
+    w_distance = this->get_parameter("w_distance").as_double();
+    w_orientation = this->get_parameter("w_orientation").as_double();
     
-    // Get shape fitting parameter values
+    // Legacy...remove later Get parameters for plane segmentation
+    max_plane_segmentation_iterations = this->get_parameter("max_plane_segmentation_iterations").as_int();
+    plane_segmentation_distance_threshold = this->get_parameter("plane_segmentation_distance_threshold").as_double();
+    
+    // Legacy...remove later Get shape fitting parameter values
     shape_fitting_max_iterations = this->get_parameter("shape_fitting_max_iterations").as_int();
     shape_fitting_distance_threshold = this->get_parameter("shape_fitting_distance_threshold").as_double();
     shape_fitting_min_radius = this->get_parameter("shape_fitting_min_radius").as_double();
@@ -848,8 +870,42 @@ class GetPlanningSceneServer : public rclcpp::Node {
     //  Used for debugging and visualization
     savePointCloudToPCD(pcl_cloud, "4_convertToPCL_" + debug_pcd_filename);
 
-    // TODO
-    
+    /**
+    // 5. Segment the support plane and objects from a given point cloud.
+    auto [support_plane_cloud, objects_cloud] = segmentPlaneAndObjects(
+      pcl_cloud,
+      enable_cropping,
+      crop_min_x, crop_max_x,
+      crop_min_y, crop_max_y,
+      crop_min_z, crop_max_z,
+      max_plane_segmentation_iterations,
+      plane_segmentation_distance_threshold,
+      z_tolerance,
+      angle_tolerance,
+      min_cluster_size,
+      max_cluster_size,
+      cluster_tolerance,
+      normal_estimation_k,
+      plane_segmentation_threshold,
+      w_inliers,
+      w_size,
+      w_distance,
+      w_orientation
+    );
+
+    if (!support_plane_cloud || !objects_cloud) {
+      RCLCPP_ERROR(this->get_logger(), "Plane and object segmentation failed");
+      return;
+    }
+
+    RCLCPP_INFO(this->get_logger(), "Plane and object segmentation successful");
+    RCLCPP_INFO(this->get_logger(), "Support plane cloud size: %zu", support_plane_cloud->size());
+    RCLCPP_INFO(this->get_logger(), "Objects cloud size: %zu", objects_cloud->size());
+
+    // For debugging
+    savePointCloudToPCD(support_plane_cloud, "5_support_plane_" + debug_pcd_filename);
+    savePointCloudToPCD(objects_cloud, "5_objects_cloud_" + debug_pcd_filename);
+    **/
     // 6. Perform plane segmentation
     //    - Check if segmentation was successful
     //    - If segmentation fails, log an error and return early

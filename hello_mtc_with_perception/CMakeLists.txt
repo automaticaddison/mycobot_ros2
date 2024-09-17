@@ -1,9 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
-
 if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
-
 project(hello_mtc_with_perception)
 
 # Set build type and C++ standard
@@ -55,24 +53,37 @@ set(dependencies ${REQUIRED_PACKAGES})
 # Include directories
 include_directories(include ${PCL_INCLUDE_DIRS})
 
-# Define targets and link libraries
-set(TARGETS mtc_node get_planning_scene_server)
-foreach(target ${TARGETS})
-  add_executable(${target} src/${target}.cpp)
-  ament_target_dependencies(${target} ${dependencies})
-endforeach()
-
 # Create plane_segmentation as a shared library
 add_library(plane_segmentation SHARED src/plane_segmentation.cpp)
 target_link_libraries(plane_segmentation ${PCL_LIBRARIES})
-target_include_directories(plane_segmentation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(plane_segmentation PUBLIC 
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
 ament_target_dependencies(plane_segmentation ${dependencies})
 
+# Define and build mtc_node
+add_executable(mtc_node src/mtc_node.cpp)
+ament_target_dependencies(mtc_node ${dependencies})
+
+# Define and build get_planning_scene_server
+add_executable(get_planning_scene_server src/get_planning_scene_server.cpp)
+ament_target_dependencies(get_planning_scene_server ${dependencies})
+target_link_libraries(get_planning_scene_server plane_segmentation)
+
 # Install targets
-install(TARGETS ${TARGETS} plane_segmentation
+install(
+  TARGETS mtc_node get_planning_scene_server
   RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  TARGETS plane_segmentation
+  EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
 )
 
 # Install directories
@@ -87,5 +98,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_export_include_directories(include/${PROJECT_NAME})
+ament_export_include_directories(include)
+ament_export_libraries(plane_segmentation)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_package()
