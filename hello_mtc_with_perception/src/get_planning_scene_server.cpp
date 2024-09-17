@@ -870,7 +870,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
     //  Used for debugging and visualization
     savePointCloudToPCD(pcl_cloud, "4_convertToPCL_" + debug_pcd_filename);
 
-    /**
     // 5. Segment the support plane and objects from a given point cloud.
     auto [support_plane_cloud, objects_cloud] = segmentPlaneAndObjects(
       pcl_cloud,
@@ -905,7 +904,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // For debugging
     savePointCloudToPCD(support_plane_cloud, "5_support_plane_" + debug_pcd_filename);
     savePointCloudToPCD(objects_cloud, "5_objects_cloud_" + debug_pcd_filename);
-    **/
+
     // 6. Perform plane segmentation
     //    - Check if segmentation was successful
     //    - If segmentation fails, log an error and return early

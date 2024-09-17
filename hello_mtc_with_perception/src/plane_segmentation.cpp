@@ -36,36 +36,73 @@ segmentPlaneAndObjects(
     double w_size,
     double w_distance,
     double w_orientation) {
+    
+  LOG_INFO("Starting plane segmentation. Input cloud size: " << input_cloud->size() << " points");
+    
+  // Remove NaN and Inf points
+  auto cloud_filtered = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+  std::vector<int> indices;
+  pcl::removeNaNFromPointCloud(*input_cloud, *cloud_filtered, indices);
+  LOG_INFO("Removed NaN points. Filtered cloud size: " << cloud_filtered->size() << " points");
+  
+  // Additional check for remaining invalid points
+  auto cleaned_cloud = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+  cleaned_cloud->points.reserve(cloud_filtered->points.size());
+  for (const auto& point : cloud_filtered->points) {
+    if (pcl::isFinite(point)) {
+      cleaned_cloud->points.push_back(point);
+    }
+  }
+  cleaned_cloud->width = cleaned_cloud->points.size();
+  cleaned_cloud->height = 1;
+  cleaned_cloud->is_dense = true;
+  
+  LOG_INFO("Removed all invalid points. Final cleaned cloud size: " << cleaned_cloud->size() << " points");
+ 
+  if (cleaned_cloud->empty()) {
+    LOG_ERROR("All points were invalid. Cannot proceed with segmentation.");
+    
+    // Return empty clouds if all points were invalid
+    return std::make_pair(
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>),
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>)
+    );
+  }
 		
   // 1. Estimate surface normals
+  LOG_INFO("Starting surface normal estimation");
   // A normal is a vector perpendicular to the surface at a given point
   pcl::PointCloud<pcl::Normal>::Ptr cloud_normals(new pcl::PointCloud<pcl::Normal>);
   pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
   pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZRGB>());
-  ne.setInputCloud(input_cloud);
+  ne.setInputCloud(cleaned_cloud);
   ne.setSearchMethod(tree);
   // Use k-nearest neighbors for normal estimation
   ne.setKSearch(normal_estimation_k);
   ne.compute(*cloud_normals);
+  LOG_INFO("Finished normal estimation. Computed " << cloud_normals->size() << " normals");
 
   // 2. Identify potential support surfaces
   // Use the computed surface normals to find approximately horizontal surfaces
+  LOG_INFO("Identifying potential horizontal support surfaces (e.g., tables, shelves)");
   pcl::PointIndices::Ptr horizontal_indices(new pcl::PointIndices);
   for (size_t i = 0; i < cloud_normals->size(); ++i) {
-    // Group points whose normals are approximately parallel to the world Z-axis (vertical)
     if (std::abs(cloud_normals->points[i].normal_z) > angle_tolerance) {
       horizontal_indices->indices.push_back(i);
     }
   }
+  LOG_INFO("Found " << horizontal_indices->indices.size() << " points likely belonging to horizontal surfaces");
 
   // Extract the points with horizontal normals
   pcl::ExtractIndices<pcl::PointXYZRGB> extract;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr horizontal_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-  extract.setInputCloud(input_cloud);
+  extract.setInputCloud(cleaned_cloud);
   extract.setIndices(horizontal_indices);
   extract.filter(*horizontal_cloud);
+  LOG_INFO("Extracted horizontal cloud with " << horizontal_cloud->size() << " points");
 
   // 3. Perform Euclidean clustering on these points to get support surface candidate clusters
+  LOG_INFO("Starting Euclidean clustering");
   pcl::search::KdTree<pcl::PointXYZRGB>::Ptr cluster_tree(new pcl::search::KdTree<pcl::PointXYZRGB>);
   cluster_tree->setInputCloud(horizontal_cloud);
 
@@ -77,18 +114,24 @@ segmentPlaneAndObjects(
   ec.setSearchMethod(cluster_tree);
   ec.setInputCloud(horizontal_cloud);
   ec.extract(cluster_indices);
+  LOG_INFO("Finished clustering. Found " << cluster_indices.size() << " clusters");
 
   // 4. Process each support surface candidate cluster
+  LOG_INFO("Processing support surface candidate clusters");
   pcl::ModelCoefficients::Ptr best_plane_model(new pcl::ModelCoefficients);
   double best_score = -std::numeric_limits<double>::max();
 
-  for (const auto& cluster : cluster_indices) {
+  for (size_t i = 0; i < cluster_indices.size(); ++i) {
+    LOG_INFO("Processing cluster " << i+1 << " of " << cluster_indices.size());
+    const auto& cluster = cluster_indices[i];
+    
     // Extract the current cluster
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cluster_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::ExtractIndices<pcl::PointXYZRGB> cluster_extract;
     cluster_extract.setInputCloud(horizontal_cloud);
     cluster_extract.setIndices(std::make_shared<const pcl::PointIndices>(cluster));
     cluster_extract.filter(*cluster_cloud);
+    LOG_INFO("  Cluster size: " << cluster_cloud->size() << " points");
 
     // Use RANSAC to fit a plane model
     pcl::SACSegmentation<pcl::PointXYZRGB> seg;
@@ -102,76 +145,86 @@ segmentPlaneAndObjects(
     seg.setInputCloud(cluster_cloud);
     seg.segment(*inliers, *coefficients);
 
-    if (inliers->indices.empty()) continue;
+    if (inliers->indices.empty()) {
+      LOG_INFO("  No plane model found for this cluster. Skipping.");
+      continue;
+    }
+    LOG_INFO("  Fitted plane model. Inliers: " << inliers->indices.size());
 
     // Validate the plane model based on the robot's workspace limits
     Eigen::Vector3f plane_normal(coefficients->values[0], coefficients->values[1], coefficients->values[2]);
     Eigen::Vector3f up_vector(0, 0, 1);
     double dot_product = plane_normal.dot(up_vector);
-
+    
     Eigen::Vector4f plane_center;
     pcl::compute3DCentroid(*cluster_cloud, *inliers, plane_center);
 
     bool is_valid = true;
 	
-    // Check if the plane is within the cropped area if cropping is enabled
     if (enable_cropping) {
       is_valid = (plane_center[0] >= crop_min_x && plane_center[0] <= crop_max_x &&
                   plane_center[1] >= crop_min_y && plane_center[1] <= crop_max_y);
+      LOG_INFO("  Cropping enabled. Plane center within bounds: " << (is_valid ? "Yes" : "No"));
     }
-    // Check if the plane is close to z=0 and approximately horizontal
     is_valid = is_valid && (std::abs(plane_center[2]) < z_tolerance) && (dot_product > angle_tolerance);
+    LOG_INFO("  Plane model validity: " << (is_valid ? "Valid" : "Invalid"));
 
-    if (!is_valid) continue;
+    if (!is_valid) {
+      LOG_INFO("  Plane model invalid. Skipping.");
+      continue;
+    }
 
     // Calculate score for the plane model
     double inlier_count = static_cast<double>(inliers->indices.size());
     double inlier_score = inlier_count / cluster_cloud->size();
-    double size_score = cluster_cloud->size() / static_cast<double>(input_cloud->size());
+    double size_score = cluster_cloud->size() / static_cast<double>(cleaned_cloud->size());
     double distance_score = 1.0 - (std::abs(plane_center[2]) / z_tolerance);
     double orientation_score = dot_product;
 
-    // Combine factors using a weighted scoring system
     double total_score = w_inliers * inlier_score + w_size * size_score + 
                          w_distance * distance_score + w_orientation * orientation_score;
 
-    // Select the plane model with the highest total_score as the best fitting plane
+    LOG_INFO("  Plane model scores - Inlier: " << inlier_score << ", Size: " << size_score 
+             << ", Distance: " << distance_score << ", Orientation: " << orientation_score
+             << ", Total: " << total_score);
+
     if (total_score > best_score) {
       best_score = total_score;
       *best_plane_model = *coefficients;
+      LOG_INFO("  New best plane model found. Score: " << best_score);
     }
   }
+  
+  LOG_INFO("Finished processing clusters. Best plane model score: " << best_score);
 
   // 5. Extract the support plane and objects above it
+  LOG_INFO("Extracting support plane and objects");
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr support_plane_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr objects_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+  
+  int support_plane_points = 0;
+  int object_points = 0;
 
-  for (const auto& point : input_cloud->points) {
-	  
-    // Use the plane equation to check if the point is above the best_plane_model
+  for (const auto& point : cleaned_cloud->points) {
     double distance = best_plane_model->values[0] * point.x +
                       best_plane_model->values[1] * point.y +
                       best_plane_model->values[2] * point.z +
                       best_plane_model->values[3];
 
     if (std::abs(distance) < plane_segmentation_threshold) {
-		
-      // Point belongs to the support plane
       support_plane_cloud->points.push_back(point);
-	  
+      support_plane_points++;
     } else if (distance > 0) {
-		
-      // Point is above the support plane
       if (!enable_cropping || 
           (point.x >= crop_min_x && point.x <= crop_max_x &&
            point.y >= crop_min_y && point.y <= crop_max_y &&
            point.z >= crop_min_z && point.z <= crop_max_z)) {
         objects_cloud->points.push_back(point);
+        object_points++;
       }
     }
   }
 
-  // Set the width, height, and is_dense properties for the output point clouds
   support_plane_cloud->width = support_plane_cloud->points.size();
   support_plane_cloud->height = 1;
   support_plane_cloud->is_dense = true;
@@ -180,7 +233,13 @@ segmentPlaneAndObjects(
   objects_cloud->height = 1;
   objects_cloud->is_dense = true;
 
-  // Return both support_plane_cloud and objects_cloud
+  LOG_INFO("Segmentation complete. Support plane size: " << support_plane_points 
+           << " points, Objects cloud size: " << object_points << " points");
+  LOG_INFO("Plane model coefficients: A=" << best_plane_model->values[0] 
+           << ", B=" << best_plane_model->values[1]
+           << ", C=" << best_plane_model->values[2]
+           << ", D=" << best_plane_model->values[3]);
+
   return std::make_pair(support_plane_cloud, objects_cloud);
 }
 

@@ -1,15 +1,22 @@
 #ifndef PLANE_SEGMENTATION_H
 #define PLANE_SEGMENTATION_H
 
+#include <algorithm>
+#include <iostream> 
 #include <memory>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/features/normal_3d.h>
+#include <pcl/filters/filter.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/common/common.h>
 #include <pcl/kdtree/kdtree.h>
+
+// Simple logging macros
+#define LOG_INFO(x) std::cout << "INFO: " << x << std::endl
+#define LOG_ERROR(x) std::cerr << "ERROR: " << x << std::endl
 
 /**
  * @brief Segment the support plane and objects from a point cloud.
