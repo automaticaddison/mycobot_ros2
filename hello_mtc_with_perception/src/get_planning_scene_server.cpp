@@ -942,6 +942,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
       response->scene_world.collision_objects.push_back(support_surface);
     }
 
+    /**
     // 7. Extract object clusters
     //    - Check if cluster extraction was successful and at least one cluster was found
     //    - If extraction fails or no clusters found, log an error and return early
@@ -977,6 +978,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
       RCLCPP_INFO(this->get_logger(), "Successfully fitted shapes to %zu out of %zu clusters", 
         shapes_fitted, clusters.size());
     }
+    
+    **/
     
     // 9. Identify target object
     //    - Check if a target object was successfully identified
@@ -1029,7 +1032,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
     RCLCPP_INFO(this->get_logger(), "RGB image frame ID: %s", response->rgb_image.header.frame_id.c_str());
     RCLCPP_INFO(this->get_logger(), "RGB image size: %d x %d", 
       response->rgb_image.width, response->rgb_image.height);
-      
+    
+    /**  
     // Collision objects information
     RCLCPP_INFO(this->get_logger(), "Number of collision objects: %zu", 
       response->scene_world.collision_objects.size());
@@ -1045,6 +1049,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
           obj.primitive_poses[i].orientation.z, obj.primitive_poses[i].orientation.w);
       }
     }  
+    **/
     
     // Support surface information (if available)
     auto it = std::find_if(response->scene_world.collision_objects.begin(),
