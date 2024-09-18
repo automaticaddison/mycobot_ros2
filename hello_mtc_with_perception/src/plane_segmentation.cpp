@@ -13,7 +13,7 @@
 #include "hello_mtc_with_perception/plane_segmentation.h"
 
 // Function to segment the support plane and objects from a point cloud
-std::pair<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, pcl::PointCloud<pcl::PointXYZRGB>::Ptr> 
+std::tuple<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, pcl::PointCloud<pcl::PointXYZRGB>::Ptr, pcl::ModelCoefficients::Ptr> 
 segmentPlaneAndObjects(
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& input_cloud,
     bool enable_cropping,
@@ -62,10 +62,11 @@ segmentPlaneAndObjects(
   if (cleaned_cloud->empty()) {
     LOG_ERROR("All points were invalid. Cannot proceed with segmentation.");
     
-    // Return empty clouds if all points were invalid
-    return std::make_pair(
+    // Return empty clouds and a null plane model if all points were invalid
+    return std::make_tuple(
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>),
-      pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>)
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>),
+      pcl::ModelCoefficients::Ptr(new pcl::ModelCoefficients)
     );
   }
 		
@@ -240,6 +241,8 @@ segmentPlaneAndObjects(
            << ", C=" << best_plane_model->values[2]
            << ", D=" << best_plane_model->values[3]);
 
-  return std::make_pair(support_plane_cloud, objects_cloud);
+  return std::make_tuple(support_plane_cloud, objects_cloud, best_plane_model);
 }
+
+
 

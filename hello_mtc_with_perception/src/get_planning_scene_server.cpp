@@ -430,6 +430,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
   }
   
   moveit_msgs::msg::CollisionObject createSupportSurfaceObject(
+    const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& plane_cloud,
     pcl::ModelCoefficients::Ptr plane_coefficients,
     const std::string& frame_id) {
     RCLCPP_INFO(this->get_logger(), "Creating support surface object");
@@ -440,10 +441,17 @@ class GetPlanningSceneServer : public rclcpp::Node {
       // Validate input parameters
       if (!plane_coefficients || plane_coefficients->values.size() != 4) {
         throw std::invalid_argument("Invalid plane coefficients");
+      }
+      if (frame_id.empty()) {
+        throw std::invalid_argument("Empty frame_id");
+      }
+      if (!plane_cloud || plane_cloud->empty()) {
+        throw std::invalid_argument("Invalid or empty plane point cloud");
     }
-    if (frame_id.empty()) {
-      throw std::invalid_argument("Empty frame_id");
-    }
+
+    // Calculate centroid
+    Eigen::Vector4f centroid;
+    pcl::compute3DCentroid(*plane_cloud, centroid);
     
     // Create a shape_msgs::msg::Plane message with the coefficients
     shape_msgs::msg::Plane plane;
@@ -460,25 +468,34 @@ class GetPlanningSceneServer : public rclcpp::Node {
     rotation.setFromTwoVectors(Eigen::Vector3d::UnitZ(), normal);
     
     // Set the pose
-    plane_pose.position.x = 0;  // Adjust as needed
-    plane_pose.position.y = 0;  // Adjust as needed
-    plane_pose.position.z = -plane.coef[3] / normal.norm();  // Distance from origin
+    plane_pose.position.x = centroid[0];
+    plane_pose.position.y = centroid[1];
+    plane_pose.position.z = centroid[2];
     plane_pose.orientation.x = rotation.x();
     plane_pose.orientation.y = rotation.y();
     plane_pose.orientation.z = rotation.z();
     plane_pose.orientation.w = rotation.w();
+
+    RCLCPP_INFO(this->get_logger(), "Support surface orientation: [%.2f, %.2f, %.2f, %.2f]",
+      plane_pose.orientation.x, plane_pose.orientation.y, 
+      plane_pose.orientation.z, plane_pose.orientation.w);
     
     // Set up the CollisionObject
     support_surface.header.frame_id = frame_id;
+    support_surface.header.stamp = this->now();
     support_surface.id = "support_surface";
     support_surface.planes.push_back(plane);
     support_surface.plane_poses.push_back(plane_pose);
     support_surface.operation = moveit_msgs::msg::CollisionObject::ADD;
+    
     RCLCPP_INFO(this->get_logger(), "Support surface object created successfully");
     RCLCPP_INFO(this->get_logger(), "Support surface normal: [%.2f, %.2f, %.2f]", 
-                 normal.x(), normal.y(), normal.z());
+      normal.x(), normal.y(), normal.z());
     RCLCPP_INFO(this->get_logger(), "Support surface position: [%.2f, %.2f, %.2f]",
-                 plane_pose.position.x, plane_pose.position.y, plane_pose.position.z);
+      plane_pose.position.x, plane_pose.position.y, plane_pose.position.z);
+    RCLCPP_INFO(this->get_logger(), "Support surface orientation: [%.2f, %.2f, %.2f, %.2f]",
+      plane_pose.orientation.x, plane_pose.orientation.y, 
+      plane_pose.orientation.z, plane_pose.orientation.w);
     } catch (const std::exception& e) {
       RCLCPP_ERROR(this->get_logger(), "Error creating support surface object: %s", e.what());
     } catch (...) {
@@ -871,7 +888,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     savePointCloudToPCD(pcl_cloud, "4_convertToPCL_" + debug_pcd_filename);
 
     // 5. Segment the support plane and objects from a given point cloud.
-    auto [support_plane_cloud, objects_cloud] = segmentPlaneAndObjects(
+    auto [support_plane_cloud, objects_cloud, plane_coefficients] = segmentPlaneAndObjects(
       pcl_cloud,
       enable_cropping,
       crop_min_x, crop_max_x,
@@ -892,62 +909,49 @@ class GetPlanningSceneServer : public rclcpp::Node {
       w_orientation
     );
 
-    if (!support_plane_cloud || !objects_cloud) {
+    if (!support_plane_cloud || !objects_cloud || !plane_coefficients) {
       RCLCPP_ERROR(this->get_logger(), "Plane and object segmentation failed");
       return;
     }
 
     RCLCPP_INFO(this->get_logger(), "Plane and object segmentation successful");
     RCLCPP_INFO(this->get_logger(), "Support plane cloud size: %zu", support_plane_cloud->size());
+    RCLCPP_INFO(this->get_logger(), "Plane coefficients: [%.3f, %.3f, %.3f, %.3f]",
+      plane_coefficients->values[0], plane_coefficients->values[1],
+      plane_coefficients->values[2], plane_coefficients->values[3]);
     RCLCPP_INFO(this->get_logger(), "Objects cloud size: %zu", objects_cloud->size());
 
     // For debugging
     savePointCloudToPCD(support_plane_cloud, "5_support_plane_" + debug_pcd_filename);
     savePointCloudToPCD(objects_cloud, "5_objects_cloud_" + debug_pcd_filename);
 
-    // 6. Perform plane segmentation
-    //    - Check if segmentation was successful
-    //    - If segmentation fails, log an error and return early
-    pcl::ModelCoefficients::Ptr plane_coefficients(new pcl::ModelCoefficients);
-    pcl::PointIndices::Ptr plane_inliers(new pcl::PointIndices);
-
-    bool plane_segmented = segmentPlane(pcl_cloud, plane_coefficients, plane_inliers);
-
-    if (!plane_segmented) {
-      RCLCPP_ERROR(this->get_logger(), "Plane segmentation failed");
-    }
-
-    RCLCPP_INFO(this->get_logger(), "Plane segmentation successful");
-
-    // Check if the segmented plane is significant enough
-    double plane_percentage = static_cast<double>(plane_inliers->indices.size()) / pcl_cloud->size();
-    if (plane_percentage < plane_segmentation_threshold) { 
-      RCLCPP_WARN(this->get_logger(), "Segmented plane is small (%.2f%% of points). It might not be the dominant plane.", plane_percentage * 100);
-    }
-
-    // 7. Create CollisionObject for support surface
+    // 6. Create CollisionObject for support surface
     //    - Check if support surface object creation was successful
     //    - If creation fails, log a warning
-    moveit_msgs::msg::CollisionObject support_surface = createSupportSurfaceObject(plane_coefficients, target_frame);
+    moveit_msgs::msg::CollisionObject support_surface = createSupportSurfaceObject(
+      support_plane_cloud, 
+      plane_coefficients, 
+      target_frame
+    );
     
     if (support_surface.id.empty()) {
-      RCLCPP_WARN(this->get_logger(), "Support surface object creation failed or resulted in an invalid object");
+      RCLCPP_WARN(this->get_logger(), "Support surface collision object creation failed or resulted in an invalid object");
     } else {
-      RCLCPP_INFO(this->get_logger(), "Adding support surface to the planning scene");      
+      RCLCPP_INFO(this->get_logger(), "Adding support surface collision object to the planning scene");      
       // Add the support surface to the planning scene
       response->scene_world.collision_objects.push_back(support_surface);
     }
 
-    // 8. Extract object clusters
+    // 7. Extract object clusters
     //    - Check if cluster extraction was successful and at least one cluster was found
     //    - If extraction fails or no clusters found, log an error and return early
-    auto clusters = extractClusters(pcl_cloud);
+    auto clusters = extractClusters(objects_cloud);
     if (clusters.empty()) {
       RCLCPP_ERROR(this->get_logger(), "No object clusters found in the point cloud");
     }
     RCLCPP_INFO(this->get_logger(), "Successfully extracted %zu object clusters", clusters.size());
     
-    // 9. For each cluster:
+    // 8. For each cluster:
     //    - Fit shapes and create CollisionObjects
     //    - Check if shape fitting was successful for at least one object
     //    - If no shapes could be fitted, log a warning
@@ -974,7 +978,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
         shapes_fitted, clusters.size());
     }
     
-    // 10. Identify target object
+    // 9. Identify target object
     //    - Check if a target object was successfully identified
     //    - If no target found, log a warning
     std::string target_object_id = identifyTargetObject(
@@ -986,7 +990,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
       response->target_object_id = target_object_id;
     } 
     
-    // 11. Assemble PlanningSceneWorld
+    // 10. Assemble PlanningSceneWorld
     //    - Check if assembly was successful
     //    - If assembly fails, log an error and return early
     try {
@@ -1005,14 +1009,14 @@ class GetPlanningSceneServer : public rclcpp::Node {
       return;
     }
     
-    // 12. Fill the rest of the response:
+    // 11. Fill the rest of the response:
     //    - Set full_cloud, rgb_image, and target_object_id
     //    - Set success flag to true if all critical steps were successful
     response->full_cloud = *latest_point_cloud;  // Use the transformed cloud
     response->rgb_image = *latest_rgb_image;
     response->target_object_id = target_object_id;
 
-  
+    // 12. Helpful logging
     RCLCPP_INFO(this->get_logger(), "Success: %s", response->success ? "true" : "false");
     RCLCPP_INFO(this->get_logger(), "Target object ID: %s", response->target_object_id.c_str());
   

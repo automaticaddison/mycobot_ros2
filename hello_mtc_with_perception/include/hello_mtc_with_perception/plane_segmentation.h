@@ -3,19 +3,20 @@
 
 /**
  * @file plane_segmentation.h
- * @brief Segment support plane and objects from a point cloud.
+ * @brief Segment support plane and objects from a point cloud, and return plane coefficients.
  *
  * This file contains a function to segment the support plane and objects from a given point cloud.
  * It uses surface normal estimation, Euclidean clustering, and RANSAC plane fitting to identify
- * the support surface and separate objects above it.
+ * the support surface, separate objects above it, and return the plane coefficients.
  *
  * @author Addison Sears-Collins
- * @date September 17, 2024
+ * @date September 18, 2024
  */
 
 #include <algorithm>
 #include <iostream> 
 #include <memory>
+#include <tuple>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/features/normal_3d.h>
@@ -31,11 +32,12 @@
 #define LOG_ERROR(x) std::cerr << "ERROR: " << x << std::endl
 
 /**
- * @brief Segment the support plane and objects from a point cloud.
+ * @brief Segment the support plane and objects from a point cloud, and return plane coefficients.
  *
  * This function takes an input point cloud and performs segmentation to identify
  * the support plane and objects above it. It uses surface normal estimation,
- * Euclidean clustering, and RANSAC plane fitting.
+ * Euclidean clustering, and RANSAC plane fitting. The function returns the segmented
+ * support plane, objects above it, and the coefficients of the best-fit plane.
  *
  * @param input_cloud The input point cloud to be segmented.
  * @param enable_cropping Flag to enable cropping of the point cloud.
@@ -59,9 +61,12 @@
  * @param w_distance Weight for distance score in plane model selection.
  * @param w_orientation Weight for orientation score in plane model selection.
  *
- * @return A pair of point clouds: the support plane and the objects above it.
+ * @return A tuple containing:
+ *         1. Pointer to the segmented support plane point cloud
+ *         2. Pointer to the segmented objects point cloud
+ *         3. Pointer to the ModelCoefficients of the best-fit plane
  */
-std::pair<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, pcl::PointCloud<pcl::PointXYZRGB>::Ptr> 
+std::tuple<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, pcl::PointCloud<pcl::PointXYZRGB>::Ptr, pcl::ModelCoefficients::Ptr>  
 segmentPlaneAndObjects(
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& input_cloud,
     bool enable_cropping = false,
@@ -86,3 +91,5 @@ segmentPlaneAndObjects(
     double w_orientation = 1.0);
 
 #endif // PLANE_SEGMENTATION_H
+
+
