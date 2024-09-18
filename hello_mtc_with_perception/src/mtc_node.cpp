@@ -7,7 +7,7 @@
  * to pick up an object from one location and place it in another.
  *
  * @author Addison Sears-Collins
- * @date September 14, 2024
+ * @date September 18, 2024
  */
  
 // Include necessary ROS 2 and MoveIt headers
@@ -22,6 +22,11 @@
 #include <type_traits>
 #include <string>
 #include <vector>
+
+// Handling the GetPlanningScene service
+#include <mycobot_interfaces/srv/get_planning_scene.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/msg/image.hpp>
 
 // Conditional includes for tf2 geometry messages and Eigen
 #include <Eigen/Geometry>
@@ -77,6 +82,13 @@ public:
 private:
   mtc::Task task_;
   mtc::Task createTask();
+
+  // Variables for calling the GetPlanningScene service
+  rclcpp::Client<mycobot_interfaces::srv::GetPlanningScene>::SharedPtr get_planning_scene_client;
+  sensor_msgs::msg::PointCloud2 full_cloud;
+  sensor_msgs::msg::Image rgb_image;
+  std::string target_object_id;
+  bool service_success;
 };
 
 /**
@@ -115,6 +127,7 @@ MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
 
   // Object parameters
   declare_parameter("object_name", "object", "Name of the object to be manipulated");
+  declare_parameter("object_type", "cylinder", "Type of the object to be manipulated");
   declare_parameter("object_reference_frame", "base_link", "Reference frame for the object");
   declare_parameter("object_dimensions", std::vector<double>{0.35, 0.0125}, "Dimensions of the object [height, radius]");
   declare_parameter("object_pose", std::vector<double>{0.22, 0.12, 0.0, 0.0, 0.0, 0.0}, "Initial pose of the object [x, y, z, roll, pitch, yaw]");
@@ -160,6 +173,10 @@ MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
   declare_parameter("retreat_max_distance", 0.25, "Maximum distance for retreat motion");
 
   RCLCPP_INFO(this->get_logger(), "All parameters have been declared with descriptions");
+
+  // Create the service client
+  get_planning_scene_client = this->create_client<mycobot_interfaces::srv::GetPlanningScene>("get_planning_scene_mycobot");
+
 }
 
 /**
@@ -167,34 +184,114 @@ MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
  */
 void MTCTaskNode::setupPlanningScene()
 {
+  RCLCPP_INFO(this->get_logger(), "Setting up planning scene");
+  
   // Create a planning scene interface to interact with the world
   moveit::planning_interface::PlanningSceneInterface psi;
 
-  // Get object parameters
+  // Get target object parameters
   auto object_name = this->get_parameter("object_name").as_string();
+  auto object_type = this->get_parameter("object_type").as_string();
   auto object_dimensions = this->get_parameter("object_dimensions").as_double_array();
   auto object_pose_param = this->get_parameter("object_pose").as_double_array();
   auto object_reference_frame = this->get_parameter("object_reference_frame").as_string();
-
-  // Create a cylinder collision object
-  geometry_msgs::msg::Pose cylinder_pose = vectorToPose(object_pose_param);
-   cylinder_pose.position.z += 0.50 * object_dimensions[0]; 
-  moveit_msgs::msg::CollisionObject cylinder_object;
-  cylinder_object.id = object_name;
-  cylinder_object.header.frame_id = object_reference_frame;
-  cylinder_object.primitives.resize(1);
-  cylinder_object.primitives[0].type = shape_msgs::msg::SolidPrimitive::CYLINDER;
-  cylinder_object.primitives[0].dimensions = { object_dimensions.at(0), object_dimensions.at(1) };
-  cylinder_object.primitive_poses.push_back(cylinder_pose);
-
-  // Add the cylinder to the planning scene
-  if (!psi.applyCollisionObject(cylinder_object)) {
-    RCLCPP_ERROR(this->get_logger(), "Failed to spawn object: %s", cylinder_object.id.c_str());
-    throw std::runtime_error("Failed to spawn object: " + cylinder_object.id);
+  
+  RCLCPP_INFO(this->get_logger(), "Target object parameters:");
+  RCLCPP_INFO(this->get_logger(), "  Name: %s", object_name.c_str());
+  RCLCPP_INFO(this->get_logger(), "  Type: %s", object_type.c_str());
+  RCLCPP_INFO(this->get_logger(), "  Dimensions: [%.3f, %.3f]", object_dimensions[0], object_dimensions[1]);
+  RCLCPP_INFO(this->get_logger(), "  Reference frame: %s", object_reference_frame.c_str());
+  
+  /**
+  // Prepare the service request to set up the planning scene based on a 3D point cloud
+  auto request = std::make_shared<mycobot_interfaces::srv::GetPlanningScene::Request>();
+  request->target_shape = object_type;
+  request->target_dimensions = {object_dimensions.at(0), object_dimensions.at(1)}; // Height and radius of the cylinder
+  
+  RCLCPP_INFO(this->get_logger(), "Waiting for GetPlanningScene service...");
+  
+  // Wait for the service to be available
+  if (!get_planning_scene_client->wait_for_service(std::chrono::seconds(10))) {
+    RCLCPP_ERROR(this->get_logger(), "GetPlanningScene service not available after waiting");
+    throw std::runtime_error("GetPlanningScene service not available");
   }
-  RCLCPP_INFO(this->get_logger(), "Added object to planning scene");
+  
+  RCLCPP_INFO(this->get_logger(), "Sending GetPlanningScene service request...");
+  
+  // Send the request asynchronously
+  auto result_future = get_planning_scene_client->async_send_request(request);
+  
+  // Wait for the result
+  if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result_future) ==
+      rclcpp::FutureReturnCode::SUCCESS)
+  {
+    auto result = result_future.get();
+    
+    // Check if the call was successful
+    if (!result) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to call service get_planning_scene_mycobot");
+      throw std::runtime_error("Failed to call GetPlanningScene service");
+    }
 
-  RCLCPP_INFO(this->get_logger(), "Planning scene setup completed");
+    RCLCPP_INFO(this->get_logger(), "Received service response successfully");
+    
+    // Store the results in member variables
+    full_cloud = result->full_cloud;
+    rgb_image = result->rgb_image;
+    target_object_id = result->target_object_id;
+    service_success = result->success;
+    
+    if (!service_success) {
+      RCLCPP_ERROR(this->get_logger(), "GetPlanningScene service reported failure");
+      throw std::runtime_error("GetPlanningScene service reported failure");
+    } 
+      
+    RCLCPP_INFO(this->get_logger(), "Service response details:");
+    RCLCPP_INFO(this->get_logger(), "  Target object ID: %s", target_object_id.c_str());
+    RCLCPP_INFO(this->get_logger(), "  Service success: %s", service_success ? "true" : "false");
+    RCLCPP_INFO(this->get_logger(), "  Full cloud size: %d points", full_cloud.width * full_cloud.height);
+    RCLCPP_INFO(this->get_logger(), "  RGB image size: %dx%d", rgb_image.width, rgb_image.height);
+
+    // Apply all collision objects from the service response at once
+    RCLCPP_INFO(this->get_logger(), "Applying collision objects from service response...");
+    if (!psi.applyCollisionObjects(result->scene_world.collision_objects)) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to add collision objects from service response");
+    } else {
+      RCLCPP_INFO(this->get_logger(), "Successfully added %zu collision objects from service response to the planning scene",
+      result->scene_world.collision_objects.size());
+    }
+    
+    **/
+
+    // Create a cylinder collision object
+    RCLCPP_INFO(this->get_logger(), "Creating cylinder collision object...");
+    geometry_msgs::msg::Pose cylinder_pose = vectorToPose(object_pose_param);
+    cylinder_pose.position.z += 0.50 * object_dimensions[0]; 
+    moveit_msgs::msg::CollisionObject cylinder_object;
+    cylinder_object.id = object_name;
+    cylinder_object.header.frame_id = object_reference_frame;
+    cylinder_object.primitives.resize(1);
+    cylinder_object.primitives[0].type = shape_msgs::msg::SolidPrimitive::CYLINDER;
+    cylinder_object.primitives[0].dimensions = { object_dimensions.at(0), object_dimensions.at(1) };
+    cylinder_object.primitive_poses.push_back(cylinder_pose);
+
+    // Add the cylinder to the planning scene
+    if (!psi.applyCollisionObject(cylinder_object)) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to spawn object: %s", cylinder_object.id.c_str());
+      throw std::runtime_error("Failed to spawn object: " + cylinder_object.id);
+    }
+    
+    RCLCPP_INFO(this->get_logger(), "Added cylinder object to planning scene");
+
+    RCLCPP_INFO(this->get_logger(), "Planning scene setup completed");
+  /**
+  }
+  else
+  {
+    RCLCPP_ERROR(this->get_logger(), "Service call to GetPlanningScene failed or timed out");
+    throw std::runtime_error("Service call to GetPlanningScene failed or timed out");
+  }
+  **/
 }
 
 /**
@@ -704,34 +801,44 @@ int main(int argc, char** argv)
   // Initialize ROS 2
   rclcpp::init(argc, argv);
 
-  // Set up node options
-  rclcpp::NodeOptions options;
-  options.automatically_declare_parameters_from_overrides(true);
-
-  // Create the MTC task node
-  auto mtc_task_node = std::make_shared<MTCTaskNode>(options);
-
-  // Set up a multi-threaded executor
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(mtc_task_node);
-
-  // Set up the planning scene and execute the task
+  int ret = 0;
+  
   try {
-    RCLCPP_INFO(mtc_task_node->get_logger(), "Setting up planning scene");
-    mtc_task_node->setupPlanningScene();
-    RCLCPP_INFO(mtc_task_node->get_logger(), "Executing task");
-    mtc_task_node->doTask();
-    RCLCPP_INFO(mtc_task_node->get_logger(), "Task execution completed. Keeping node alive for visualization. Press Ctrl+C to exit.");
-  } catch (const std::exception& e) {
-    RCLCPP_ERROR(mtc_task_node->get_logger(), "An error occurred: %s", e.what());
-  }
+    // Set up node options
+    rclcpp::NodeOptions options;
+    options.automatically_declare_parameters_from_overrides(true);
 
-  // Keep the node running until Ctrl+C is pressed
-  executor.spin();
+    // Create the MTC task node
+    auto mtc_task_node = std::make_shared<MTCTaskNode>(options);
+
+    // Set up a multi-threaded executor
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(mtc_task_node);
+
+    // Set up the planning scene and execute the task
+    try {
+      RCLCPP_INFO(mtc_task_node->get_logger(), "Setting up planning scene");
+      mtc_task_node->setupPlanningScene();
+      RCLCPP_INFO(mtc_task_node->get_logger(), "Executing task");
+      mtc_task_node->doTask();
+      RCLCPP_INFO(mtc_task_node->get_logger(), "Task execution completed. Keeping node alive for visualization. Press Ctrl+C to exit.");
+      
+      // Keep the node running until Ctrl+C is pressed
+      executor.spin();
+    } catch (const std::runtime_error& e) {
+      RCLCPP_ERROR(mtc_task_node->get_logger(), "Runtime error occurred: %s", e.what());
+      ret = 1;
+    } catch (const std::exception& e) {
+      RCLCPP_ERROR(mtc_task_node->get_logger(), "An error occurred: %s", e.what());
+      ret = 1;
+    }
+  } catch (const std::exception& e) {
+    RCLCPP_ERROR(rclcpp::get_logger("main"), "Error during node setup: %s", e.what());
+    ret = 1;
+  }
 
   // Cleanup
   rclcpp::shutdown();
-
-  return 0;
+  return ret;
 }
 
