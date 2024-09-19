@@ -85,10 +85,11 @@ private:
 
   // Variables for calling the GetPlanningScene service
   std::shared_ptr<GetPlanningSceneClient> planning_scene_client;
-  sensor_msgs::msg::PointCloud2 full_cloud;
-  sensor_msgs::msg::Image rgb_image;
-  std::string target_object_id;
-  bool service_success;
+  moveit_msgs::msg::PlanningSceneWorld scene_world_;
+  sensor_msgs::msg::PointCloud2 full_cloud_;
+  sensor_msgs::msg::Image rgb_image_;
+  std::string target_object_id_;
+  bool service_success_;
 };
 
 /**
@@ -183,7 +184,6 @@ MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
  */
 void MTCTaskNode::setupPlanningScene()
 {
-  RCLCPP_INFO(this->get_logger(), "Setting up planning scene");
   
   // Create a planning scene interface to interact with the world
   moveit::planning_interface::PlanningSceneInterface psi;
@@ -200,38 +200,31 @@ void MTCTaskNode::setupPlanningScene()
   RCLCPP_INFO(this->get_logger(), "  Type: %s", object_type.c_str());
   RCLCPP_INFO(this->get_logger(), "  Dimensions: [%.3f, %.3f]", object_dimensions[0], object_dimensions[1]);
   RCLCPP_INFO(this->get_logger(), "  Reference frame: %s", object_reference_frame.c_str());
+
+  RCLCPP_INFO(this->get_logger(), "Sending GetPlanningScene service request...");  
+  
+  // Call the service
+  auto response = planning_scene_client->call_service(object_type, object_dimensions);
+  
+  RCLCPP_INFO(this->get_logger(), "Service call to the GetPlanningScene service completed.");
+  
+  // Store the results
+  scene_world_ = response.scene_world; 
+  full_cloud_ = response.full_cloud;
+  rgb_image_ = response.rgb_image;
+  target_object_id_ = response.target_object_id;
+  service_success_ = response.success;
   
   /** TODO
-  RCLCPP_INFO(this->get_logger(), "Sending GetPlanningScene service request...");
 
-  RCLCPP_INFO(this->get_logger(), "Received service response successfully");  
-  OR
-  RCLCPP_ERROR(this->get_logger(), "Failed to call service get_planning_scene_mycobot");
-   
-  // Store the results 
-  full_cloud = ???
-  rgb_image = ???
-  target_object_id = ???
-  service_success = ???
-  scene_world = ???
-    
-  if (!service_success) {
-      RCLCPP_WARN(this->get_logger(), "GetPlanningScene service reported failure. Review the get_planning_scene_server logs.");
-  } 
-      
-  RCLCPP_INFO(this->get_logger(), "Service response details:");
-  RCLCPP_INFO(this->get_logger(), "  Target object ID: %s", target_object_id.c_str());
-  RCLCPP_INFO(this->get_logger(), "  Service success: %s", service_success ? "true" : "false");
-  RCLCPP_INFO(this->get_logger(), "  Full cloud size: %d points", full_cloud.width * full_cloud.height);
-  RCLCPP_INFO(this->get_logger(), "  RGB image size: %dx%d", rgb_image.width, rgb_image.height);
-
-  // Add all collision objects to the planning scene
+  // Add collision objects to the planning scene
   RCLCPP_INFO(this->get_logger(), "Applying collision objects from service response...");
-  if (!psi.applyCollisionObjects(scene_world.collision_objects)) {
+  
+  if (!psi.applyCollisionObjects(scene_world_.collision_objects)) {
     RCLCPP_ERROR(this->get_logger(), "Failed to add collision objects from service response");
   } else {
-      RCLCPP_INFO(this->get_logger(), "Successfully added %zu collision objects from service response to the planning scene",
-      scene_world.collision_objects.size());
+    RCLCPP_INFO(this->get_logger(), "Successfully added %zu collision objects from service response to the planning scene",
+      scene_world_.collision_objects.size());
   }
   **/
 
