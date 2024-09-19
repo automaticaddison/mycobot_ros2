@@ -504,12 +504,12 @@ mtc::Task MTCTaskNode::createTask()
       vec.vector.z = approach_object_direction_z; // Set the direction (in this case, along the z-axis of the gripper frame)
       stage->setDirection(vec);
       grasp->insert(std::move(stage));
-	}
+    }
 	
     /****************************************************
 ---- *               Generate Grasp Pose               *
      ***************************************************/
-	{
+    {
 	  // Generate the grasp pose
 	  // This is the stage for computing how the robot should grab the object
 	  // This stage is a generator stage because it doesn't need information from
@@ -562,6 +562,17 @@ mtc::Task MTCTaskNode::createTask()
                       mtc::TrajectoryExecutionInfo().set__controller_names(controller_names));
       grasp->insert(std::move(stage));
     }
+    
+    /****************************************************
+---- *       Allow collision (object,  support_surface)        *
+     ***************************************************/
+    {
+      // Allows the planner to generate valid trajectories where the object remains in contact 
+      // with the support surface until it's lifted.
+      auto stage = std::make_unique<mtc::stages::ModifyPlanningScene>("allow collision (object,support_surface)");
+      stage->allowCollisions({ object_name }, {support_surface_id_}, true);
+      grasp->insert(std::move(stage));
+    }	    
 	
     /****************************************************
 ---- *               Attach Object                     *
@@ -572,7 +583,7 @@ mtc::Task MTCTaskNode::createTask()
        attach_object_stage = stage.get();
        grasp->insert(std::move(stage));
     }
-	
+
     /****************************************************
 ---- *       Lift object                               *
      ***************************************************/
@@ -592,11 +603,23 @@ mtc::Task MTCTaskNode::createTask()
       stage->setDirection(vec);
       grasp->insert(std::move(stage));
     }
-    // Add the serial container to the robot's to-do list
-    // This serial container contains all the sequential steps we've created for grasping
-    // and lifting the object 
-    task.add(std::move(grasp));
-  }
+    /****************************************************
+---- *       Forbid collision (object, surface)*       *
+     ***************************************************/
+    {
+      // Forbid collisions between the picked object and the support surface. 
+      // This is important after the object has been lifted to ensure it doesn't accidentally 
+      // collide with the surface during subsequent movements.
+      auto stage = std::make_unique<mtc::stages::ModifyPlanningScene>("forbid collision (object,support_surface)");
+      stage->allowCollisions({ object_name }, {support_surface_id_}, false);
+      grasp->insert(std::move(stage)); 
+    }     
+   	 
+      // Add the serial container to the robot's to-do list
+      // This serial container contains all the sequential steps we've created for grasping
+      // and lifting the object 
+      task.add(std::move(grasp));
+  }  
   /******************************************************
    *                                                    *
    *          Move to Place                             *
