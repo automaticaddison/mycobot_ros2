@@ -49,6 +49,7 @@ public:
     sensor_msgs::msg::PointCloud2 full_cloud; // The full point cloud data
     sensor_msgs::msg::Image rgb_image; // The RGB image data
     std::string target_object_id; // The ID of the target object
+    std::string support_surface_id; // The ID of the support surface
     bool success; // Flag indicating whether the service call was successful
   };
 

@@ -89,6 +89,7 @@ private:
   sensor_msgs::msg::PointCloud2 full_cloud_;
   sensor_msgs::msg::Image rgb_image_;
   std::string target_object_id_;
+  std::string support_surface_id_;
   bool service_success_;
 };
 
@@ -213,6 +214,7 @@ void MTCTaskNode::setupPlanningScene()
   full_cloud_ = response.full_cloud;
   rgb_image_ = response.rgb_image;
   target_object_id_ = response.target_object_id;
+  support_surface_id_ = response.support_surface_id; 
   service_success_ = response.success;
   
   // Add all collision objects to the planning scene  

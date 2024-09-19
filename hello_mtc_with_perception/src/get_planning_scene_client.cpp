@@ -54,6 +54,7 @@ GetPlanningSceneClient::call_service(const std::string& target_shape, const std:
     response.full_cloud = result->full_cloud;
     response.rgb_image = result->rgb_image;
     response.target_object_id = result->target_object_id;
+    response.support_surface_id = result->support_surface_id;
     response.success = result->success;
 
     // Log information about the response
@@ -69,6 +70,7 @@ void GetPlanningSceneClient::log_response_info(const PlanningSceneResponse& resp
 {
   RCLCPP_INFO(get_logger(), "Response received. Success: %s", response.success ? "true" : "false");
   RCLCPP_INFO(get_logger(), "Target object ID: %s", response.target_object_id.c_str());
+  RCLCPP_INFO(get_logger(), "Support surface ID: %s", response.support_surface_id.c_str());
   RCLCPP_INFO(get_logger(), "Number of collision objects: %zu", response.scene_world.collision_objects.size());
   RCLCPP_INFO(get_logger(), "Point cloud width: %d, height: %d", response.full_cloud.width, response.full_cloud.height);
   RCLCPP_INFO(get_logger(), "RGB image width: %d, height: %d", response.rgb_image.width, response.rgb_image.height);

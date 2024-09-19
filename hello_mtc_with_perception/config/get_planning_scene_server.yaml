@@ -33,7 +33,7 @@ get_planning_scene_server:
     
     # Support surface parameters
     support_surface_name: "support_surface"
-    min_surface_thickness: 0.001
+    min_surface_thickness: 0.0001
     
     # Legacy parameters (to be removed later)
     max_plane_segmentation_iterations: 1000

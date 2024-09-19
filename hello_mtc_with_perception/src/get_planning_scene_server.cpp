@@ -171,7 +171,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     
     // Declare parameters for creating the support surface
     declare_parameter("support_surface_name", "support_surface", "Name of the support surface collision object");
-    declare_parameter("min_surface_thickness", 0.001, "Minimum thickness for the support surface (in meters)");
+    declare_parameter("min_surface_thickness", 0.0001, "Minimum thickness for the support surface (in meters)");
   
     // Legacy...remove these later
     declare_parameter("max_plane_segmentation_iterations", 1000, "Maximum iterations for plane segmentation RANSAC");
@@ -976,6 +976,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
       RCLCPP_INFO(this->get_logger(), "Adding support surface collision object to the planning scene");      
       // Add the support surface to the planning scene
       response->scene_world.collision_objects.push_back(support_surface);
+      // Set the support_surface_id in the response
+      response->support_surface_id = support_surface.id;
     }
 
     /**
@@ -1058,6 +1060,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // 12. Helpful logging
     RCLCPP_INFO(this->get_logger(), "Success: %s", response->success ? "true" : "false");
     RCLCPP_INFO(this->get_logger(), "Target object ID: %s", response->target_object_id.c_str());
+    RCLCPP_INFO(this->get_logger(), "Support surface ID: %s", response->support_surface_id.c_str());
   
     // Point cloud information
     RCLCPP_INFO(this->get_logger(), "Full cloud frame ID: %s", response->full_cloud.header.frame_id.c_str());
@@ -1116,7 +1119,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
     if (!response->scene_world.collision_objects.empty() &&
         !response->full_cloud.data.empty() &&
         !response->rgb_image.data.empty() &&
-        !response->target_object_id.empty()) {
+        !response->target_object_id.empty() &&
+        !response->support_surface_id.empty()) {
       response->success = true;
       RCLCPP_INFO(this->get_logger(), "Service response filled successfully");
     } else {
@@ -1133,6 +1137,9 @@ class GetPlanningSceneServer : public rclcpp::Node {
       }
       if (response->target_object_id.empty()) {
         RCLCPP_WARN(this->get_logger(), "  The target object was not found in the input point cloud");
+      }
+      if (response->support_surface_id.empty()) {
+        RCLCPP_WARN(this->get_logger(), "  The support surface ID is empty");
       }
     }
   
