@@ -202,96 +202,61 @@ void MTCTaskNode::setupPlanningScene()
   RCLCPP_INFO(this->get_logger(), "  Dimensions: [%.3f, %.3f]", object_dimensions[0], object_dimensions[1]);
   RCLCPP_INFO(this->get_logger(), "  Reference frame: %s", object_reference_frame.c_str());
   
-  /**
-  // Prepare the service request to set up the planning scene based on a 3D point cloud
-  auto request = std::make_shared<mycobot_interfaces::srv::GetPlanningScene::Request>();
-  request->target_shape = object_type;
-  request->target_dimensions = {object_dimensions.at(0), object_dimensions.at(1)}; // Height and radius of the cylinder
-  
-  RCLCPP_INFO(this->get_logger(), "Waiting for GetPlanningScene service...");
-  
-  // Wait for the service to be available
-  if (!get_planning_scene_client->wait_for_service(std::chrono::seconds(10))) {
-    RCLCPP_ERROR(this->get_logger(), "GetPlanningScene service not available after waiting");
-    throw std::runtime_error("GetPlanningScene service not available");
-  }
-  
+  /** TODO
   RCLCPP_INFO(this->get_logger(), "Sending GetPlanningScene service request...");
-  
-  // Send the request asynchronously
-  auto result_future = get_planning_scene_client->async_send_request(request);
-  
-  // Wait for the result
-  if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result_future) ==
-      rclcpp::FutureReturnCode::SUCCESS)
-  {
-    auto result = result_future.get();
-    
-    // Check if the call was successful
-    if (!result) {
-      RCLCPP_ERROR(this->get_logger(), "Failed to call service get_planning_scene_mycobot");
-      throw std::runtime_error("Failed to call GetPlanningScene service");
-    }
 
-    RCLCPP_INFO(this->get_logger(), "Received service response successfully");
+  RCLCPP_INFO(this->get_logger(), "Received service response successfully");  
+  OR
+  RCLCPP_ERROR(this->get_logger(), "Failed to call service get_planning_scene_mycobot");
+   
+  // Store the results 
+  full_cloud = ???
+  rgb_image = ???
+  target_object_id = ???
+  service_success = ???
+  scene_world = ???
     
-    // Store the results in member variables
-    full_cloud = result->full_cloud;
-    rgb_image = result->rgb_image;
-    target_object_id = result->target_object_id;
-    service_success = result->success;
-    
-    if (!service_success) {
-      RCLCPP_ERROR(this->get_logger(), "GetPlanningScene service reported failure");
-      throw std::runtime_error("GetPlanningScene service reported failure");
-    } 
+  if (!service_success) {
+      RCLCPP_WARN(this->get_logger(), "GetPlanningScene service reported failure. Review the get_planning_scene_server logs.");
+  } 
       
-    RCLCPP_INFO(this->get_logger(), "Service response details:");
-    RCLCPP_INFO(this->get_logger(), "  Target object ID: %s", target_object_id.c_str());
-    RCLCPP_INFO(this->get_logger(), "  Service success: %s", service_success ? "true" : "false");
-    RCLCPP_INFO(this->get_logger(), "  Full cloud size: %d points", full_cloud.width * full_cloud.height);
-    RCLCPP_INFO(this->get_logger(), "  RGB image size: %dx%d", rgb_image.width, rgb_image.height);
+  RCLCPP_INFO(this->get_logger(), "Service response details:");
+  RCLCPP_INFO(this->get_logger(), "  Target object ID: %s", target_object_id.c_str());
+  RCLCPP_INFO(this->get_logger(), "  Service success: %s", service_success ? "true" : "false");
+  RCLCPP_INFO(this->get_logger(), "  Full cloud size: %d points", full_cloud.width * full_cloud.height);
+  RCLCPP_INFO(this->get_logger(), "  RGB image size: %dx%d", rgb_image.width, rgb_image.height);
 
-    // Apply all collision objects from the service response at once
-    RCLCPP_INFO(this->get_logger(), "Applying collision objects from service response...");
-    if (!psi.applyCollisionObjects(result->scene_world.collision_objects)) {
-      RCLCPP_ERROR(this->get_logger(), "Failed to add collision objects from service response");
-    } else {
+  // Add all collision objects to the planning scene
+  RCLCPP_INFO(this->get_logger(), "Applying collision objects from service response...");
+  if (!psi.applyCollisionObjects(scene_world.collision_objects)) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to add collision objects from service response");
+  } else {
       RCLCPP_INFO(this->get_logger(), "Successfully added %zu collision objects from service response to the planning scene",
-      result->scene_world.collision_objects.size());
-    }
-    
-    **/
-
-    // Create a cylinder collision object
-    RCLCPP_INFO(this->get_logger(), "Creating cylinder collision object...");
-    geometry_msgs::msg::Pose cylinder_pose = vectorToPose(object_pose_param);
-    cylinder_pose.position.z += 0.50 * object_dimensions[0]; 
-    moveit_msgs::msg::CollisionObject cylinder_object;
-    cylinder_object.id = object_name;
-    cylinder_object.header.frame_id = object_reference_frame;
-    cylinder_object.primitives.resize(1);
-    cylinder_object.primitives[0].type = shape_msgs::msg::SolidPrimitive::CYLINDER;
-    cylinder_object.primitives[0].dimensions = { object_dimensions.at(0), object_dimensions.at(1) };
-    cylinder_object.primitive_poses.push_back(cylinder_pose);
-
-    // Add the cylinder to the planning scene
-    if (!psi.applyCollisionObject(cylinder_object)) {
-      RCLCPP_ERROR(this->get_logger(), "Failed to spawn object: %s", cylinder_object.id.c_str());
-      throw std::runtime_error("Failed to spawn object: " + cylinder_object.id);
-    }
-    
-    RCLCPP_INFO(this->get_logger(), "Added cylinder object to planning scene");
-
-    RCLCPP_INFO(this->get_logger(), "Planning scene setup completed");
-  /**
-  }
-  else
-  {
-    RCLCPP_ERROR(this->get_logger(), "Service call to GetPlanningScene failed or timed out");
-    throw std::runtime_error("Service call to GetPlanningScene failed or timed out");
+      scene_world.collision_objects.size());
   }
   **/
+
+  // Create a cylinder collision object
+  RCLCPP_INFO(this->get_logger(), "Creating cylinder collision object...");
+  geometry_msgs::msg::Pose cylinder_pose = vectorToPose(object_pose_param);
+  cylinder_pose.position.z += 0.50 * object_dimensions[0]; 
+  moveit_msgs::msg::CollisionObject cylinder_object;
+  cylinder_object.id = object_name;
+  cylinder_object.header.frame_id = object_reference_frame;
+  cylinder_object.primitives.resize(1);
+  cylinder_object.primitives[0].type = shape_msgs::msg::SolidPrimitive::CYLINDER;
+  cylinder_object.primitives[0].dimensions = { object_dimensions.at(0), object_dimensions.at(1) };
+  cylinder_object.primitive_poses.push_back(cylinder_pose);
+
+  // Add the cylinder to the planning scene
+  if (!psi.applyCollisionObject(cylinder_object)) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to spawn object: %s", cylinder_object.id.c_str());
+    throw std::runtime_error("Failed to spawn object: " + cylinder_object.id);
+  }
+    
+  RCLCPP_INFO(this->get_logger(), "Added cylinder object to planning scene");
+
+  RCLCPP_INFO(this->get_logger(), "Planning scene setup completed");
 }
 
 /**
