@@ -24,7 +24,7 @@
 #include <vector>
 
 // Handling the GetPlanningScene service
-#include <mycobot_interfaces/srv/get_planning_scene.hpp>
+#include "hello_mtc_with_perception/get_planning_scene_client.h"
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/msg/image.hpp>
 
@@ -84,7 +84,7 @@ private:
   mtc::Task createTask();
 
   // Variables for calling the GetPlanningScene service
-  rclcpp::Client<mycobot_interfaces::srv::GetPlanningScene>::SharedPtr get_planning_scene_client;
+  std::shared_ptr<GetPlanningSceneClient> planning_scene_client;
   sensor_msgs::msg::PointCloud2 full_cloud;
   sensor_msgs::msg::Image rgb_image;
   std::string target_object_id;
@@ -173,10 +173,9 @@ MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
   declare_parameter("retreat_max_distance", 0.25, "Maximum distance for retreat motion");
 
   RCLCPP_INFO(this->get_logger(), "All parameters have been declared with descriptions");
-
-  // Create the service client
-  get_planning_scene_client = this->create_client<mycobot_interfaces::srv::GetPlanningScene>("get_planning_scene_mycobot");
-
+  
+  // Initialize the planning scene client
+  planning_scene_client = std::make_shared<GetPlanningSceneClient>();
 }
 
 /**
