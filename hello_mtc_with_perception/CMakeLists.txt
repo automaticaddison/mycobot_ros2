@@ -54,7 +54,9 @@ set(dependencies ${REQUIRED_PACKAGES})
 include_directories(include ${PCL_INCLUDE_DIRS})
 
 # Create plane_segmentation as a shared library
-add_library(plane_segmentation SHARED src/plane_segmentation.cpp)
+add_library(plane_segmentation SHARED 
+  src/plane_segmentation.cpp
+)
 target_link_libraries(plane_segmentation ${PCL_LIBRARIES})
 target_include_directories(plane_segmentation PUBLIC 
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -62,9 +64,29 @@ target_include_directories(plane_segmentation PUBLIC
 )
 ament_target_dependencies(plane_segmentation ${dependencies})
 
+# Create get_planning_scene_client as a shared library
+add_library(get_planning_scene_client SHARED
+  src/get_planning_scene_client.cpp
+)
+target_include_directories(get_planning_scene_client PUBLIC 
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+ament_target_dependencies(get_planning_scene_client ${dependencies})
+
 # Define and build mtc_node
 add_executable(mtc_node src/mtc_node.cpp)
 ament_target_dependencies(mtc_node ${dependencies})
+target_link_libraries(mtc_node get_planning_scene_client)
+
+# Define and build get_planning_scene_client_node
+add_executable(get_planning_scene_client_node src/get_planning_scene_client.cpp)
+target_compile_definitions(get_planning_scene_client_node PRIVATE GET_PLANNING_SCENE_CLIENT_MAIN)
+target_include_directories(get_planning_scene_client_node PUBLIC 
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+ament_target_dependencies(get_planning_scene_client_node ${dependencies})
 
 # Define and build get_planning_scene_server
 add_executable(get_planning_scene_server src/get_planning_scene_server.cpp)
@@ -73,12 +95,17 @@ target_link_libraries(get_planning_scene_server plane_segmentation)
 
 # Install targets
 install(
-  TARGETS mtc_node get_planning_scene_server
+  TARGETS 
+    mtc_node 
+    get_planning_scene_server
+    get_planning_scene_client_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 install(
-  TARGETS plane_segmentation
+  TARGETS 
+    plane_segmentation 
+    get_planning_scene_client
   EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
@@ -99,6 +126,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(plane_segmentation)
+ament_export_libraries(plane_segmentation get_planning_scene_client)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_package()

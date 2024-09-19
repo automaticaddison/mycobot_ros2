@@ -1,0 +1,109 @@
+/**
+ * @file get_planning_scene_client.cpp
+ * @brief Implementation of the GetPlanningSceneClient class and standalone executable.
+ *
+ * This file contains the implementation of the GetPlanningSceneClient class,
+ * which acts as a client for the GetPlanningScene service in ROS2.
+ * It can be compiled as part of a library or as a standalone executable.
+ *
+ * @author Addison Sears-Collins
+ * @date September 19, 2024
+ */
+
+#include "hello_mtc_with_perception/get_planning_scene_client.h"
+
+GetPlanningSceneClient::GetPlanningSceneClient()
+: Node("get_planning_scene_client")
+{
+  // Create a client for the GetPlanningScene service
+  client_ = create_client<mycobot_interfaces::srv::GetPlanningScene>("/get_planning_scene_mycobot");
+}
+
+GetPlanningSceneClient::PlanningSceneResponse 
+GetPlanningSceneClient::call_service(const std::string& target_shape, const std::vector<double>& target_dimensions)
+{
+  PlanningSceneResponse response;
+  response.success = false;
+
+  // Wait for the service to become available
+  while (!client_->wait_for_service(std::chrono::seconds(1))) {
+    if (!rclcpp::ok()) {
+      RCLCPP_ERROR(get_logger(), "Interrupted while waiting for the service. Exiting.");
+      return response;
+    }
+    RCLCPP_INFO(get_logger(), "Service not available, waiting again...");
+  }
+
+  // Prepare the request
+  auto request = std::make_shared<mycobot_interfaces::srv::GetPlanningScene::Request>();
+  request->target_shape = target_shape;
+  request->target_dimensions = target_dimensions;
+
+  // Send the request asynchronously
+  auto result_future = client_->async_send_request(request);
+
+  // Wait for the result
+  if (rclcpp::spin_until_future_complete(get_node_base_interface(), result_future) ==
+    rclcpp::FutureReturnCode::SUCCESS)
+  {
+    auto result = result_future.get();
+    RCLCPP_INFO(get_logger(), "Service call successful");
+    
+    // Store the result in our response struct
+    response.scene_world = result->scene_world;
+    response.full_cloud = result->full_cloud;
+    response.rgb_image = result->rgb_image;
+    response.target_object_id = result->target_object_id;
+    response.success = result->success;
+
+    // Log information about the response
+    log_response_info(response);
+  } else {
+    RCLCPP_ERROR(get_logger(), "Failed to call service");
+  }
+
+  return response;
+}
+
+void GetPlanningSceneClient::log_response_info(const PlanningSceneResponse& response)
+{
+  RCLCPP_INFO(get_logger(), "Response received. Success: %s", response.success ? "true" : "false");
+  RCLCPP_INFO(get_logger(), "Target object ID: %s", response.target_object_id.c_str());
+  RCLCPP_INFO(get_logger(), "Number of collision objects: %zu", response.scene_world.collision_objects.size());
+  RCLCPP_INFO(get_logger(), "Point cloud width: %d, height: %d", response.full_cloud.width, response.full_cloud.height);
+  RCLCPP_INFO(get_logger(), "RGB image width: %d, height: %d", response.rgb_image.width, response.rgb_image.height);
+}
+
+// Conditional compilation for standalone executable
+#ifdef GET_PLANNING_SCENE_CLIENT_MAIN
+
+int main(int argc, char** argv)
+{
+  // Initialize ROS2
+  rclcpp::init(argc, argv);
+
+  // Create an instance of our GetPlanningSceneClient
+  auto node = std::make_shared<GetPlanningSceneClient>();
+  
+  // Example input parameters
+  std::string target_shape = "cylinder";
+  std::vector<double> target_dimensions = {0.35, 0.0125};
+  
+  // Call the service
+  auto response = node->call_service(target_shape, target_dimensions);
+  
+  // Process the response
+  if (response.success) {
+    RCLCPP_INFO(node->get_logger(), "Service call completed successfully");
+    // Additional processing can be done here
+  } else {
+    RCLCPP_WARN(node->get_logger(), "Service response incomplete or invalid. Check get_planning_scene_server logs for the explanation.");
+  }
+  
+  // Shutdown ROS2
+  rclcpp::shutdown();
+  return 0;
+}
+
+#endif // GET_PLANNING_SCENE_CLIENT_MAIN
+
