@@ -447,55 +447,70 @@ class GetPlanningSceneServer : public rclcpp::Node {
       }
       if (!plane_cloud || plane_cloud->empty()) {
         throw std::invalid_argument("Invalid or empty plane point cloud");
-    }
+      }
 
-    // Calculate centroid
-    Eigen::Vector4f centroid;
-    pcl::compute3DCentroid(*plane_cloud, centroid);
-    
-    // Create a shape_msgs::msg::Plane message with the coefficients
-    shape_msgs::msg::Plane plane;
-    for (size_t i = 0; i < 4; ++i) {
-      plane.coef[i] = static_cast<double>(plane_coefficients->values[i]);
-    }
-    // Calculate an appropriate pose for the plane based on its normal vector
-    geometry_msgs::msg::Pose plane_pose;
-    Eigen::Vector3d normal(plane.coef[0], plane.coef[1], plane.coef[2]);
-    normal.normalize();
-    
-    // Calculate rotation to align the plane normal with the z-axis
-    Eigen::Quaterniond rotation;
-    rotation.setFromTwoVectors(Eigen::Vector3d::UnitZ(), normal);
-    
-    // Set the pose
-    plane_pose.position.x = centroid[0];
-    plane_pose.position.y = centroid[1];
-    plane_pose.position.z = centroid[2];
-    plane_pose.orientation.x = rotation.x();
-    plane_pose.orientation.y = rotation.y();
-    plane_pose.orientation.z = rotation.z();
-    plane_pose.orientation.w = rotation.w();
+      // Calculate bounding box of the plane cloud
+      Eigen::Vector4f min_pt, max_pt;
+      pcl::getMinMax3D(*plane_cloud, min_pt, max_pt);
 
-    RCLCPP_INFO(this->get_logger(), "Support surface orientation: [%.2f, %.2f, %.2f, %.2f]",
-      plane_pose.orientation.x, plane_pose.orientation.y, 
-      plane_pose.orientation.z, plane_pose.orientation.w);
-    
-    // Set up the CollisionObject
-    support_surface.header.frame_id = frame_id;
-    support_surface.header.stamp = this->now();
-    support_surface.id = "support_surface";
-    support_surface.planes.push_back(plane);
-    support_surface.plane_poses.push_back(plane_pose);
-    support_surface.operation = moveit_msgs::msg::CollisionObject::ADD;
-    
-    RCLCPP_INFO(this->get_logger(), "Support surface object created successfully");
-    RCLCPP_INFO(this->get_logger(), "Support surface normal: [%.2f, %.2f, %.2f]", 
-      normal.x(), normal.y(), normal.z());
-    RCLCPP_INFO(this->get_logger(), "Support surface position: [%.2f, %.2f, %.2f]",
-      plane_pose.position.x, plane_pose.position.y, plane_pose.position.z);
-    RCLCPP_INFO(this->get_logger(), "Support surface orientation: [%.2f, %.2f, %.2f, %.2f]",
-      plane_pose.orientation.x, plane_pose.orientation.y, 
-      plane_pose.orientation.z, plane_pose.orientation.w);
+      // Calculate centroid
+      Eigen::Vector4f centroid;
+      pcl::compute3DCentroid(*plane_cloud, centroid);
+
+      // Create a box primitive
+      shape_msgs::msg::SolidPrimitive box_primitive;
+      box_primitive.type = shape_msgs::msg::SolidPrimitive::BOX;
+      box_primitive.dimensions.resize(3);
+      box_primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_X] = max_pt[0] - min_pt[0];
+      box_primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Y] = max_pt[1] - min_pt[1];
+      box_primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Z] = max_pt[2] - min_pt[2];
+
+      // Ensure a minimum thickness
+      const double min_thickness = 0.001; // 1mm minimum thickness
+      if (box_primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Z] < min_thickness) {
+        box_primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Z] = min_thickness;
+      }
+
+      // Calculate an appropriate pose for the box based on the plane's normal vector
+      geometry_msgs::msg::Pose box_pose;
+      Eigen::Vector3d normal(plane_coefficients->values[0], plane_coefficients->values[1], plane_coefficients->values[2]);
+      normal.normalize();
+      
+      // Calculate rotation to align the plane normal with the z-axis
+      Eigen::Quaterniond rotation;
+      rotation.setFromTwoVectors(Eigen::Vector3d::UnitZ(), normal);
+      
+      // Set the pose
+      box_pose.position.x = centroid[0];
+      box_pose.position.y = centroid[1];
+      box_pose.position.z = centroid[2];
+      box_pose.orientation.x = rotation.x();
+      box_pose.orientation.y = rotation.y();
+      box_pose.orientation.z = rotation.z();
+      box_pose.orientation.w = rotation.w();
+
+      RCLCPP_INFO(this->get_logger(), "Support surface box dimensions: [%.4f, %.4f, %.4f]",
+        box_primitive.dimensions[0], box_primitive.dimensions[1], box_primitive.dimensions[2]);
+      RCLCPP_INFO(this->get_logger(), "Support surface orientation: [%.4f, %.4f, %.4f, %.4f]",
+        box_pose.orientation.x, box_pose.orientation.y, 
+        box_pose.orientation.z, box_pose.orientation.w);
+      
+      // Set up the CollisionObject
+      support_surface.header.frame_id = frame_id;
+      support_surface.header.stamp = this->now();
+      support_surface.id = "support_surface";
+      support_surface.primitives.push_back(box_primitive);
+      support_surface.primitive_poses.push_back(box_pose);
+      support_surface.operation = moveit_msgs::msg::CollisionObject::ADD;
+      
+      RCLCPP_INFO(this->get_logger(), "Support surface object created successfully as a box");
+      RCLCPP_INFO(this->get_logger(), "Support surface normal: [%.4f, %.4f, %.4f]", 
+        normal.x(), normal.y(), normal.z());
+      RCLCPP_INFO(this->get_logger(), "Support surface position: [%.4f, %.4f, %.4f]",
+        box_pose.position.x, box_pose.position.y, box_pose.position.z);
+      RCLCPP_INFO(this->get_logger(), "Support surface orientation: [%.4f, %.4f, %.4f, %.4f]",
+        box_pose.orientation.x, box_pose.orientation.y, 
+        box_pose.orientation.z, box_pose.orientation.w);
     } catch (const std::exception& e) {
       RCLCPP_ERROR(this->get_logger(), "Error creating support surface object: %s", e.what());
     } catch (...) {
@@ -1033,39 +1048,45 @@ class GetPlanningSceneServer : public rclcpp::Node {
     RCLCPP_INFO(this->get_logger(), "RGB image size: %d x %d", 
       response->rgb_image.width, response->rgb_image.height);
     
-    /**  
     // Collision objects information
     RCLCPP_INFO(this->get_logger(), "Number of collision objects: %zu", 
       response->scene_world.collision_objects.size());
     for (const auto& obj : response->scene_world.collision_objects) {
-      RCLCPP_INFO(this->get_logger(), "  Object ID: %s, Frame ID: %s", 
-      obj.id.c_str(), obj.header.frame_id.c_str());
-      RCLCPP_INFO(this->get_logger(), "    Number of primitives: %zu", obj.primitives.size());
-      for (size_t i = 0; i < obj.primitives.size(); ++i) {
-        RCLCPP_INFO(this->get_logger(), "    Primitive type: %d", obj.primitives[i].type);
-        RCLCPP_INFO(this->get_logger(), "    Pose: [%.2f, %.2f, %.2f] [%.2f, %.2f, %.2f, %.2f]",
-          obj.primitive_poses[i].position.x, obj.primitive_poses[i].position.y, obj.primitive_poses[i].position.z,
-          obj.primitive_poses[i].orientation.x, obj.primitive_poses[i].orientation.y, 
-          obj.primitive_poses[i].orientation.z, obj.primitive_poses[i].orientation.w);
-      }
-    }  
-    **/
-    
-    // Support surface information (if available)
-    auto it = std::find_if(response->scene_world.collision_objects.begin(),
-      response->scene_world.collision_objects.end(),
-      [](const moveit_msgs::msg::CollisionObject& obj) { return obj.id == "support_surface"; });
-    if (it != response->scene_world.collision_objects.end()) {
-      RCLCPP_INFO(this->get_logger(), "Support surface detected:");
-      RCLCPP_INFO(this->get_logger(), "  Frame ID: %s", it->header.frame_id.c_str());
-      if (!it->planes.empty()) {
-        RCLCPP_INFO(this->get_logger(), "  Plane coefficients: [%.3f, %.3f, %.3f, %.3f]",
-          it->planes[0].coef[0], it->planes[0].coef[1], it->planes[0].coef[2], it->planes[0].coef[3]);
-      }
-    } else {
-      RCLCPP_INFO(this->get_logger(), "No support surface detected in the scene.");
-    }
+      if (!obj.primitives.empty()) {
+        const auto& primitive = obj.primitives[0];
+        const auto& pose = obj.primitive_poses[0];
+        std::string type_str;
+        std::string dimensions_str;
 
+        switch(primitive.type) {
+          case shape_msgs::msg::SolidPrimitive::BOX:
+            type_str = "BOX";
+            dimensions_str = "x=" + std::to_string(primitive.dimensions[0]) + ", " +
+                             "y=" + std::to_string(primitive.dimensions[1]) + ", " +
+                             "z=" + std::to_string(primitive.dimensions[2]);
+            break;
+          case shape_msgs::msg::SolidPrimitive::CYLINDER:
+            type_str = "CYLINDER";
+            dimensions_str = "height=" + std::to_string(primitive.dimensions[shape_msgs::msg::SolidPrimitive::CYLINDER_HEIGHT]) + ", " +
+                             "radius=" + std::to_string(primitive.dimensions[shape_msgs::msg::SolidPrimitive::CYLINDER_RADIUS]);
+            break;
+          default:
+            continue;  // Skip other primitive types
+        }
+
+        RCLCPP_INFO(this->get_logger(), "Collision Object: ID=%s, Frame=%s, Type=%s", 
+          obj.id.c_str(), obj.header.frame_id.c_str(), type_str.c_str());
+        RCLCPP_INFO(this->get_logger(), "  Position: x=%.4f, y=%.4f, z=%.4f (meters)",
+          pose.position.x, pose.position.y, pose.position.z);
+        RCLCPP_INFO(this->get_logger(), "  Orientation: x=%.4f, y=%.4f, z=%.4f, w=%.4f",
+          pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+        RCLCPP_INFO(this->get_logger(), "  Dimensions: %s", dimensions_str.c_str());
+      } else {
+        RCLCPP_WARN(this->get_logger(), "Collision Object: ID=%s has no primitives", 
+          obj.id.c_str());
+      }
+    } 
+    
     // Additional processing information
     RCLCPP_INFO(this->get_logger(), "Original point cloud frame: %s", latest_point_cloud->header.frame_id.c_str());
     RCLCPP_INFO(this->get_logger(), "Target frame used for processing: %s", target_frame.c_str());

@@ -215,19 +215,89 @@ void MTCTaskNode::setupPlanningScene()
   target_object_id_ = response.target_object_id;
   service_success_ = response.success;
   
-  /** TODO
+  /**
+  // Find and add the support surface
+  moveit_msgs::msg::CollisionObject support_surface;
+  for (const auto& obj : scene_world_.collision_objects) {
+    if (obj.id == "support_surface") {
+      support_surface = obj;
+      break;
+    }
+  }
 
-  // Add collision objects to the planning scene
-  RCLCPP_INFO(this->get_logger(), "Applying collision objects from service response...");
-  
-  if (!psi.applyCollisionObjects(scene_world_.collision_objects)) {
-    RCLCPP_ERROR(this->get_logger(), "Failed to add collision objects from service response");
+  if (!support_surface.id.empty() && !support_surface.planes.empty()) {
+    RCLCPP_INFO(this->get_logger(), "Converting support surface plane to thin box for visualization...");
+    
+    // Create a new collision object for the thin box
+    moveit_msgs::msg::CollisionObject thin_box;
+    thin_box.header = support_surface.header;
+    thin_box.id = "support_surface_box";
+    thin_box.primitives.resize(1);
+    thin_box.primitives[0].type = shape_msgs::msg::SolidPrimitive::BOX;
+    thin_box.primitives[0].dimensions.resize(3);
+    
+    // Get the plane coefficients
+    double a = support_surface.planes[0].coef[0];
+    double b = support_surface.planes[0].coef[1];
+    double c = support_surface.planes[0].coef[2];
+    double d = support_surface.planes[0].coef[3];
+
+    // Normalize the normal vector
+    double norm = std::sqrt(a*a + b*b + c*c);
+    a /= norm; b /= norm; c /= norm; d /= norm;
+
+    // Set box dimensions (adjust these as needed)
+    double box_size_x = 2.0;  // 2 meters in x direction
+    double box_size_y = 2.0;  // 2 meters in y direction
+    double box_thickness = 0.002;  // 2 mm thick
+    
+    thin_box.primitives[0].dimensions[shape_msgs::msg::SolidPrimitive::BOX_X] = box_size_x;
+    thin_box.primitives[0].dimensions[shape_msgs::msg::SolidPrimitive::BOX_Y] = box_size_y;
+    thin_box.primitives[0].dimensions[shape_msgs::msg::SolidPrimitive::BOX_Z] = box_thickness;
+
+    // Calculate the center point of the box
+    Eigen::Vector3d normal(a, b, c);
+    Eigen::Vector3d point_on_plane = -d * normal;  // A point on the plane
+
+    // Calculate orientation
+    Eigen::Quaterniond orientation;
+    orientation.setFromTwoVectors(Eigen::Vector3d::UnitZ(), normal);
+
+    // Set the pose of the box
+    thin_box.primitive_poses.resize(1);
+    thin_box.primitive_poses[0].position.x = point_on_plane.x();
+    thin_box.primitive_poses[0].position.y = point_on_plane.y();
+    thin_box.primitive_poses[0].position.z = point_on_plane.z();
+    thin_box.primitive_poses[0].orientation.x = orientation.x();
+    thin_box.primitive_poses[0].orientation.y = orientation.y();
+    thin_box.primitive_poses[0].orientation.z = orientation.z();
+    thin_box.primitive_poses[0].orientation.w = orientation.w();
+
+    // Add the thin box to the planning scene
+    if (!psi.applyCollisionObject(thin_box)) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to add support surface box to planning scene");
+    } else {
+      RCLCPP_INFO(this->get_logger(), "Successfully added support surface box to planning scene");
+    }
+
+    // Log the box details for debugging
+    RCLCPP_INFO(this->get_logger(), "Support surface plane coefficients: [%.2f, %.2f, %.2f, %.2f]", a, b, c, d);
+    RCLCPP_INFO(this->get_logger(), "Support surface box dimensions: %.2f x %.2f x %.2f",
+                box_size_x, box_size_y, box_thickness);
+    RCLCPP_INFO(this->get_logger(), "Support surface box position: [%.2f, %.2f, %.2f]",
+                thin_box.primitive_poses[0].position.x,
+                thin_box.primitive_poses[0].position.y,
+                thin_box.primitive_poses[0].position.z);
+    RCLCPP_INFO(this->get_logger(), "Support surface box orientation: [%.2f, %.2f, %.2f, %.2f]",
+                thin_box.primitive_poses[0].orientation.x,
+                thin_box.primitive_poses[0].orientation.y,
+                thin_box.primitive_poses[0].orientation.z,
+                thin_box.primitive_poses[0].orientation.w);
   } else {
-    RCLCPP_INFO(this->get_logger(), "Successfully added %zu collision objects from service response to the planning scene",
-      scene_world_.collision_objects.size());
+    RCLCPP_WARN(this->get_logger(), "Support surface not found in service response or has no plane data");
   }
   **/
-
+  
   // Create a cylinder collision object
   RCLCPP_INFO(this->get_logger(), "Creating cylinder collision object...");
   geometry_msgs::msg::Pose cylinder_pose = vectorToPose(object_pose_param);

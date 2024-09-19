@@ -93,17 +93,6 @@ void GetPlanningSceneClient::log_response_info(const PlanningSceneResponse& resp
                   prim_pose.orientation.x, prim_pose.orientation.y, prim_pose.orientation.z, prim_pose.orientation.w);
     }
 
-    RCLCPP_INFO(get_logger(), "  Number of planes: %zu", obj.planes.size());
-    for (size_t i = 0; i < obj.planes.size(); ++i) {
-      const auto& plane = obj.planes[i];
-      const auto& plane_pose = obj.plane_poses[i];
-      RCLCPP_INFO(get_logger(), "    Plane %zu:", i);
-      RCLCPP_INFO(get_logger(), "      Coefficients: a=%.3f, b=%.3f, c=%.3f, d=%.3f",
-                  plane.coef[0], plane.coef[1], plane.coef[2], plane.coef[3]);
-      RCLCPP_INFO(get_logger(), "      Pose: x=%.3f, y=%.3f, z=%.3f, qx=%.3f, qy=%.3f, qz=%.3f, qw=%.3f",
-                  plane_pose.position.x, plane_pose.position.y, plane_pose.position.z,
-                  plane_pose.orientation.x, plane_pose.orientation.y, plane_pose.orientation.z, plane_pose.orientation.w);
-    }
   }
 }
 
