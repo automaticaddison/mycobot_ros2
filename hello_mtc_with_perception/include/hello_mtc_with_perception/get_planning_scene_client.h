@@ -17,11 +17,14 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <geometry_msgs/msg/pose.hpp>
 #include "rclcpp/rclcpp.hpp"
 #include "mycobot_interfaces/srv/get_planning_scene.hpp"
 #include "moveit_msgs/msg/planning_scene_world.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/msg/image.hpp"
+#include <shape_msgs/msg/solid_primitive.hpp>
+#include <shape_msgs/msg/plane.hpp>
 
 
 /**

@@ -72,7 +72,41 @@ void GetPlanningSceneClient::log_response_info(const PlanningSceneResponse& resp
   RCLCPP_INFO(get_logger(), "Number of collision objects: %zu", response.scene_world.collision_objects.size());
   RCLCPP_INFO(get_logger(), "Point cloud width: %d, height: %d", response.full_cloud.width, response.full_cloud.height);
   RCLCPP_INFO(get_logger(), "RGB image width: %d, height: %d", response.rgb_image.width, response.rgb_image.height);
+  
+  // Detailed logging for each collision object
+  for (const auto& obj : response.scene_world.collision_objects) {
+    RCLCPP_INFO(get_logger(), "Collision object details:");
+    RCLCPP_INFO(get_logger(), "  ID: %s", obj.id.c_str());
+    
+    RCLCPP_INFO(get_logger(), "  Number of primitives: %zu", obj.primitives.size());
+    for (size_t i = 0; i < obj.primitives.size(); ++i) {
+      const auto& prim = obj.primitives[i];
+      const auto& prim_pose = obj.primitive_poses[i];
+      RCLCPP_INFO(get_logger(), "    Primitive %zu:", i);
+      RCLCPP_INFO(get_logger(), "      Type: %d", prim.type);
+      RCLCPP_INFO(get_logger(), "      Dimensions: %zu", prim.dimensions.size());
+      for (size_t j = 0; j < prim.dimensions.size(); ++j) {
+        RCLCPP_INFO(get_logger(), "        Dimension %zu: %.3f", j, prim.dimensions[j]);
+      }
+      RCLCPP_INFO(get_logger(), "      Pose: x=%.3f, y=%.3f, z=%.3f, qx=%.3f, qy=%.3f, qz=%.3f, qw=%.3f",
+                  prim_pose.position.x, prim_pose.position.y, prim_pose.position.z,
+                  prim_pose.orientation.x, prim_pose.orientation.y, prim_pose.orientation.z, prim_pose.orientation.w);
+    }
+
+    RCLCPP_INFO(get_logger(), "  Number of planes: %zu", obj.planes.size());
+    for (size_t i = 0; i < obj.planes.size(); ++i) {
+      const auto& plane = obj.planes[i];
+      const auto& plane_pose = obj.plane_poses[i];
+      RCLCPP_INFO(get_logger(), "    Plane %zu:", i);
+      RCLCPP_INFO(get_logger(), "      Coefficients: a=%.3f, b=%.3f, c=%.3f, d=%.3f",
+                  plane.coef[0], plane.coef[1], plane.coef[2], plane.coef[3]);
+      RCLCPP_INFO(get_logger(), "      Pose: x=%.3f, y=%.3f, z=%.3f, qx=%.3f, qy=%.3f, qz=%.3f, qw=%.3f",
+                  plane_pose.position.x, plane_pose.position.y, plane_pose.position.z,
+                  plane_pose.orientation.x, plane_pose.orientation.y, plane_pose.orientation.z, plane_pose.orientation.w);
+    }
+  }
 }
+
 
 // Conditional compilation for standalone executable
 #ifdef GET_PLANNING_SCENE_CLIENT_MAIN
