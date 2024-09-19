@@ -7,7 +7,7 @@
 ## Overview
 ![RViz Pick and Place Simulation](https://automaticaddison.com/wp-content/uploads/2024/09/pick-place-moveit-task-constructor-moveit2-no-objects-rviz.gif)
 
-This repository contains ROS 2 packages for simulating and controlling the myCobot robotic arm. It provides support for Gazebo simulation and visualization in RViz.
+This repository contains ROS 2 packages for simulating and controlling the myCobot robotic arm. It provides support for Gazebo simulation and visualization in RViz. Gazebo simulation also includes simulated 3D point cloud data from the depth camera (RGBD) sensor plugin.
 
 ## Getting Started
 
@@ -15,6 +15,8 @@ For a complete step-by-step walkthrough on how to build this repository from scr
 [How to Model a Robotic Arm with a URDF File (ROS 2)](https://automaticaddison.com/how-to-model-a-robotic-arm-with-a-urdf-file-ros-2/)
 
 This guide will take you through the entire process of setting up and understanding the mycobot_ros2 project.
+
+![3D Point Cloud RViz](https://automaticaddison.com/wp-content/uploads/2024/09/3d-point-cloud-rviz.jpg)
 
 ## Features
 
