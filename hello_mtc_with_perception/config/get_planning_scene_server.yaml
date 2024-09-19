@@ -31,6 +31,10 @@ get_planning_scene_server:
     w_distance: 1.0
     w_orientation: 1.0
     
+    # Support surface parameters
+    support_surface_name: "support_surface"
+    min_surface_thickness: 0.001
+    
     # Legacy parameters (to be removed later)
     max_plane_segmentation_iterations: 1000
     plane_segmentation_distance_threshold: 0.01

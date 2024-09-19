@@ -215,18 +215,14 @@ void MTCTaskNode::setupPlanningScene()
   target_object_id_ = response.target_object_id;
   service_success_ = response.success;
   
-  /**
-  // Add all collision objects to the planning scene
-  
+  // Add all collision objects to the planning scene  
   RCLCPP_INFO(this->get_logger(), "Applying collision objects from service response...");
   if (!psi.applyCollisionObjects(scene_world_.collision_objects)) {
     RCLCPP_ERROR(this->get_logger(), "Failed to add collision objects from service response");
   } else {
       RCLCPP_INFO(this->get_logger(), "Successfully added %zu collision objects from service response to the planning scene",
-      scene_world.collision_objects.size());
+      scene_world_.collision_objects.size());
   }
-  
-  **/
   
   // Create a cylinder collision object
   RCLCPP_INFO(this->get_logger(), "Creating cylinder collision object...");

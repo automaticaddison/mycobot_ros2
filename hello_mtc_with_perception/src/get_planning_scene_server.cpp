@@ -95,6 +95,10 @@ class GetPlanningSceneServer : public rclcpp::Node {
   double w_distance;
   double w_orientation;
   
+  // Parameters for creating the support plane
+  std::string support_surface_name;
+  double min_surface_thickness;
+  
   // Legacy...remove later Parameters for plane segmentation
   int max_plane_segmentation_iterations;
   double plane_segmentation_distance_threshold;
@@ -164,6 +168,10 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("w_size", 1.0, "Weight for size score in plane model selection");
     declare_parameter("w_distance", 1.0, "Weight for distance score in plane model selection");
     declare_parameter("w_orientation", 1.0, "Weight for orientation score in plane model selection");
+    
+    // Declare parameters for creating the support surface
+    declare_parameter("support_surface_name", "support_surface", "Name of the support surface collision object");
+    declare_parameter("min_surface_thickness", 0.001, "Minimum thickness for the support surface (in meters)");
   
     // Legacy...remove these later
     declare_parameter("max_plane_segmentation_iterations", 1000, "Maximum iterations for plane segmentation RANSAC");
@@ -211,6 +219,10 @@ class GetPlanningSceneServer : public rclcpp::Node {
     w_size = this->get_parameter("w_size").as_double();
     w_distance = this->get_parameter("w_distance").as_double();
     w_orientation = this->get_parameter("w_orientation").as_double();
+    
+    // Get parameters for creating the support plane
+    support_surface_name = this->get_parameter("support_surface_name").as_string();
+    min_surface_thickness = this->get_parameter("min_surface_thickness").as_double();
     
     // Legacy...remove later Get parameters for plane segmentation
     max_plane_segmentation_iterations = this->get_parameter("max_plane_segmentation_iterations").as_int();
@@ -430,9 +442,9 @@ class GetPlanningSceneServer : public rclcpp::Node {
   }
   
   moveit_msgs::msg::CollisionObject createSupportSurfaceObject(
-    const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& plane_cloud,
-    pcl::ModelCoefficients::Ptr plane_coefficients,
-    const std::string& frame_id) {
+      const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& plane_cloud,
+      pcl::ModelCoefficients::Ptr plane_coefficients,
+      const std::string& frame_id) {
     RCLCPP_INFO(this->get_logger(), "Creating support surface object");
     
     moveit_msgs::msg::CollisionObject support_surface;
@@ -453,9 +465,19 @@ class GetPlanningSceneServer : public rclcpp::Node {
       Eigen::Vector4f min_pt, max_pt;
       pcl::getMinMax3D(*plane_cloud, min_pt, max_pt);
 
+      // If cropping is enabled, limit the bounding box to the crop box limits
+      if (enable_cropping) {
+        min_pt[0] = std::max(min_pt[0], static_cast<float>(crop_min_x));
+        min_pt[1] = std::max(min_pt[1], static_cast<float>(crop_min_y));
+        min_pt[2] = std::max(min_pt[2], static_cast<float>(crop_min_z));
+        max_pt[0] = std::min(max_pt[0], static_cast<float>(crop_max_x));
+        max_pt[1] = std::min(max_pt[1], static_cast<float>(crop_max_y));
+        max_pt[2] = std::min(max_pt[2], static_cast<float>(crop_max_z));
+      }
+
       // Calculate centroid
       Eigen::Vector4f centroid;
-      pcl::compute3DCentroid(*plane_cloud, centroid);
+      centroid = (min_pt + max_pt) / 2.0f;
 
       // Create a box primitive
       shape_msgs::msg::SolidPrimitive box_primitive;
@@ -466,9 +488,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
       box_primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Z] = max_pt[2] - min_pt[2];
 
       // Ensure a minimum thickness
-      const double min_thickness = 0.001; // 1mm minimum thickness
-      if (box_primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Z] < min_thickness) {
-        box_primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Z] = min_thickness;
+      if (box_primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Z] < min_surface_thickness) {
+        box_primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Z] = min_surface_thickness;
       }
 
       // Calculate an appropriate pose for the box based on the plane's normal vector
@@ -498,7 +519,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
       // Set up the CollisionObject
       support_surface.header.frame_id = frame_id;
       support_surface.header.stamp = this->now();
-      support_surface.id = "support_surface";
+      support_surface.id = support_surface_name;
       support_surface.primitives.push_back(box_primitive);
       support_surface.primitive_poses.push_back(box_pose);
       support_surface.operation = moveit_msgs::msg::CollisionObject::ADD;
