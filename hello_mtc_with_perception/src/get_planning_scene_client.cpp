@@ -6,6 +6,22 @@
  * which acts as a client for the GetPlanningScene service in ROS2.
  * It can be compiled as part of a library or as a standalone executable.
  *
+ * Input:
+ * - target_shape (std::string): The shape of the target object (e.g., "cylinder", "box")
+ * - target_dimensions (std::vector<double>): The dimensions of the target object
+ *
+ * Output:
+ * - PlanningSceneResponse struct containing:
+ *   - scene_world (moveit_msgs::msg::PlanningSceneWorld): The planning scene world
+ *   - full_cloud (sensor_msgs::msg::PointCloud2): The full point cloud of the scene
+ *   - rgb_image (sensor_msgs::msg::Image): The RGB image of the scene
+ *   - target_object_id (std::string): The ID of the target object in the scene
+ *   - support_surface_id (std::string): The ID of the support surface in the scene
+ *   - success (bool): Indicates if the service call was successful
+ *
+ * The client sends a request to the GetPlanningScene service and processes the response,
+ * providing detailed logging of the received planning scene information.
+ *
  * @author Addison Sears-Collins
  * @date September 19, 2024
  */

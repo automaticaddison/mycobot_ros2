@@ -6,6 +6,29 @@
  * It uses surface normal estimation, Euclidean clustering, and RANSAC plane fitting to identify
  * the support surface and separate objects above it.
  *
+ * Input:
+ * - input_cloud (pcl::PointCloud<pcl::PointXYZRGB>::Ptr): The input point cloud
+ * - enable_cropping (bool): Flag to enable or disable point cloud cropping
+ * - crop_min_x, crop_max_x, crop_min_y, crop_max_y, crop_min_z, crop_max_z (double): Cropping boundaries
+ * - max_iterations (int): Maximum iterations for RANSAC
+ * - distance_threshold (double): Distance threshold for RANSAC
+ * - z_tolerance (double): Tolerance for z-coordinate of the support plane
+ * - angle_tolerance (double): Angle tolerance for surface normals
+ * - min_cluster_size, max_cluster_size (int): Minimum and maximum size of clusters
+ * - cluster_tolerance (double): Tolerance for Euclidean clustering
+ * - normal_estimation_k (int): Number of neighbors for normal estimation
+ * - plane_segmentation_threshold (double): Threshold for plane segmentation
+ * - w_inliers, w_size, w_distance, w_orientation (double): Weights for plane model selection
+ *
+ * Output:
+ * std::tuple containing:
+ * - support_plane_cloud (pcl::PointCloud<pcl::PointXYZRGB>::Ptr): Point cloud of the segmented support plane
+ * - objects_cloud (pcl::PointCloud<pcl::PointXYZRGB>::Ptr): Point cloud of objects above the support plane
+ * - best_plane_model (pcl::ModelCoefficients::Ptr): Coefficients of the best-fit plane model
+ *
+ * The function processes the input point cloud, removes invalid points, estimates surface normals,
+ * identifies potential support surfaces, performs clustering, and extracts the support plane and objects.
+ *
  * @author Addison Sears-Collins
  * @date September 17, 2024
  */

@@ -6,8 +6,31 @@
  * It creates a planning scene, generates a series of motion stages, and executes them
  * to pick up an object from one location and place it in another.
  *
+ * The node performs the following main steps:
+ * 1. Set up the planning scene with collision objects
+ * 2. Create an MTC task with stages for picking and placing
+ * 3. Plan the task
+ * 4. Optionally execute the planned task
+ *
+ * Input Parameters:
+ * - Robot configuration (arm_group_name, gripper_group_name, etc.)
+ * - Object parameters (name, dimensions, pose)
+ * - Motion planning parameters (approach distances, timeouts, etc.)
+ * - Execution flag (whether to execute the planned task)
+ *
+ * Output:
+ * - Planned trajectory for the pick and place task
+ * - Execution of the planned trajectory (if execution flag is set)
+ * - Visualization markers for RViz
+ *
+ * Services Used:
+ * - GetPlanningScene: Retrieves the current planning scene
+ *
+ * Topics Published:
+ * - Various topics for trajectory execution and visualization (specific topics depend on MoveIt configuration)
+ *
  * @author Addison Sears-Collins
- * @date September 18, 2024
+ * @date September 20, 2024
  */
  
 // Include necessary ROS 2 and MoveIt headers
