@@ -24,6 +24,7 @@
  *     full_cloud (sensor_msgs/PointCloud2): Full scene point cloud
  *     rgb_image (sensor_msgs/Image): RGB image of the scene
  *     target_object_id (string): ID of the target object in the PlanningSceneWorld
+ *     support_surface_id (string): ID of the support surface in the PlanningSceneWorld
  *     success (bool): Indicates if the operation was successful
  *
  * @author Addison Sears-Collins
