@@ -383,7 +383,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
     return pcl_cloud;
   }
 
-  // TODO
   bool segmentPlane(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
                     pcl::ModelCoefficients::Ptr coefficients,
                     pcl::PointIndices::Ptr inliers) {
