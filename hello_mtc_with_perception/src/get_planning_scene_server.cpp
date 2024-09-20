@@ -979,16 +979,14 @@ class GetPlanningSceneServer : public rclcpp::Node {
       response->support_surface_id = support_surface.id;
     }
 
-    /**
-    // 7. Extract object clusters
-    //    - Check if cluster extraction was successful and at least one cluster was found
-    //    - If extraction fails or no clusters found, log an error and return early
-    auto clusters = extractClusters(objects_cloud);
-    if (clusters.empty()) {
-      RCLCPP_ERROR(this->get_logger(), "No object clusters found in the point cloud");
-    }
-    RCLCPP_INFO(this->get_logger(), "Successfully extracted %zu object clusters", clusters.size());
+
+    // 7. Estimate normal vectors and curvature values for each point in the point cloud
+    //    - Input: point cloud
+    //    - Output: point cloud with normal vectors and curvature values for each point
+    // TODO
     
+    
+    /**    
     // 8. For each cluster:
     //    - Fit shapes and create CollisionObjects
     //    - Check if shape fitting was successful for at least one object
