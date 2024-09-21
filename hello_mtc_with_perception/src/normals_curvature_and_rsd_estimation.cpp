@@ -29,14 +29,19 @@ estimateNormalsCurvatureAndRSD(
 
   // Output: Point Cloud with Normal Vectors, Curvature Values, and RSD Values
   auto output_cloud = std::make_shared<pcl::PointCloud<PointXYZRGBNormalRSD>>();
+  output_cloud->points.resize(input_cloud->size());
   
   // Create a KdTree for efficient neighbor searches
   auto tree = std::make_shared<pcl::search::KdTree<pcl::PointXYZRGB>>();
   tree->setInputCloud(input_cloud);
 
+  // Step 1: Compute normal vectors and curvature values for all points
+  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals(new pcl::PointCloud<pcl::Normal>);
+  cloud_normals->points.resize(input_cloud->size());
+
   // Process: For each point p in the cloud
   for (size_t i = 0; i < input_cloud->size(); ++i) {
-    // Step 1: Find neighbors
+    // Find neighbors
     std::vector<int> indices;
     std::vector<float> distances;
     tree->nearestKSearch(input_cloud->points[i], k_neighbors, indices, distances);
@@ -55,14 +60,14 @@ estimateNormalsCurvatureAndRSD(
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr neighborhood(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::copyPointCloud(*input_cloud, indices, *neighborhood);
 
-    // Step 2 & 3: Perform Principal Component Analysis (PCA) on this neighborhood
+    // Perform Principal Component Analysis (PCA) on this neighborhood
     pcl::PCA<pcl::PointXYZRGB> initial_pca;
     initial_pca.setInputCloud(neighborhood);
 
     // The eigenvector corresponding to the smallest eigenvalue is an initial normal estimate
     Eigen::Vector3f initial_normal = initial_pca.getEigenVectors().col(2);
 
-    // Step 4: Use Maximum Likelihood Estimation SAmple Consensus (MLESAC) to refine the local plane estimate
+    // Use Maximum Likelihood Estimation SAmple Consensus (MLESAC) to refine the local plane estimate
     pcl::SampleConsensusModelPlane<pcl::PointXYZRGB>::Ptr
         model(new pcl::SampleConsensusModelPlane<pcl::PointXYZRGB>(neighborhood));
     pcl::MaximumLikelihoodSampleConsensus<pcl::PointXYZRGB> mlesac(model);
@@ -81,7 +86,7 @@ estimateNormalsCurvatureAndRSD(
       coefficients(3) = -initial_normal.dot(initial_pca.getMean().head<3>());
     }
 
-    // Step 5: Compute a weighted covariance matrix
+    // Compute a weighted covariance matrix
     Eigen::Matrix3f weighted_covariance = Eigen::Matrix3f::Zero();
     Eigen::Vector3f weighted_mean = Eigen::Vector3f::Zero();
     float total_weight = 0.0f;
@@ -110,7 +115,7 @@ estimateNormalsCurvatureAndRSD(
     }
     weighted_covariance /= total_weight;
 
-    // Step 6: Perform PCA on this weighted covariance matrix
+    // Perform PCA on this weighted covariance matrix
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigen_solver(weighted_covariance);
     Eigen::Matrix3f eigenvectors = eigen_solver.eigenvectors();
     Eigen::Vector3f eigenvalues = eigen_solver.eigenvalues();
@@ -118,48 +123,45 @@ estimateNormalsCurvatureAndRSD(
     // The eigenvector corresponding to the smallest eigenvalue is the final normal estimate
     Eigen::Vector3f final_normal = eigenvectors.col(0);
 
-    // Step 7: Compute curvature values
+    // Compute curvature values
     // Sort eigenvalues in ascending order
     std::sort(eigenvalues.data(), eigenvalues.data() + 3);
     // Compute curvature using the formula: γp = λ₀ / (λ₀ + λ₁ + λ₂) where λ₀ ≤ λ₁ ≤ λ₂
     float curvature = eigenvalues(0) / eigenvalues.sum();
 
-    // Step 8: Estimate RSD values
-    pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
-    normals->points.resize(1);
-    normals->points[0].normal_x = final_normal(0);
-    normals->points[0].normal_y = final_normal(1);
-    normals->points[0].normal_z = final_normal(2);
+    // Store the computed normal and curvature
+    cloud_normals->points[i].normal_x = final_normal(0);
+    cloud_normals->points[i].normal_y = final_normal(1);
+    cloud_normals->points[i].normal_z = final_normal(2);
+    cloud_normals->points[i].curvature = curvature;
 
-    pcl::RSDEstimation<pcl::PointXYZRGB, pcl::Normal, pcl::PrincipalRadiiRSD> rsd;
-    rsd.setInputCloud(input_cloud);
-    rsd.setInputNormals(normals);
-    rsd.setSearchMethod(tree);
-    rsd.setRadiusSearch(rsd_radius);
+    // Store the original point data
+    output_cloud->points[i].x = input_cloud->points[i].x;
+    output_cloud->points[i].y = input_cloud->points[i].y;
+    output_cloud->points[i].z = input_cloud->points[i].z;
+    output_cloud->points[i].r = input_cloud->points[i].r;
+    output_cloud->points[i].g = input_cloud->points[i].g;
+    output_cloud->points[i].b = input_cloud->points[i].b;
+    output_cloud->points[i].normal_x = final_normal(0);
+    output_cloud->points[i].normal_y = final_normal(1);
+    output_cloud->points[i].normal_z = final_normal(2);
+    output_cloud->points[i].curvature = curvature;
+  }
 
-    pcl::PointCloud<pcl::PrincipalRadiiRSD>::Ptr rsd_features(new pcl::PointCloud<pcl::PrincipalRadiiRSD>);
-    rsd.compute(*rsd_features);
+  // Step 2: Estimate RSD values
+  pcl::RSDEstimation<pcl::PointXYZRGB, pcl::Normal, pcl::PrincipalRadiiRSD> rsd;
+  rsd.setInputCloud(input_cloud);
+  rsd.setInputNormals(cloud_normals);
+  rsd.setSearchMethod(tree);
+  rsd.setRadiusSearch(rsd_radius);
 
-    // Step 9: Output creation
-    PointXYZRGBNormalRSD point;
-    // The original XYZ coordinates
-    point.x = input_cloud->points[i].x;
-    point.y = input_cloud->points[i].y;
-    point.z = input_cloud->points[i].z;
-    // The RGB color information
-    point.r = input_cloud->points[i].r;
-    point.g = input_cloud->points[i].g;
-    point.b = input_cloud->points[i].b;
-    // The estimated normal vector for each point
-    point.normal_x = final_normal(0);
-    point.normal_y = final_normal(1);
-    point.normal_z = final_normal(2);
-    // The estimated curvature value for each point
-    point.curvature = curvature;
-    // The estimated RSD values
-    point.r_min = rsd_features->points[0].r_min;
-    point.r_max = rsd_features->points[0].r_max;
-    output_cloud->points.push_back(point);
+  pcl::PointCloud<pcl::PrincipalRadiiRSD>::Ptr rsd_features(new pcl::PointCloud<pcl::PrincipalRadiiRSD>);
+  rsd.compute(*rsd_features);
+
+  // Step 3: Combine all data in the output cloud
+  for (size_t i = 0; i < input_cloud->size(); ++i) {
+    output_cloud->points[i].r_min = rsd_features->points[i].r_min;
+    output_cloud->points[i].r_max = rsd_features->points[i].r_max;
   }
 
   output_cloud->width = output_cloud->points.size();
@@ -188,4 +190,3 @@ estimateNormalsCurvatureAndRSD(
 
   return output_cloud;
 }
-
