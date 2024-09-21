@@ -74,6 +74,17 @@ target_include_directories(get_planning_scene_client PUBLIC
 )
 ament_target_dependencies(get_planning_scene_client ${dependencies})
 
+# Create normals_curvature_and_rsd_estimation as a shared library
+add_library(normals_curvature_and_rsd_estimation SHARED 
+  src/normals_curvature_and_rsd_estimation.cpp
+)
+target_link_libraries(normals_curvature_and_rsd_estimation ${PCL_LIBRARIES})
+target_include_directories(normals_curvature_and_rsd_estimation PUBLIC 
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+ament_target_dependencies(normals_curvature_and_rsd_estimation ${dependencies})
+
 # Define and build mtc_node
 add_executable(mtc_node src/mtc_node.cpp)
 ament_target_dependencies(mtc_node ${dependencies})
@@ -91,7 +102,10 @@ ament_target_dependencies(get_planning_scene_client_node ${dependencies})
 # Define and build get_planning_scene_server
 add_executable(get_planning_scene_server src/get_planning_scene_server.cpp)
 ament_target_dependencies(get_planning_scene_server ${dependencies})
-target_link_libraries(get_planning_scene_server plane_segmentation)
+target_link_libraries(get_planning_scene_server 
+  plane_segmentation
+  normals_curvature_and_rsd_estimation
+)
 
 # Install targets
 install(
@@ -104,8 +118,9 @@ install(
 
 install(
   TARGETS 
-    plane_segmentation 
     get_planning_scene_client
+    normals_curvature_and_rsd_estimation
+    plane_segmentation     
   EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
