@@ -28,10 +28,11 @@
  *     success (bool): Indicates if the operation was successful
  *
  * @author Addison Sears-Collins
- * @date September 17, 2024
+ * @date September 21, 2024
  */
- 
- #include "hello_mtc_with_perception/plane_segmentation.h"
+
+#include "hello_mtc_with_perception/normals_curvature_and_rsd_estimation.h"
+#include "hello_mtc_with_perception/plane_segmentation.h"
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/qos.hpp>
@@ -104,6 +105,14 @@ class GetPlanningSceneServer : public rclcpp::Node {
   int max_plane_segmentation_iterations;
   double plane_segmentation_distance_threshold;
   
+  // Parameters for normal, curvature, and RSD estimation
+  int k_neighbors;
+  double max_plane_error;
+  int max_iterations_normals;
+  int min_boundary_neighbors;
+  double rsd_radius;
+  pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr cloud_with_features;
+  
   // Legacy...remove later Shape fitting parameters
   int shape_fitting_max_iterations;
   double shape_fitting_distance_threshold;
@@ -173,6 +182,13 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // Declare parameters for creating the support surface
     declare_parameter("support_surface_name", "support_surface", "Name of the support surface collision object");
     declare_parameter("min_surface_thickness", 0.0001, "Minimum thickness for the support surface (in meters)");
+    
+    // Declare parameters for normal, curvature, and RSD estimation
+    declare_parameter("k_neighbors", 30, "Number of neighbors to consider for normal estimation");
+    declare_parameter("max_plane_error", 0.01, "Threshold for MLESAC plane fitting");
+    declare_parameter("max_iterations_normals", 100, "Maximum iterations for MLESAC in normal estimation");
+    declare_parameter("min_boundary_neighbors", 10, "Minimum number of neighbors for boundary points");
+    declare_parameter("rsd_radius", 0.01, "Radius for RSD estimation");
   
     // Legacy...remove these later
     declare_parameter("max_plane_segmentation_iterations", 1000, "Maximum iterations for plane segmentation RANSAC");
@@ -223,6 +239,13 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // Get parameters for creating the support plane
     support_surface_name = this->get_parameter("support_surface_name").as_string();
     min_surface_thickness = this->get_parameter("min_surface_thickness").as_double();
+   
+    // Get parameters for normal, curvature, and RSD estimation
+    k_neighbors = this->get_parameter("k_neighbors").as_int();
+    max_plane_error = this->get_parameter("max_plane_error").as_double();
+    max_iterations_normals = this->get_parameter("max_iterations_normals").as_int();
+    min_boundary_neighbors = this->get_parameter("min_boundary_neighbors").as_int();
+    rsd_radius = this->get_parameter("rsd_radius").as_double();
     
     // Legacy...remove later Get parameters for plane segmentation
     max_plane_segmentation_iterations = this->get_parameter("max_plane_segmentation_iterations").as_int();
@@ -979,13 +1002,25 @@ class GetPlanningSceneServer : public rclcpp::Node {
       response->support_surface_id = support_surface.id;
     }
 
+    // 7. Estimate normal vectors, curvature values, and RSD values for 
+    // each point in the point cloud.
+    cloud_with_features = estimateNormalsCurvatureAndRSD(
+      objects_cloud,
+      k_neighbors,
+      max_plane_error,
+      max_iterations_normals,
+      min_boundary_neighbors,
+      rsd_radius
+    );
 
-    // 7. Estimate normal vectors and curvature values for each point in the point cloud
-    //    - Input: point cloud
-    //    - Output: point cloud with normal vectors and curvature values for each point
-    // TODO
-    
-    
+    if (!cloud_with_features || cloud_with_features->empty()) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to estimate normals, curvature, and RSD");
+      return;
+    }
+
+    RCLCPP_INFO(this->get_logger(), "Successfully estimated normals, curvature, and RSD for %zu points", 
+      cloud_with_features->size());
+   
     /**    
     // 8. For each cluster:
     //    - Fit shapes and create CollisionObjects
