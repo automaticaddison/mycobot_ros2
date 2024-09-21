@@ -173,20 +173,45 @@ estimateNormalsCurvatureAndRSD(
   std::stringstream ss;
   ss << std::fixed << std::setprecision(4);
   ss << "Sample of output data structure (showing first " << sample_size << " points):\n";
-  ss << "Point\tX\tY\tZ\tR\tG\tB\tNormal X\tNormal Y\tNormal Z\tCurvature\tRSD Min\tRSD Max\n";
-  
+  ss << std::left
+     << std::setw(6) << "Point"
+     << std::setw(8) << "X"
+     << std::setw(8) << "Y"
+     << std::setw(8) << "Z"
+     << std::setw(4) << "R"
+     << std::setw(4) << "G"
+     << std::setw(4) << "B"
+     << std::setw(10) << "Normal X"
+     << std::setw(10) << "Normal Y"
+     << std::setw(10) << "Normal Z"
+     << std::setw(11) << "Curvature"
+     << std::setw(8) << "RSD Min"
+     << std::setw(8) << "RSD Max"
+     << "\n";
+
   for (int i = 0; i < sample_size; ++i) {
     const auto& point = output_cloud->points[i];
-    ss << i << "\t"
-       << point.x << "\t" << point.y << "\t" << point.z << "\t"
-       << static_cast<int>(point.r) << "\t" << static_cast<int>(point.g) << "\t" << static_cast<int>(point.b) << "\t"
-       << point.normal_x << "\t" << point.normal_y << "\t" << point.normal_z << "\t"
-       << point.curvature << "\t"
-       << point.r_min << "\t" << point.r_max << "\n";
+    ss << std::setw(6) << i
+       << std::setw(8) << point.x
+       << std::setw(8) << point.y
+       << std::setw(8) << point.z
+       << std::setw(4) << static_cast<int>(point.r)
+       << std::setw(4) << static_cast<int>(point.g)
+       << std::setw(4) << static_cast<int>(point.b)
+       << std::setw(10) << point.normal_x
+       << std::setw(10) << point.normal_y
+       << std::setw(10) << point.normal_z
+       << std::setw(11) << point.curvature
+       << std::setw(8) << point.r_min
+       << std::setw(8) << point.r_max
+       << "\n";
   }
-  
+
   LOG_INFO("Normal, curvature, and RSD estimation completed. Output cloud size: " + std::to_string(output_cloud->size()) + " points");
   LOG_INFO("Sample output:\n" + ss.str());
 
   return output_cloud;
 }
+
+
+
