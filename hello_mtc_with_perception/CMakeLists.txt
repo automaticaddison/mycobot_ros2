@@ -56,6 +56,10 @@ set(dependencies ${REQUIRED_PACKAGES})
 # Include directories
 include_directories(include ${PCL_INCLUDE_DIRS})
 
+# Add PCL definitions
+add_definitions(${PCL_DEFINITIONS})
+add_definitions(-DPCL_NO_PRECOMPILE) 
+
 # Libraries
 ## cluster_extraction
 add_library(cluster_extraction SHARED
@@ -70,8 +74,12 @@ ament_target_dependencies(cluster_extraction
 )
 target_link_libraries(cluster_extraction
   ${PCL_LIBRARIES}
+  ${PCL_COMMON_LIBRARIES}
+  ${PCL_IO_LIBRARIES}
+  ${PCL_KDTREE_LIBRARIES}
+  ${PCL_SEARCH_LIBRARIES}
+  ${PCL_SEGMENTATION_LIBRARIES}
 )
-
 ## get_planning_scene_client
 add_library(get_planning_scene_client SHARED
   src/get_planning_scene_client.cpp
@@ -97,6 +105,11 @@ ament_target_dependencies(normals_curvature_and_rsd_estimation
 )
 target_link_libraries(normals_curvature_and_rsd_estimation
   ${PCL_LIBRARIES}
+  ${PCL_COMMON_LIBRARIES}
+  ${PCL_IO_LIBRARIES}
+  ${PCL_KDTREE_LIBRARIES}
+  ${PCL_SEARCH_LIBRARIES}
+  ${PCL_SEGMENTATION_LIBRARIES}
 )
 
 ## plane_segmentation
@@ -141,6 +154,12 @@ target_link_libraries(get_planning_scene_server
   cluster_extraction
   normals_curvature_and_rsd_estimation
   plane_segmentation
+  ${PCL_LIBRARIES}
+  ${PCL_COMMON_LIBRARIES}
+  ${PCL_IO_LIBRARIES}
+  ${PCL_KDTREE_LIBRARIES}
+  ${PCL_SEARCH_LIBRARIES}
+  ${PCL_SEGMENTATION_LIBRARIES}
 )
 
 ## mtc_node

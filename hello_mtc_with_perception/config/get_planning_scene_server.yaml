@@ -30,6 +30,8 @@ get_planning_scene_server:
     w_size: 1.0
     w_distance: 1.0
     w_orientation: 1.0
+    max_plane_segmentation_iterations: 1000
+    plane_segmentation_distance_threshold: 0.01
     
     # Support surface parameters
     support_surface_name: "support_surface"
@@ -42,9 +44,11 @@ get_planning_scene_server:
     min_boundary_neighbors: 10
     rsd_radius: 0.02 
     
+    # Cluster extraction parameters
+    smoothness_threshold: 3.0  # in degrees
+    curvature_threshold: 1.0
+    
     # Legacy parameters (to be removed later)
-    max_plane_segmentation_iterations: 1000
-    plane_segmentation_distance_threshold: 0.01
     shape_fitting_max_iterations: 1000
     shape_fitting_distance_threshold: 0.01
     shape_fitting_min_radius: 0.01

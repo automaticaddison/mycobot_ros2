@@ -63,6 +63,15 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZRGBNormalRSD,
     (float, r_min, r_min)(float, r_max, r_max)
 )
 
+#include <pcl/impl/instantiate.hpp>
+#include <pcl/search/kdtree.h>
+#include <pcl/search/impl/kdtree.hpp>
+#include <pcl/segmentation/region_growing.h>
+#include <pcl/segmentation/impl/region_growing.hpp>
+PCL_INSTANTIATE_PRODUCT(KdTree, (pcl::PointXYZRGBNormalRSD))
+PCL_INSTANTIATE_PRODUCT(Search, (pcl::PointXYZRGBNormalRSD))
+PCL_INSTANTIATE_PRODUCT(RegionGrowing, ((pcl::PointXYZRGBNormalRSD))(pcl::Normal))
+
 /**
  * @brief Log information to console.
  * 

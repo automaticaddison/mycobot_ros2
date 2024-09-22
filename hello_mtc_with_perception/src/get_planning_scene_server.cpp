@@ -31,6 +31,7 @@
  * @date September 21, 2024
  */
 
+#include "hello_mtc_with_perception/cluster_extraction.h"
 #include "hello_mtc_with_perception/normals_curvature_and_rsd_estimation.h"
 #include "hello_mtc_with_perception/plane_segmentation.h"
 
@@ -96,14 +97,12 @@ class GetPlanningSceneServer : public rclcpp::Node {
   double w_size;
   double w_distance;
   double w_orientation;
+  int max_plane_segmentation_iterations;
+  double plane_segmentation_distance_threshold;
   
   // Parameters for creating the support plane
   std::string support_surface_name;
   double min_surface_thickness;
-  
-  // Legacy...remove later Parameters for plane segmentation
-  int max_plane_segmentation_iterations;
-  double plane_segmentation_distance_threshold;
   
   // Parameters for normal, curvature, and RSD estimation
   int k_neighbors;
@@ -112,6 +111,10 @@ class GetPlanningSceneServer : public rclcpp::Node {
   int min_boundary_neighbors;
   double rsd_radius;
   pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr cloud_with_features;
+  
+  // Parameters for cluster extraction
+  float smoothness_threshold;
+  float curvature_threshold;
   
   // Legacy...remove later Shape fitting parameters
   int shape_fitting_max_iterations;
@@ -178,6 +181,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("w_size", 1.0, "Weight for size score in plane model selection");
     declare_parameter("w_distance", 1.0, "Weight for distance score in plane model selection");
     declare_parameter("w_orientation", 1.0, "Weight for orientation score in plane model selection");
+    declare_parameter("max_plane_segmentation_iterations", 1000, "Maximum iterations for plane segmentation RANSAC");
+    declare_parameter("plane_segmentation_distance_threshold", 0.01, "Distance threshold for plane segmentation (in meters)");  
     
     // Declare parameters for creating the support surface
     declare_parameter("support_surface_name", "support_surface", "Name of the support surface collision object");
@@ -189,11 +194,11 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("max_iterations_normals", 100, "Maximum iterations for MLESAC in normal estimation");
     declare_parameter("min_boundary_neighbors", 10, "Minimum number of neighbors for boundary points");
     declare_parameter("rsd_radius", 0.01, "Radius for RSD estimation");
-  
-    // Legacy...remove these later
-    declare_parameter("max_plane_segmentation_iterations", 1000, "Maximum iterations for plane segmentation RANSAC");
-    declare_parameter("plane_segmentation_distance_threshold", 0.01, "Distance threshold for plane segmentation (in meters)");  
 
+    // Declare new parameters for cluster extraction
+    declare_parameter("smoothness_threshold", 3.0f, "Smoothness threshold for the region growing algorithm (in degrees)");
+    declare_parameter("curvature_threshold", 1.0f, "Curvature threshold for the region growing algorithm");
+  
     // Legacy...remove these later
     declare_parameter("shape_fitting_max_iterations", 1000, "Maximum iterations for shape fitting RANSAC");
     declare_parameter("shape_fitting_distance_threshold", 0.01, "Distance threshold for shape fitting (in meters)");
@@ -235,6 +240,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
     w_size = this->get_parameter("w_size").as_double();
     w_distance = this->get_parameter("w_distance").as_double();
     w_orientation = this->get_parameter("w_orientation").as_double();
+    max_plane_segmentation_iterations = this->get_parameter("max_plane_segmentation_iterations").as_int();
+    plane_segmentation_distance_threshold = this->get_parameter("plane_segmentation_distance_threshold").as_double();
     
     // Get parameters for creating the support plane
     support_surface_name = this->get_parameter("support_surface_name").as_string();
@@ -247,9 +254,9 @@ class GetPlanningSceneServer : public rclcpp::Node {
     min_boundary_neighbors = this->get_parameter("min_boundary_neighbors").as_int();
     rsd_radius = this->get_parameter("rsd_radius").as_double();
     
-    // Legacy...remove later Get parameters for plane segmentation
-    max_plane_segmentation_iterations = this->get_parameter("max_plane_segmentation_iterations").as_int();
-    plane_segmentation_distance_threshold = this->get_parameter("plane_segmentation_distance_threshold").as_double();
+    // Get clustering parameter values
+    smoothness_threshold = this->get_parameter("smoothness_threshold").as_double();
+    curvature_threshold = this->get_parameter("curvature_threshold").as_double();
     
     // Legacy...remove later Get shape fitting parameter values
     shape_fitting_max_iterations = this->get_parameter("shape_fitting_max_iterations").as_int();
@@ -407,62 +414,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
     return pcl_cloud;
   }
 
-  bool segmentPlane(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
-                    pcl::ModelCoefficients::Ptr coefficients,
-                    pcl::PointIndices::Ptr inliers) {
-    if (!cloud || cloud->empty()) {
-      RCLCPP_ERROR(this->get_logger(), "Input cloud is null or empty in segmentPlane()");
-      return false;
-    }
-
-    RCLCPP_INFO(this->get_logger(), "Starting plane segmentation. Input cloud size: %zu points", cloud->size());
-
-    try {
-      // Create the segmentation object
-      pcl::SACSegmentation<pcl::PointXYZRGB> seg;
-      
-      // Set segmentation parameters
-      seg.setOptimizeCoefficients(true);
-      seg.setModelType(pcl::SACMODEL_PLANE);
-      seg.setMethodType(pcl::SAC_RANSAC);
-      seg.setMaxIterations(max_plane_segmentation_iterations);
-      seg.setDistanceThreshold(plane_segmentation_distance_threshold);
-
-      seg.setInputCloud(cloud);
-      seg.segment(*inliers, *coefficients);
-
-      if (inliers->indices.empty()) {
-        RCLCPP_WARN(this->get_logger(), "Could not estimate a planar model for the given dataset.");
-        return false;
-      }
-
-      RCLCPP_INFO(this->get_logger(), "Plane segmentation completed. Found %zu inliers.", inliers->indices.size());
-      RCLCPP_INFO(this->get_logger(), "Plane coefficients: a = %f, b = %f, c = %f, d = %f",
-                  coefficients->values[0], coefficients->values[1], 
-                  coefficients->values[2], coefficients->values[3]);
-
-      // Remove the planar inliers, extract the rest
-      pcl::ExtractIndices<pcl::PointXYZRGB> extract;
-      extract.setInputCloud(cloud);
-      extract.setIndices(inliers);
-      extract.setNegative(true);
-      extract.filter(*cloud);
-
-      RCLCPP_INFO(this->get_logger(), "Remaining cloud after plane removal: %zu points.", cloud->size());
-
-      return true;
-    } catch (const pcl::PCLException& e) {
-      RCLCPP_ERROR(this->get_logger(), "PCL exception caught during plane segmentation: %s", e.what());
-      return false;
-    } catch (const std::exception& e) {
-      RCLCPP_ERROR(this->get_logger(), "Standard exception caught during plane segmentation: %s", e.what());
-      return false;
-    } catch (...) {
-      RCLCPP_ERROR(this->get_logger(), "Unknown exception caught during plane segmentation");
-      return false;
-    }
-  }
-  
   moveit_msgs::msg::CollisionObject createSupportSurfaceObject(
       const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& plane_cloud,
       pcl::ModelCoefficients::Ptr plane_coefficients,
@@ -561,74 +512,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     }
     return support_surface;
   }
-
-  std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractClusters(
-      const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud) {
-    
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clusters;
-    if (!cloud || cloud->empty()) {
-      RCLCPP_ERROR(this->get_logger(), "Input cloud is null or empty in extractClusters()");
-      return clusters;
-    }
-    RCLCPP_INFO(this->get_logger(), "Starting cluster extraction. Input cloud size: %zu points", cloud->size());
-    try {
-      // Remove NaN and Inf points
-      auto cloud_filtered = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
-      std::vector<int> indices;
-      pcl::removeNaNFromPointCloud(*cloud, *cloud_filtered, indices);
-      
-      // Additional check for remaining invalid points
-      auto cloud_valid = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
-      cloud_valid->points.reserve(cloud_filtered->points.size());
-      for (const auto& point : cloud_filtered->points) {
-        if (pcl::isFinite(point)) {
-          cloud_valid->points.push_back(point);
-        }
-      }
-      cloud_valid->width = cloud_valid->points.size();
-      cloud_valid->height = 1;
-      cloud_valid->is_dense = true;
-      RCLCPP_INFO(this->get_logger(), "Removed invalid points. Filtered cloud size: %zu points", cloud_valid->size());
-      if (cloud_valid->empty()) {
-        RCLCPP_ERROR(this->get_logger(), "All points were invalid. Cannot proceed with clustering.");
-        return clusters;
-      }
-      // Clustering
-      auto tree = std::make_shared<pcl::search::KdTree<pcl::PointXYZRGB>>();
-      tree->setInputCloud(cloud_valid);
-      std::vector<pcl::PointIndices> cluster_indices;
-      pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
-      ec.setClusterTolerance(cluster_tolerance);
-      ec.setMinClusterSize(min_cluster_size);
-      ec.setMaxClusterSize(max_cluster_size);
-      ec.setSearchMethod(tree);
-      ec.setInputCloud(cloud_valid);
-      ec.extract(cluster_indices);
-      RCLCPP_INFO(this->get_logger(), "Found %zu initial clusters", cluster_indices.size());
-      // Process clusters
-      for (const auto& indices : cluster_indices) {
-        auto cluster = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
-        cluster->points.reserve(indices.indices.size());
-        for (const auto& index : indices.indices) {
-          cluster->points.push_back((*cloud_valid)[index]);
-        }
-        cluster->width = static_cast<uint32_t>(cluster->points.size());
-        cluster->height = 1;
-        cluster->is_dense = true;
-        clusters.push_back(cluster);
-        RCLCPP_INFO(this->get_logger(), "Extracted cluster with %zu points", cluster->points.size());
-      }
-      RCLCPP_INFO(this->get_logger(), "Extraction complete. Returning %zu clusters", clusters.size());
-    } catch (const pcl::PCLException& e) {
-      RCLCPP_ERROR(this->get_logger(), "PCL exception caught during cluster extraction: %s", e.what());
-    } catch (const std::exception& e) {
-      RCLCPP_ERROR(this->get_logger(), "Standard exception caught during cluster extraction: %s", e.what());
-    } catch (...) {
-      RCLCPP_ERROR(this->get_logger(), "Unknown exception caught during cluster extraction");
-    }
-    return clusters;
-  }
-
+  
   moveit_msgs::msg::CollisionObject fitShapeToCluster(
       const std::shared_ptr<pcl::PointCloud<pcl::PointXYZRGB>>& cluster,
       const std::string& frame_id,
@@ -1021,11 +905,31 @@ class GetPlanningSceneServer : public rclcpp::Node {
     RCLCPP_INFO(this->get_logger(), "Successfully estimated normals, curvature, and RSD for %zu points", 
       cloud_with_features->size());
    
-    /**    
-    // 8. For each cluster:
-    //    - Fit shapes and create CollisionObjects
-    //    - Check if shape fitting was successful for at least one object
-    //    - If no shapes could be fitted, log a warning
+    /**      
+    // 8. Extract clusters
+    //    - Extract point cloud clusters using region growing based on nearest neighbors.    
+    std::vector<pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr> clusters = extractClusters(
+      cloud_with_features,
+      min_cluster_size,
+      max_cluster_size,
+      smoothness_threshold,
+      curvature_threshold,
+      k_neighbors
+    );
+
+    if (clusters.empty()) {
+      RCLCPP_ERROR(this->get_logger(), "Node '%s' failed to extract any clusters from the point cloud", this->get_name());
+      return;
+    }
+
+    RCLCPP_INFO(this->get_logger(), "Node '%s' successfully extracted %zu clusters from the point cloud", this->get_name(), clusters.size());
+    
+    // 9. Get collision objects
+    //    - Segment the point cloud clusters into distinct collision objects.  
+    //TODO
+        
+ 
+ 
     bool any_shape_fitted = false;
     size_t shapes_fitted = 0;
     RCLCPP_INFO(this->get_logger(), "Processing %zu clusters for shape fitting", clusters.size());
@@ -1048,12 +952,12 @@ class GetPlanningSceneServer : public rclcpp::Node {
       RCLCPP_INFO(this->get_logger(), "Successfully fitted shapes to %zu out of %zu clusters", 
         shapes_fitted, clusters.size());
     }
-    
-    **/
+    **/       
     
     // 9. Identify target object
     //    - Check if a target object was successfully identified
     //    - If no target found, log a warning
+    // TODO
     std::string target_object_id = identifyTargetObject(
       response->scene_world.collision_objects,
       request->target_shape,
@@ -1066,6 +970,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // 10. Assemble PlanningSceneWorld
     //    - Check if assembly was successful
     //    - If assembly fails, log an error and return early
+    // TODO
     try {
       response->scene_world = assemblePlanningSceneWorld(response->scene_world.collision_objects);
       

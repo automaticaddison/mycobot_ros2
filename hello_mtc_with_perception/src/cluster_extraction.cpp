@@ -19,7 +19,7 @@ extractClusters(
     unsigned int max_cluster_size,
     float smoothness_threshold,
     float curvature_threshold,
-    unsigned int number_of_neighbors) {
+    unsigned int k_neighbors) {
   LOG_INFO("Starting cluster extraction. Input cloud size: " + std::to_string(input_cloud->size()) + " points");
 
   // Create a KdTree object for the search method of the extraction
@@ -47,7 +47,7 @@ extractClusters(
   reg.setMinClusterSize(min_cluster_size);
   reg.setMaxClusterSize(max_cluster_size);
   reg.setSearchMethod(tree);
-  reg.setNumberOfNeighbours(number_of_neighbors);
+  reg.setNumberOfNeighbours(k_neighbors);
   reg.setInputCloud(input_cloud);
   reg.setInputNormals(normals);
   reg.setIndices(indices);

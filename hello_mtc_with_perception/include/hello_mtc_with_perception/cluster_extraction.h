@@ -35,7 +35,7 @@
  * @param max_cluster_size [unsigned int] Maximum number of points that a cluster needs to contain
  * @param smoothness_threshold [float] Threshold for the angle between normals (in degrees)
  * @param curvature_threshold [float] Threshold for the curvature test
- * @param number_of_neighbors [unsigned int] Number of neighbors to use for KNN
+ * @param k_neighbors [unsigned int] Number of neighbors to use for KNN
  * 
  * Output:
  * @return [std::vector<pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr>] Vector of point cloud clusters
@@ -49,7 +49,7 @@ extractClusters(
     unsigned int max_cluster_size,
     float smoothness_threshold,
     float curvature_threshold,
-    unsigned int number_of_neighbors);
+    unsigned int k_neighbors);
 
 #endif // CLUSTER_EXTRACTION_H
 
