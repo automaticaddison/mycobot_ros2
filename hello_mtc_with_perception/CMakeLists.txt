@@ -60,134 +60,79 @@ include_directories(include ${PCL_INCLUDE_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 add_definitions(-DPCL_NO_PRECOMPILE) 
 
+# Define PCL libraries
+set(PCL_LIBS 
+  ${PCL_LIBRARIES}
+  ${PCL_COMMON_LIBRARIES}
+  ${PCL_IO_LIBRARIES}
+  ${PCL_KDTREE_LIBRARIES}
+  ${PCL_SEARCH_LIBRARIES}
+  ${PCL_SEGMENTATION_LIBRARIES}
+)
+
+# Custom function for library creation
+function(add_custom_library name)
+  add_library(${name} SHARED src/${name}.cpp)
+  target_include_directories(${name} PUBLIC 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+  )
+  ament_target_dependencies(${name} ${dependencies})
+  if(ARGN)
+    target_link_libraries(${name} ${ARGN})
+  endif()
+endfunction()
+
 # Libraries
-## cluster_extraction
-add_library(cluster_extraction SHARED
-  src/cluster_extraction.cpp
-)
-target_include_directories(cluster_extraction PUBLIC 
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-ament_target_dependencies(cluster_extraction
-  ${dependencies}
-)
-target_link_libraries(cluster_extraction
-  ${PCL_LIBRARIES}
-  ${PCL_COMMON_LIBRARIES}
-  ${PCL_IO_LIBRARIES}
-  ${PCL_KDTREE_LIBRARIES}
-  ${PCL_SEARCH_LIBRARIES}
-  ${PCL_SEGMENTATION_LIBRARIES}
-)
-## get_planning_scene_client
-add_library(get_planning_scene_client SHARED
-  src/get_planning_scene_client.cpp
-)
-target_include_directories(get_planning_scene_client PUBLIC 
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-ament_target_dependencies(get_planning_scene_client
-  ${dependencies}
-)
-
-## normals_curvature_and_rsd_estimation
-add_library(normals_curvature_and_rsd_estimation SHARED
-  src/normals_curvature_and_rsd_estimation.cpp
-)
-target_include_directories(normals_curvature_and_rsd_estimation PUBLIC 
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-ament_target_dependencies(normals_curvature_and_rsd_estimation
-  ${dependencies}
-)
-target_link_libraries(normals_curvature_and_rsd_estimation
-  ${PCL_LIBRARIES}
-  ${PCL_COMMON_LIBRARIES}
-  ${PCL_IO_LIBRARIES}
-  ${PCL_KDTREE_LIBRARIES}
-  ${PCL_SEARCH_LIBRARIES}
-  ${PCL_SEGMENTATION_LIBRARIES}
-)
-
-## plane_segmentation
-add_library(plane_segmentation SHARED
-  src/plane_segmentation.cpp
-)
-target_include_directories(plane_segmentation PUBLIC 
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-ament_target_dependencies(plane_segmentation
-  ${dependencies}
-)
-target_link_libraries(plane_segmentation
-  ${PCL_LIBRARIES}
-)
+add_custom_library(cluster_extraction ${PCL_LIBS})
+add_custom_library(get_planning_scene_client)
+add_custom_library(normals_curvature_and_rsd_estimation ${PCL_LIBS})
+add_custom_library(plane_segmentation ${PCL_LIBRARIES})
 
 # Executables
 ## get_planning_scene_client_node
-add_executable(get_planning_scene_client_node
-  src/get_planning_scene_client.cpp
-)
-target_compile_definitions(get_planning_scene_client_node PRIVATE
-  GET_PLANNING_SCENE_CLIENT_MAIN
-)
+add_executable(get_planning_scene_client_node src/get_planning_scene_client.cpp)
+target_compile_definitions(get_planning_scene_client_node PRIVATE GET_PLANNING_SCENE_CLIENT_MAIN)
 target_include_directories(get_planning_scene_client_node PUBLIC 
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
-ament_target_dependencies(get_planning_scene_client_node
-  ${dependencies}
-)
+ament_target_dependencies(get_planning_scene_client_node ${dependencies})
 
 ## get_planning_scene_server
-add_executable(get_planning_scene_server
-  src/get_planning_scene_server.cpp
-)
-ament_target_dependencies(get_planning_scene_server
-  ${dependencies}
-)
+add_executable(get_planning_scene_server src/get_planning_scene_server.cpp)
+ament_target_dependencies(get_planning_scene_server ${dependencies})
 target_link_libraries(get_planning_scene_server 
   cluster_extraction
   normals_curvature_and_rsd_estimation
   plane_segmentation
-  ${PCL_LIBRARIES}
-  ${PCL_COMMON_LIBRARIES}
-  ${PCL_IO_LIBRARIES}
-  ${PCL_KDTREE_LIBRARIES}
-  ${PCL_SEARCH_LIBRARIES}
-  ${PCL_SEGMENTATION_LIBRARIES}
+  ${PCL_LIBS}
 )
 
 ## mtc_node
-add_executable(mtc_node
-  src/mtc_node.cpp
-)
-ament_target_dependencies(mtc_node
-  ${dependencies}
-)
-target_link_libraries(mtc_node
-  get_planning_scene_client
-)
+add_executable(mtc_node src/mtc_node.cpp)
+ament_target_dependencies(mtc_node ${dependencies})
+target_link_libraries(mtc_node get_planning_scene_client)
 
 # Installation
-## Executables 
-install(TARGETS 
+set(EXECUTABLES
   get_planning_scene_client_node
   get_planning_scene_server
-  mtc_node 
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  mtc_node
 )
 
-## Libraries
-install(TARGETS 
+set(LIBRARIES
   cluster_extraction
   get_planning_scene_client
   normals_curvature_and_rsd_estimation
-  plane_segmentation     
+  plane_segmentation
+)
+
+install(TARGETS ${EXECUTABLES}
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS ${LIBRARIES}
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -195,14 +140,8 @@ install(TARGETS
   INCLUDES DESTINATION include
 )
 
-## Directories 
 install(DIRECTORY 
-  config
-  include/
-  launch
-  rviz
-  scripts
-  urdf
+  config include/ launch rviz scripts urdf
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -216,7 +155,7 @@ endif()
 
 # Export and package
 ament_export_include_directories(include)
-ament_export_libraries(cluster_extraction get_planning_scene_client plane_segmentation)
+ament_export_libraries(${LIBRARIES})
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_package()
 

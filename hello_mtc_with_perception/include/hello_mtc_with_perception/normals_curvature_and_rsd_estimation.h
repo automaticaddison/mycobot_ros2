@@ -24,19 +24,28 @@
  * @date September 21, 2024
  */
 
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/search/kdtree.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/features/rsd.h>
-#include <pcl/common/io.h>
-#include <pcl/common/pca.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/sample_consensus/sac_model_plane.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/sample_consensus/mlesac.h>  
+// PCL library includes
+#include <pcl/point_types.h>              // For basic point types
+#include <pcl/point_cloud.h>              // For point cloud data structures
+#include <pcl/search/kdtree.h>            // For K-d tree searches
+#include <pcl/features/normal_3d.h>       // For normal estimation
+#include <pcl/features/rsd.h>             // For RSD estimation
+#include <pcl/common/io.h>                // For I/O operations
+#include <pcl/common/pca.h>               // For Principal Component Analysis
+#include <pcl/sample_consensus/method_types.h>    // For sample consensus methods
+#include <pcl/sample_consensus/model_types.h>     // For sample consensus models
+#include <pcl/sample_consensus/sac_model_plane.h> // For plane model fitting
+#include <pcl/segmentation/sac_segmentation.h>    // For segmentation
+#include <pcl/sample_consensus/mlesac.h>          // For MLESAC algorithm
+#include <pcl/impl/instantiate.hpp>               // For instantiating PCL classes
+#include <pcl/search/impl/kdtree.hpp>             // For K-d tree implementation
+#include <pcl/segmentation/region_growing.h>      // For region growing segmentation
+#include <pcl/segmentation/impl/region_growing.hpp> // For region growing implementation
+
+// Eigen library include for linear algebra operations
 #include <Eigen/Dense>
+
+// Standard library includes
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
@@ -49,12 +58,13 @@ struct PointXYZRGBNormalRSD {
     PCL_ADD_POINT4D;    // This adds the members x,y,z which can also be accessed using the point (which is float[4])
     PCL_ADD_RGB;        // This adds the member rgb which can also be accessed using r, g, b
     PCL_ADD_NORMAL4D;   // This adds the member normal[3] which can also be accessed using normal_x, normal_y, normal_z
-    float curvature;
-    float r_min;
-    float r_max;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW   // make sure our new allocations are aligned
-} EIGEN_ALIGN16;                      // enforce SSE padding for correct memory alignment
+    float curvature;    // Curvature value
+    float r_min;        // Minimum radius for RSD
+    float r_max;        // Maximum radius for RSD
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW   // Ensure proper memory alignment for Eigen
+} EIGEN_ALIGN16;                      // Enforce SSE padding for correct memory alignment
 
+// Register the custom point type with PCL
 POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZRGBNormalRSD,
     (float, x, x)(float, y, y)(float, z, z)
     (float, rgb, rgb)
@@ -63,11 +73,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZRGBNormalRSD,
     (float, r_min, r_min)(float, r_max, r_max)
 )
 
-#include <pcl/impl/instantiate.hpp>
-#include <pcl/search/kdtree.h>
-#include <pcl/search/impl/kdtree.hpp>
-#include <pcl/segmentation/region_growing.h>
-#include <pcl/segmentation/impl/region_growing.hpp>
+// Instantiate PCL classes for the custom point type
 PCL_INSTANTIATE_PRODUCT(KdTree, (pcl::PointXYZRGBNormalRSD))
 PCL_INSTANTIATE_PRODUCT(Search, (pcl::PointXYZRGBNormalRSD))
 PCL_INSTANTIATE_PRODUCT(RegionGrowing, ((pcl::PointXYZRGBNormalRSD))(pcl::Normal))
