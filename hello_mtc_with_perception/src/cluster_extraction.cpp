@@ -19,7 +19,7 @@ extractClusters(
     unsigned int max_cluster_size,
     float smoothness_threshold,
     float curvature_threshold,
-    unsigned int k_neighbors) {
+    unsigned int nearest_neighbors) {
   LOG_INFO("Starting cluster extraction. Input cloud size: " + std::to_string(input_cloud->size()) + " points");
 
   // Create a KdTree object for the search method of the extraction
@@ -47,7 +47,7 @@ extractClusters(
   reg.setMinClusterSize(min_cluster_size);
   reg.setMaxClusterSize(max_cluster_size);
   reg.setSearchMethod(tree);
-  reg.setNumberOfNeighbours(k_neighbors);
+  reg.setNumberOfNeighbours(nearest_neighbors);
   reg.setInputCloud(input_cloud);
   reg.setInputNormals(normals);
   reg.setIndices(indices);
@@ -71,7 +71,7 @@ extractClusters(
 
   // Log sample of output data structure
   const std::size_t total_clusters = clusters.size();
-  const std::size_t sample_size = std::min(static_cast<std::size_t>(5), total_clusters);
+  const std::size_t sample_size = std::min(static_cast<std::size_t>(10), total_clusters);
   std::stringstream ss;
   ss << "Sample of output data structure (showing " << sample_size << " out of " << total_clusters << " clusters):\n";
   ss << std::left
@@ -116,7 +116,7 @@ extractClusters(
 
     ss << std::setw(8) << i
        << std::setw(10) << cluster->size()
-       << std::fixed << std::setprecision(1)
+       << std::fixed << std::setprecision(2) 
        << std::setw(10) << centroid[0]
        << std::setw(10) << centroid[1]
        << std::setw(10) << centroid[2]

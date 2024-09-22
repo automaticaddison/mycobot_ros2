@@ -113,6 +113,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
   pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr cloud_with_features;
   
   // Parameters for cluster extraction
+  int nearest_neighbors;
   float smoothness_threshold;
   float curvature_threshold;
   
@@ -174,7 +175,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("angle_tolerance", 0.9990482216, "Angle tolerance for surface normals"); 
     declare_parameter("plane_segmentation_threshold", 0.001, "Threshold for plane segmentation");
     declare_parameter("min_cluster_size", 100, "Minimum size of a cluster");
-    declare_parameter("max_cluster_size", 25000, "Maximum size of a cluster");
+    declare_parameter("max_cluster_size", 1000000, "Maximum size of a cluster");
     declare_parameter("cluster_tolerance", 0.02, "Tolerance for Euclidean clustering");
     declare_parameter("normal_estimation_k", 30, "Number of neighbors for normal estimation");
     declare_parameter("w_inliers", 1.0, "Weight for inlier score in plane model selection");
@@ -196,8 +197,9 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("rsd_radius", 0.01, "Radius for RSD estimation");
 
     // Declare new parameters for cluster extraction
-    declare_parameter("smoothness_threshold", 3.0f, "Smoothness threshold for the region growing algorithm (in degrees)");
-    declare_parameter("curvature_threshold", 1.0f, "Curvature threshold for the region growing algorithm");
+    declare_parameter("nearest_neighbors", 30, "Number of neighbors to consider for region growing");
+    declare_parameter("smoothness_threshold", 20.0f, "Smoothness threshold for the region growing algorithm (in degrees)");
+    declare_parameter("curvature_threshold", 0.2f, "Curvature threshold for the region growing algorithm");
   
     // Legacy...remove these later
     declare_parameter("shape_fitting_max_iterations", 1000, "Maximum iterations for shape fitting RANSAC");
@@ -255,6 +257,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     rsd_radius = this->get_parameter("rsd_radius").as_double();
     
     // Get clustering parameter values
+    nearest_neighbors = this->get_parameter("nearest_neighbors").as_int();
     smoothness_threshold = this->get_parameter("smoothness_threshold").as_double();
     curvature_threshold = this->get_parameter("curvature_threshold").as_double();
     
@@ -905,7 +908,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
     RCLCPP_INFO(this->get_logger(), "Successfully estimated normals, curvature, and RSD for %zu points", 
       cloud_with_features->size());
    
-    /**      
     // 8. Extract clusters
     //    - Extract point cloud clusters using region growing based on nearest neighbors.    
     std::vector<pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr> clusters = extractClusters(
@@ -914,7 +916,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
       max_cluster_size,
       smoothness_threshold,
       curvature_threshold,
-      k_neighbors
+      nearest_neighbors
     );
 
     if (clusters.empty()) {
@@ -923,7 +925,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     }
 
     RCLCPP_INFO(this->get_logger(), "Node '%s' successfully extracted %zu clusters from the point cloud", this->get_name(), clusters.size());
-    
+    /**       
     // 9. Get collision objects
     //    - Segment the point cloud clusters into distinct collision objects.  
     //TODO

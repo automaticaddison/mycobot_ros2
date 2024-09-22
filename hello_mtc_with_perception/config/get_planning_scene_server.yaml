@@ -23,7 +23,7 @@ get_planning_scene_server:
     angle_tolerance: 0.9990482216 # cos(2.5 * M_PI / 180.0)
     plane_segmentation_threshold: 0.001
     min_cluster_size: 100
-    max_cluster_size: 25000
+    max_cluster_size: 1000000
     cluster_tolerance: 0.02
     normal_estimation_k: 30
     w_inliers: 1.0
@@ -45,8 +45,9 @@ get_planning_scene_server:
     rsd_radius: 0.02 
     
     # Cluster extraction parameters
-    smoothness_threshold: 3.0  # in degrees
-    curvature_threshold: 1.0
+    nearest_neighbors: 30
+    smoothness_threshold: 20.0 # in degrees
+    curvature_threshold: 0.2
     
     # Legacy parameters (to be removed later)
     shape_fitting_max_iterations: 1000
