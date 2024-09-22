@@ -57,6 +57,21 @@ set(dependencies ${REQUIRED_PACKAGES})
 include_directories(include ${PCL_INCLUDE_DIRS})
 
 # Libraries
+## cluster_extraction
+add_library(cluster_extraction SHARED
+  src/cluster_extraction.cpp
+)
+target_include_directories(cluster_extraction PUBLIC 
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+ament_target_dependencies(cluster_extraction
+  ${dependencies}
+)
+target_link_libraries(cluster_extraction
+  ${PCL_LIBRARIES}
+)
+
 ## get_planning_scene_client
 add_library(get_planning_scene_client SHARED
   src/get_planning_scene_client.cpp
@@ -123,6 +138,7 @@ ament_target_dependencies(get_planning_scene_server
   ${dependencies}
 )
 target_link_libraries(get_planning_scene_server 
+  cluster_extraction
   normals_curvature_and_rsd_estimation
   plane_segmentation
 )
@@ -149,6 +165,7 @@ install(TARGETS
 
 ## Libraries
 install(TARGETS 
+  cluster_extraction
   get_planning_scene_client
   normals_curvature_and_rsd_estimation
   plane_segmentation     
@@ -180,6 +197,8 @@ endif()
 
 # Export and package
 ament_export_include_directories(include)
-ament_export_libraries(get_planning_scene_client plane_segmentation)
+ament_export_libraries(cluster_extraction get_planning_scene_client plane_segmentation)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_package()
+
+
