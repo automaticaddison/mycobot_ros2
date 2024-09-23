@@ -15,6 +15,11 @@
 
 // Include the header that defines PointXYZRGBNormalRSD and LOG_INFO
 #include "hello_mtc_with_perception/normals_curvature_and_rsd_estimation.h"
+#include <pcl/segmentation/region_growing.h>      // For region growing segmentation
+#include <pcl/search/kdtree.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/segmentation/region_growing.h>
+#include <pcl/common/centroid.h>
 
 /**
  * @brief Extract clusters from a point cloud using region growing algorithm.

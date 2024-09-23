@@ -35,20 +35,18 @@
 #include "hello_mtc_with_perception/normals_curvature_and_rsd_estimation.h"
 #include "hello_mtc_with_perception/object_segmentation.h"
 #include "hello_mtc_with_perception/plane_segmentation.h"
-
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/qos.hpp>
-#include <rcl_interfaces/msg/parameter_descriptor.hpp>
 #include <mycobot_interfaces/srv/get_planning_scene.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <moveit_msgs/msg/planning_scene_world.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
-#include <shape_msgs/msg/plane.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_eigen/tf2_eigen.hpp>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/filters/crop_box.h>
 
 class GetPlanningSceneServer : public rclcpp::Node {
  public:

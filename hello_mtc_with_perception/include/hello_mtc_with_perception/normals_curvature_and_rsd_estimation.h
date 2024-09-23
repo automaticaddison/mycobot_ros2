@@ -28,26 +28,14 @@
 #include <pcl/point_types.h>              // For basic point types
 #include <pcl/point_cloud.h>              // For point cloud data structures
 #include <pcl/search/kdtree.h>            // For K-d tree searches
-#include <pcl/features/normal_3d.h>       // For normal estimation
 #include <pcl/features/rsd.h>             // For RSD estimation
-#include <pcl/common/io.h>                // For I/O operations
 #include <pcl/common/pca.h>               // For Principal Component Analysis
-#include <pcl/sample_consensus/method_types.h>    // For sample consensus methods
-#include <pcl/sample_consensus/model_types.h>     // For sample consensus models
 #include <pcl/sample_consensus/sac_model_plane.h> // For plane model fitting
-#include <pcl/segmentation/sac_segmentation.h>    // For segmentation
 #include <pcl/sample_consensus/mlesac.h>          // For MLESAC algorithm
 #include <pcl/impl/instantiate.hpp>               // For instantiating PCL classes
 #include <pcl/search/impl/kdtree.hpp>             // For K-d tree implementation
-#include <pcl/segmentation/region_growing.h>      // For region growing segmentation
-#include <pcl/segmentation/impl/region_growing.hpp> // For region growing implementation
 #include <pcl/segmentation/region_growing.h>
-#include <pcl/common/centroid.h>
-#include <pcl/common/transforms.h>
-#include <pcl/filters/crop_box.h>
-#include <pcl/filters/voxel_grid.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl_conversions/pcl_conversions.h>
 
 // Eigen library include for linear algebra operations
 #include <Eigen/Dense>

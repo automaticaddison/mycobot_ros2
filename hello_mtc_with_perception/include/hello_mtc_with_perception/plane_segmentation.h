@@ -13,14 +13,12 @@
  * @date September 18, 2024
  */
 
-#include <algorithm>
 #include <iostream> 
 #include <memory>
 #include <tuple>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/features/normal_3d.h>
-#include <pcl/filters/filter.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/segmentation/extract_clusters.h>
