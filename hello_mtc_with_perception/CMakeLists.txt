@@ -87,6 +87,7 @@ endfunction()
 add_custom_library(cluster_extraction ${PCL_LIBS})
 add_custom_library(get_planning_scene_client)
 add_custom_library(normals_curvature_and_rsd_estimation ${PCL_LIBS})
+add_custom_library(object_segmentation ${PCL_LIBS})
 add_custom_library(plane_segmentation ${PCL_LIBRARIES})
 
 # Executables
@@ -105,6 +106,7 @@ ament_target_dependencies(get_planning_scene_server ${dependencies})
 target_link_libraries(get_planning_scene_server 
   cluster_extraction
   normals_curvature_and_rsd_estimation
+  object_segmentation
   plane_segmentation
   ${PCL_LIBS}
 )
@@ -125,6 +127,7 @@ set(LIBRARIES
   cluster_extraction
   get_planning_scene_client
   normals_curvature_and_rsd_estimation
+  object_segmentation
   plane_segmentation
 )
 
