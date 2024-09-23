@@ -49,6 +49,10 @@ get_planning_scene_server:
     smoothness_threshold: 20.0 # in degrees
     curvature_threshold: 0.2
     
+    # Object segmentation parameters
+    num_iterations: 25
+    inlier_threshold: 100  
+    
     # Legacy parameters (to be removed later)
     shape_fitting_max_iterations: 1000
     shape_fitting_distance_threshold: 0.01
