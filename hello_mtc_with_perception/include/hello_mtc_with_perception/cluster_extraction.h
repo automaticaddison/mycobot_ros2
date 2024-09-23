@@ -13,16 +13,6 @@
  * @date September 22, 2024
  */
 
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/search/kdtree.h>
-#include <pcl/segmentation/region_growing.h>
-#include <pcl/common/centroid.h>
-#include <vector>
-#include <memory>
-#include <iomanip>
-#include <sstream>
-
 // Include the header that defines PointXYZRGBNormalRSD and LOG_INFO
 #include "hello_mtc_with_perception/normals_curvature_and_rsd_estimation.h"
 

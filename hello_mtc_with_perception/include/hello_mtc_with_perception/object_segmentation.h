@@ -1,9 +1,6 @@
 #ifndef OBJECT_SEGMENTATION_H
 #define OBJECT_SEGMENTATION_H
 
-#include <vector>
-#include <string>
-#include <pcl/point_cloud.h>
 #include "hello_mtc_with_perception/normals_curvature_and_rsd_estimation.h"  // For PointXYZRGBNormalRSD definition
 #include <moveit_msgs/msg/collision_object.hpp>
 
@@ -24,7 +21,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     const std::vector<pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr>& cloud_clusters,
     int num_iterations,
     const std::string& frame_id,
-    double inlier_threshold);
+    int inlier_threshold);
 
 // Helper function declarations will be added here as we develop them
 

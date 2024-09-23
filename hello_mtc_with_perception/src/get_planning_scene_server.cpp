@@ -33,6 +33,7 @@
 
 #include "hello_mtc_with_perception/cluster_extraction.h"
 #include "hello_mtc_with_perception/normals_curvature_and_rsd_estimation.h"
+#include "hello_mtc_with_perception/object_segmentation.h"
 #include "hello_mtc_with_perception/plane_segmentation.h"
 
 #include <rclcpp/rclcpp.hpp>
@@ -41,17 +42,9 @@
 #include <mycobot_interfaces/srv/get_planning_scene.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/msg/image.hpp>
-#include <moveit_msgs/msg/collision_object.hpp>
 #include <moveit_msgs/msg/planning_scene_world.hpp>
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <shape_msgs/msg/plane.hpp>
-#include <pcl/common/transforms.h>
-#include <pcl/filters/crop_box.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/search/kdtree.h>
-#include <pcl_conversions/pcl_conversions.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -116,6 +109,10 @@ class GetPlanningSceneServer : public rclcpp::Node {
   int nearest_neighbors;
   float smoothness_threshold;
   float curvature_threshold;
+  
+  // Parameters for object segmentation
+  int num_iterations;
+  int inlier_threshold;  
   
   // Legacy...remove later Shape fitting parameters
   int shape_fitting_max_iterations;
@@ -200,6 +197,10 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("nearest_neighbors", 30, "Number of neighbors to consider for region growing");
     declare_parameter("smoothness_threshold", 20.0f, "Smoothness threshold for the region growing algorithm (in degrees)");
     declare_parameter("curvature_threshold", 0.2f, "Curvature threshold for the region growing algorithm");
+    
+    // Declare new parameters for object segmentation
+    declare_parameter("num_iterations", 25, "Number of iterations for the inner loop");
+    declare_parameter("inlier_threshold", 100, "Threshold for the number of inliers to consider a model valid");
   
     // Legacy...remove these later
     declare_parameter("shape_fitting_max_iterations", 1000, "Maximum iterations for shape fitting RANSAC");
@@ -260,6 +261,10 @@ class GetPlanningSceneServer : public rclcpp::Node {
     nearest_neighbors = this->get_parameter("nearest_neighbors").as_int();
     smoothness_threshold = this->get_parameter("smoothness_threshold").as_double();
     curvature_threshold = this->get_parameter("curvature_threshold").as_double();
+    
+    // Get object segmentation values
+    num_iterations = this->get_parameter("num_iterations").as_int();
+    inlier_threshold = this->get_parameter("inlier_threshold").as_int();
     
     // Legacy...remove later Get shape fitting parameter values
     shape_fitting_max_iterations = this->get_parameter("shape_fitting_max_iterations").as_int();
@@ -925,38 +930,24 @@ class GetPlanningSceneServer : public rclcpp::Node {
     }
 
     RCLCPP_INFO(this->get_logger(), "Node '%s' successfully extracted %zu clusters from the point cloud", this->get_name(), clusters.size());
-    /**       
+       
     // 9. Get collision objects
     //    - Segment the point cloud clusters into distinct collision objects.  
-    //TODO
-        
- 
- 
-    bool any_shape_fitted = false;
-    size_t shapes_fitted = 0;
-    RCLCPP_INFO(this->get_logger(), "Processing %zu clusters for shape fitting", clusters.size());
+    std::vector<moveit_msgs::msg::CollisionObject> segmented_objects = segmentObjects(
+      clusters,
+      num_iterations,
+      target_frame,
+      inlier_threshold
+    );    
 
-    for (size_t i = 0; i < clusters.size(); ++i) {
-      auto collision_object = fitShapeToCluster(clusters[i], target_frame, i);
-      if (!collision_object.primitives.empty()) {
-        response->scene_world.collision_objects.push_back(collision_object);
-        any_shape_fitted = true;
-        shapes_fitted++;
-        RCLCPP_INFO(this->get_logger(), "Fitted shape for cluster %zu: %s", i, collision_object.id.c_str());
-      } else {
-        RCLCPP_INFO(this->get_logger(), "Failed to fit shape for cluster %zu", i);
-      }
-    }
-
-    if (!any_shape_fitted) {
-      RCLCPP_WARN(this->get_logger(), "No shapes could be fitted to any of the clusters");
-    } else {
-      RCLCPP_INFO(this->get_logger(), "Successfully fitted shapes to %zu out of %zu clusters", 
-        shapes_fitted, clusters.size());
-    }
-    **/       
+    RCLCPP_INFO(this->get_logger(), "Segmented %zu objects from the point cloud clusters", segmented_objects.size());
     
-    // 9. Identify target object
+    // Add segmented objects to the planning scene
+    //for (const auto& object : segmented_objects) {
+    //  response->scene_world.collision_objects.push_back(object);
+    //}
+        
+    // 10. Identify target object
     //    - Check if a target object was successfully identified
     //    - If no target found, log a warning
     // TODO

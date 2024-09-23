@@ -4,7 +4,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     const std::vector<pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr>& cloud_clusters,
     int num_iterations,
     const std::string& frame_id,
-    double inlier_threshold) {
+    int inlier_threshold) {
   
   std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
   [[maybe_unused]] int box_count = 0;
@@ -13,7 +13,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
   for ([[maybe_unused]] const auto& cluster : cloud_clusters) {
     // Silence unused variable warnings
     [[maybe_unused]] int num_iterations_copy = num_iterations;
-    [[maybe_unused]] double inlier_threshold_copy = inlier_threshold;
+    [[maybe_unused]] int inlier_threshold_copy = inlier_threshold;
 
     // TODO: Project the Point Cloud Cluster onto the Surface Plane
     // For each point (x,y,z,RGB,normal, curvature, RSDmin and RSDmax) in the 3D cluster:
@@ -98,6 +98,15 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     collision_object.operation = moveit_msgs::msg::CollisionObject::ADD;
 
     collision_objects.push_back(collision_object);
+
+    std::ostringstream log_stream;
+    log_stream << "Added cylinder collision object: id=" << collision_object.id
+               << ", height=" << primitive.dimensions[0]
+               << ", radius=" << primitive.dimensions[1]
+               << ", position=(" << cylinder_pose.position.x
+               << ", " << cylinder_pose.position.y
+               << ", " << cylinder_pose.position.z << ")";
+    LOG_INFO(log_stream.str());
 
     // TODO: Check if there are Points Remaining for this Cluster
     // - If points remain in the point cloud cluster, go back to the top of the Inner Loop (starting with I=0) for the remaining points in the cluster.

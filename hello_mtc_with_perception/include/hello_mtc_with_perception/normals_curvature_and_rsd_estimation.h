@@ -41,6 +41,13 @@
 #include <pcl/search/impl/kdtree.hpp>             // For K-d tree implementation
 #include <pcl/segmentation/region_growing.h>      // For region growing segmentation
 #include <pcl/segmentation/impl/region_growing.hpp> // For region growing implementation
+#include <pcl/segmentation/region_growing.h>
+#include <pcl/common/centroid.h>
+#include <pcl/common/transforms.h>
+#include <pcl/filters/crop_box.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl_conversions/pcl_conversions.h>
 
 // Eigen library include for linear algebra operations
 #include <Eigen/Dense>
@@ -51,7 +58,10 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <string>
+#include <memory>
 #include <numeric>
+#include <vector>
 
 // Define a custom point type that includes RSD values
 struct PointXYZRGBNormalRSD {
