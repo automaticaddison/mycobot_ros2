@@ -4,7 +4,11 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     const std::vector<pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr>& cloud_clusters,
     int num_iterations,
     const std::string& frame_id,
-    int inlier_threshold) {
+    int inlier_threshold,
+    int hough_angle_bins,
+    int hough_rho_bins,
+    int hough_radius_bins,
+    int hough_center_bins) {
   
   std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
   [[maybe_unused]] int box_count = 0;
@@ -44,7 +48,6 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
       pcl::PointXY projected_point;
       projected_point.x = point.x;  // x coordinate remains the same
       projected_point.y = point.y;  // y coordinate remains the same
-      // z coordinate is implicitly set to 0 by projecting onto the z=0 plane
       
       // Add the projected point to the new cloud
       projected_cloud->points.push_back(projected_point);
@@ -66,10 +69,62 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
                << projected_cloud->points.size() << " points.";
     LOG_INFO(log_stream.str());
       
+    /****************************************************
+     *                                                  *
+     *    Initialize empty 2D Hough parameter spaces    *
+     *            (lines and circles)                   *
+     *                                                  *
+     ***************************************************/ 
+    // Determine the range of the projected points
+    pcl::PointXY min_pt, max_pt;
+    min_pt.x = min_pt.y = std::numeric_limits<float>::max();
+    max_pt.x = max_pt.y = -std::numeric_limits<float>::max();
 
-    // TODO: Initialize two separate parameter spaces:
-    // - Create an empty 2D Hough parameter space for line models
-    // - Create an empty 2D Hough parameter space for circle models
+    for (const auto& point : projected_cloud->points) {
+      min_pt.x = std::min(min_pt.x, point.x);
+      min_pt.y = std::min(min_pt.y, point.y);
+      max_pt.x = std::max(max_pt.x, point.x);
+      max_pt.y = std::max(max_pt.y, point.y);
+    }
+    
+    // Calculate dimensions for Hough spaces
+    double projected_x_range = max_pt.x - min_pt.x;
+    double projected_y_range = max_pt.y - min_pt.y;
+    double hough_max_distance = std::sqrt(projected_x_range * projected_x_range + projected_y_range * projected_y_range);
+
+    // Line Hough space setup
+    Eigen::MatrixXi hough_space_line = Eigen::MatrixXi::Zero(hough_angle_bins, hough_rho_bins);
+    double hough_angle_step = M_PI / hough_angle_bins;
+    double hough_rho_step = hough_max_distance / hough_rho_bins;
+    
+    // Circle Hough space setup
+    Eigen::Tensor<int, 3> hough_space_circle(hough_center_bins, hough_center_bins, hough_radius_bins);
+    hough_space_circle.setZero();
+    
+    double hough_max_radius = hough_max_distance / 2.0;
+    double hough_center_x_step = projected_x_range / hough_center_bins;
+    double hough_center_y_step = projected_y_range / hough_center_bins;
+    double hough_radius_step = hough_max_radius / hough_radius_bins;
+
+    // Log the initialization of Hough spaces
+    log_stream.str("");
+    log_stream << "Hough Parameter Spaces Initialization\n"
+      << "  Line Hough Space (2D):\n"
+      << "    - Dimensions: " << hough_angle_bins << " x " << hough_rho_bins << "\n"
+      << "    - θ (angle): " << hough_angle_bins << " bins (range: 0 to π, step: " << hough_angle_step << " radians)\n"
+      << "    - ρ (distance): " << hough_rho_bins << " bins (range: -" << hough_max_distance << " to " << hough_max_distance << " m, step: " << hough_rho_step << " m)\n"
+      << "  Circle Hough Space (3D):\n"
+      << "    - Dimensions: " << hough_center_bins << " x " << hough_center_bins << " x " << hough_radius_bins << "\n"
+      << "    - Center X: " << hough_center_bins << " bins (range: " << min_pt.x << " to " << max_pt.x << " m, step: " << hough_center_x_step << " m)\n"
+      << "    - Center Y: " << hough_center_bins << " bins (range: " << min_pt.y << " to " << max_pt.y << " m, step: " << hough_center_y_step << " m)\n"
+      << "    - Radius: " << hough_radius_bins << " bins (range: 0 to " << hough_max_radius << " m, step: " << hough_radius_step << " m)\n"
+      << "  Projected 2D Space Dimensions:\n"
+      << "    - X-range: " << projected_x_range << " m\n"
+      << "    - Y-range: " << projected_y_range << " m\n"
+      << "    - Diagonal: " << hough_max_distance << " m\n"
+      << "  Note: Each point in the Hough space represents a potential line or circle in the 2D projected space (z=0 plane).";
+    LOG_INFO(log_stream.str());
+
 
     // TODO: Inner Loop (repeated I=25 times)
     for (int i = 0; i < num_iterations; ++i) {

@@ -110,7 +110,11 @@ class GetPlanningSceneServer : public rclcpp::Node {
   
   // Parameters for object segmentation
   int num_iterations;
-  int inlier_threshold;  
+  int inlier_threshold; 
+  int hough_angle_bins;
+  int hough_rho_bins;
+  int hough_radius_bins;
+  int hough_center_bins; 
   
   // Legacy...remove later Shape fitting parameters
   int shape_fitting_max_iterations;
@@ -199,6 +203,10 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // Declare new parameters for object segmentation
     declare_parameter("num_iterations", 25, "Number of iterations for the inner loop");
     declare_parameter("inlier_threshold", 100, "Threshold for the number of inliers to consider a model valid");
+    declare_parameter("hough_angle_bins", 180, "Number of angle bins for the line Hough space");
+    declare_parameter("hough_rho_bins", 100, "Number of distance bins for the line Hough space");
+    declare_parameter("hough_radius_bins", 50, "Number of radius bins for the circle Hough space");
+    declare_parameter("hough_center_bins", 100, "Number of center bins (in each dimension) for the circle Hough space");
   
     // Legacy...remove these later
     declare_parameter("shape_fitting_max_iterations", 1000, "Maximum iterations for shape fitting RANSAC");
@@ -263,6 +271,10 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // Get object segmentation values
     num_iterations = this->get_parameter("num_iterations").as_int();
     inlier_threshold = this->get_parameter("inlier_threshold").as_int();
+    hough_angle_bins = this->get_parameter("hough_angle_bins").as_int();
+    hough_rho_bins = this->get_parameter("hough_rho_bins").as_int();
+    hough_radius_bins = this->get_parameter("hough_radius_bins").as_int();
+    hough_center_bins = this->get_parameter("hough_center_bins").as_int();
     
     // Legacy...remove later Get shape fitting parameter values
     shape_fitting_max_iterations = this->get_parameter("shape_fitting_max_iterations").as_int();
@@ -975,7 +987,11 @@ class GetPlanningSceneServer : public rclcpp::Node {
       clusters,
       num_iterations,
       target_frame,
-      inlier_threshold
+      inlier_threshold,
+      hough_angle_bins,
+      hough_rho_bins,
+      hough_radius_bins,
+      hough_center_bins
     );    
 
     RCLCPP_INFO(this->get_logger(), "Segmented %zu objects from the point cloud clusters", segmented_objects.size());
