@@ -782,27 +782,43 @@ class GetPlanningSceneServer : public rclcpp::Node {
     }
   }  
 
+  /***********************************************************************************
+   *                                                                                 *
+   *                               Main Method                                       *
+   *                                                                                 *
+   **********************************************************************************/   
   void handleService(
       const std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Request> request,
       std::shared_ptr<mycobot_interfaces::srv::GetPlanningScene::Response> response) {
-      
-    // 1. Initialize response success flag to false
+
+    /****************************************************
+     *                                                  *
+     * 1. Initialize response success flag to false     *
+     *                                                  *
+     ***************************************************/        
     response->success = false;
 
-    // 2. Check if point cloud and RGB image data are available
-    //    - If not, log an error and return early
+    /****************************************************
+     *                                                  *
+     * 2. Point cloud and RGB image data available?     *
+     *                                                  *
+     ***************************************************/  
     if (!latest_point_cloud || !latest_rgb_image) {
       RCLCPP_ERROR(this->get_logger(), "Point cloud or RGB image data not available");
       return;
     }
-
-    // 3. Validate input parameters and prepare point cloud:
-    //    - Check if target_shape and target_dimensions are not empty
-    //    - Verify that target_shape is one of the valid shapes (cylinder, box)
-    //    - Store the original point cloud frame for reference
-    //    - Transform the point cloud to the target frame for consistent processing
-    //    - Apply optional clipping (cropping) to the point cloud based on parameters
-    //    - If any validation or transformation fails, log an error and return early
+    
+    /***********************************************************************************
+     *                                                                                 *
+     * 3. Validate input parameters & prepare point cloud:                             *
+     *    - Check if target_shape and target_dimensions are not empty                  *
+     *    - Verify that target_shape is one of the valid shapes (cylinder, box)        *   
+     *    - Store the original point cloud frame for reference                         *
+     *    - Transform the point cloud to the target frame for consistent processing    *
+     *    - Apply optional clipping (cropping) to the point cloud based on parameters  *
+     *    - If any validation or transformation fails, log an error and return early   *
+     *                                                                                 *
+     **********************************************************************************/    
     if (request->target_shape.empty() || request->target_dimensions.empty()) {
       RCLCPP_ERROR(this->get_logger(), "Invalid input parameters: target_shape or target_dimensions is empty");
       return;
@@ -823,10 +839,14 @@ class GetPlanningSceneServer : public rclcpp::Node {
       RCLCPP_ERROR(this->get_logger(), "Failed to transform point cloud to target frame");
       return;
     }
-
-    // 4. Convert PointCloud2 to PCL point cloud
-    //    - Check if conversion was successful and resulting cloud is not empty
-    //    - If conversion fails, log an error and return early
+    
+    /***********************************************************************************
+     *                                                                                 *
+     * 4. Convert PointCloud2 to PCL point cloud                                       *
+     *    - Check if conversion was successful and resulting cloud is not empty        *
+     *    - If conversion fails, log an error and return early                         *
+     *                                                                                 *
+     **********************************************************************************/  
     auto pcl_cloud = convertToPCL(transformed_cloud);
     if (!pcl_cloud) {
       RCLCPP_ERROR(this->get_logger(), "Failed to convert PointCloud2 to PCL format");
@@ -834,8 +854,12 @@ class GetPlanningSceneServer : public rclcpp::Node {
     }
     //  Used for debugging and visualization
     savePointCloudToPCD(pcl_cloud, "4_convertToPCL_" + debug_pcd_filename);
-
-    // 5. Segment the support plane and objects from a given point cloud.
+    
+    /***********************************************************************************
+     *                                                                                 *
+     * 5. Segment the support plane and objects from a given point cloud.              *
+     *                                                                                 *
+     **********************************************************************************/ 
     auto [support_plane_cloud, objects_cloud, plane_coefficients] = segmentPlaneAndObjects(
       pcl_cloud,
       enable_cropping,
@@ -873,9 +897,13 @@ class GetPlanningSceneServer : public rclcpp::Node {
     savePointCloudToPCD(support_plane_cloud, "5_support_plane_" + debug_pcd_filename);
     savePointCloudToPCD(objects_cloud, "5_objects_cloud_" + debug_pcd_filename);
 
-    // 6. Create CollisionObject for support surface
-    //    - Check if support surface object creation was successful
-    //    - If creation fails, log a warning
+    /***********************************************************************************
+     *                                                                                 *
+     * 6. Create CollisionObject for support surface                                   *
+     *    - Check if support surface object creation was successful                    *
+     *    - If creation fails, log a warning                                           *
+     *                                                                                 *
+     **********************************************************************************/ 
     moveit_msgs::msg::CollisionObject support_surface = createSupportSurfaceObject(
       support_plane_cloud, 
       plane_coefficients, 
@@ -892,8 +920,12 @@ class GetPlanningSceneServer : public rclcpp::Node {
       response->support_surface_id = support_surface.id;
     }
 
-    // 7. Estimate normal vectors, curvature values, and RSD values for 
-    // each point in the point cloud.
+    /***********************************************************************************
+     *                                                                                 *
+     * 7. Estimate normal vectors, curvature values, and RSD values for                *
+     *      each point in the point cloud.                                             *
+     *                                                                                 *
+     **********************************************************************************/ 
     cloud_with_features = estimateNormalsCurvatureAndRSD(
       objects_cloud,
       k_neighbors,
@@ -910,9 +942,13 @@ class GetPlanningSceneServer : public rclcpp::Node {
 
     RCLCPP_INFO(this->get_logger(), "Successfully estimated normals, curvature, and RSD for %zu points", 
       cloud_with_features->size());
-   
-    // 8. Extract clusters
-    //    - Extract point cloud clusters using region growing based on nearest neighbors.    
+
+    /***********************************************************************************
+     *                                                                                 *
+     * 8. Extract clusters                                                             *
+     *    - Extract point cloud clusters using region growing (nearest neighbors).     *
+     *                                                                                 *
+     **********************************************************************************/ 
     std::vector<pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr> clusters = extractClusters(
       cloud_with_features,
       min_cluster_size,
@@ -928,9 +964,13 @@ class GetPlanningSceneServer : public rclcpp::Node {
     }
 
     RCLCPP_INFO(this->get_logger(), "Node '%s' successfully extracted %zu clusters from the point cloud", this->get_name(), clusters.size());
-       
-    // 9. Get collision objects
-    //    - Segment the point cloud clusters into distinct collision objects.  
+
+    /***********************************************************************************
+     *                                                                                 *
+     * 9. Get collision objects    TODO                                                *
+     *    - Segment the point cloud clusters into distinct collision objects.          *
+     *                                                                                 *
+     **********************************************************************************/        
     std::vector<moveit_msgs::msg::CollisionObject> segmented_objects = segmentObjects(
       clusters,
       num_iterations,
@@ -944,11 +984,14 @@ class GetPlanningSceneServer : public rclcpp::Node {
     //for (const auto& object : segmented_objects) {
     //  response->scene_world.collision_objects.push_back(object);
     //}
-        
-    // 10. Identify target object
-    //    - Check if a target object was successfully identified
-    //    - If no target found, log a warning
-    // TODO
+    
+    /***********************************************************************************
+     *                                                                                 *
+     * 10. Identify target object          TODO                                        *
+     *     - Check if a target object was successfully identified                      *
+     *     - If no target found, log a warning                                         *
+     *                                                                                 *
+     **********************************************************************************/
     std::string target_object_id = identifyTargetObject(
       response->scene_world.collision_objects,
       request->target_shape,
@@ -957,11 +1000,14 @@ class GetPlanningSceneServer : public rclcpp::Node {
     if (!target_object_id.empty()) {
       response->target_object_id = target_object_id;
     } 
-    
-    // 10. Assemble PlanningSceneWorld
-    //    - Check if assembly was successful
-    //    - If assembly fails, log an error and return early
-    // TODO
+
+    /***********************************************************************************
+     *                                                                                 *
+     * 11. Assemble PlanningSceneWorld        TODO                                     *
+     *     - Check if assembly was successful                                          *
+     *     - If assembly fails, log an error and return early                          *
+     *                                                                                 *
+     **********************************************************************************/
     try {
       response->scene_world = assemblePlanningSceneWorld(response->scene_world.collision_objects);
       
@@ -977,15 +1023,19 @@ class GetPlanningSceneServer : public rclcpp::Node {
       RCLCPP_ERROR(this->get_logger(), "Unknown error occurred while assembling PlanningSceneWorld");
       return;
     }
-    
-    // 11. Fill the rest of the response:
-    //    - Set full_cloud, rgb_image, and target_object_id
-    //    - Set success flag to true if all critical steps were successful
+
+    /***********************************************************************************
+     *                                                                                 *
+     * 12. Fill the rest of the response:                                              *
+     *     - Set full_cloud, rgb_image, and target_object_id                           *
+     *     - Set success flag to true if all critical steps were successful            *
+     *                                                                                 *
+     **********************************************************************************/
     response->full_cloud = *latest_point_cloud;  // Use the transformed cloud
     response->rgb_image = *latest_rgb_image;
     response->target_object_id = target_object_id;
 
-    // 12. Helpful logging
+    // Helpful logging
     RCLCPP_INFO(this->get_logger(), "Success: %s", response->success ? "true" : "false");
     RCLCPP_INFO(this->get_logger(), "Target object ID: %s", response->target_object_id.c_str());
     RCLCPP_INFO(this->get_logger(), "Support surface ID: %s", response->support_surface_id.c_str());

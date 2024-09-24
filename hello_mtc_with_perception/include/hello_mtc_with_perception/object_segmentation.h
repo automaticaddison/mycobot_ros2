@@ -3,6 +3,8 @@
 
 #include "hello_mtc_with_perception/normals_curvature_and_rsd_estimation.h"  // For PointXYZRGBNormalRSD definition
 #include <moveit_msgs/msg/collision_object.hpp>
+#include <pcl/common/projection_matrix.h> // Used for projecting 3D point clusters to 2D
+#include <unordered_map> // Used for projecting 3D point clusters to 2D
 
 /**
  * @brief Segment objects from point cloud clusters and create collision objects.

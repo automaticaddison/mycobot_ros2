@@ -9,16 +9,63 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
   std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
   [[maybe_unused]] int box_count = 0;
   int cylinder_count = 0;
-
+  
+  std::ostringstream log_stream;
+  
+  /****************************************************
+   *                                                  *
+   *                Outer Loop                        *
+   *                                                  *
+   ***************************************************/    
   for ([[maybe_unused]] const auto& cluster : cloud_clusters) {
     // Silence unused variable warnings
     [[maybe_unused]] int num_iterations_copy = num_iterations;
     [[maybe_unused]] int inlier_threshold_copy = inlier_threshold;
-
-    // TODO: Project the Point Cloud Cluster onto the Surface Plane
+    
+    /****************************************************
+     *                                                  *
+     *       Project the 3D Point Cloud Cluster         *
+     *        onto the 2D Surface Plane (z=0)           *
+     *                                                  *
+     ***************************************************/    
     // For each point (x,y,z,RGB,normal, curvature, RSDmin and RSDmax) in the 3D cluster:
     // - Project the point onto the surface plane (assumed to be z=0). This will create a point (x, y).
     // - Maintain a mapping between each 2D projected point and its original 3D point
+    // - NOTE: This implementation assumes the surface plane is z=0.
+    // - If a different plane is required, the projection step should be modified accordingly.
+    pcl::PointCloud<pcl::PointXY>::Ptr projected_cloud(new pcl::PointCloud<pcl::PointXY>);
+    std::unordered_map<size_t, size_t> projection_map;
+    
+    for (size_t i = 0; i < cluster->points.size(); ++i) {
+      const auto& point = cluster->points[i];
+      
+      // Project the point onto the z=0 plane
+      // This is done by taking the x and y coordinates and discarding the z coordinate
+      pcl::PointXY projected_point;
+      projected_point.x = point.x;  // x coordinate remains the same
+      projected_point.y = point.y;  // y coordinate remains the same
+      // z coordinate is implicitly set to 0 by projecting onto the z=0 plane
+      
+      // Add the projected point to the new cloud
+      projected_cloud->points.push_back(projected_point);
+
+      // Maintain a mapping between 2D projected point index and original 3D point index
+      // This allows us to reference back to the original 3D point when needed
+      projection_map[projected_cloud->points.size() - 1] = i;
+    }
+    
+    // Set the properties of the projected point cloud
+    projected_cloud->width = projected_cloud->points.size();
+    projected_cloud->height = 1;  // This is an unorganized point cloud
+    projected_cloud->is_dense = true;  // Assuming no invalid (NaN, Inf) points in the projection
+    
+    // Log the successful projection
+    log_stream.str("");  // Clear the stream
+    log_stream << "Successfully projected " << cluster->points.size() 
+               << " 3D points onto the z=0 plane. Resulting 2D cloud has " 
+               << projected_cloud->points.size() << " points.";
+    LOG_INFO(log_stream.str());
+      
 
     // TODO: Initialize two separate parameter spaces:
     // - Create an empty 2D Hough parameter space for line models
