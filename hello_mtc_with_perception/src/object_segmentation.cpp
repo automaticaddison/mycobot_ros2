@@ -21,7 +21,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
    *                Outer Loop                        *
    *                                                  *
    ***************************************************/    
-  for ([[maybe_unused]] const auto& cluster : cloud_clusters) {
+  for (const auto& cluster : cloud_clusters) {
     // Silence unused variable warnings
     [[maybe_unused]] int num_iterations_copy = num_iterations;
     [[maybe_unused]] int inlier_threshold_copy = inlier_threshold;
