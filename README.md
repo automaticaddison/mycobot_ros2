@@ -2,7 +2,7 @@
 ![OS](https://img.shields.io/ubuntu/v/ubuntu-wallpapers/jammy)
 ![ROS_2](https://img.shields.io/ros/v/iron/rclcpp)
 
-![Gazebo Pick and Place Task Simulation](https://automaticaddison.com/wp-content/uploads/2024/09/pick-place-moveit-2-task-constructor-tutorial.gif)
+![Gazebo Pick and Place Task Simulation](https://automaticaddison.com/wp-content/uploads/2024/09/mtc_gazebo-moveit-pick-place.gif)
 
 ## Overview
 ![RViz Pick and Place Simulation](https://automaticaddison.com/wp-content/uploads/2024/09/pick-place-moveit-task-constructor-moveit2-no-objects-rviz.gif)
