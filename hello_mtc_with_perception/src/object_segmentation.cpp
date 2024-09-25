@@ -1,18 +1,8 @@
 #include "hello_mtc_with_perception/object_segmentation.h"
 
-#include <Eigen/Dense>
-#include <random>
-#include <algorithm>
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-
-#include <Eigen/Dense>
-#include <random>
-#include <algorithm>
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-
 // Line fitting helpers
+// Computes the coefficients (a, b, c) of a 2D line in the form a*x + b*y + c = 0 
+// that passes through two points p1 and p2.
 Eigen::Vector3f fitLine(const Eigen::Vector2f& p1, const Eigen::Vector2f& p2) {
   Eigen::Vector3f line;
   line[0] = p2.y() - p1.y();  // a
@@ -21,12 +11,15 @@ Eigen::Vector3f fitLine(const Eigen::Vector2f& p1, const Eigen::Vector2f& p2) {
   line.normalize();
   return line;
 }
+// Calculates the perpendicular distance from a given point to a line 
+// defined by coefficients (a, b, c).
 float distanceToLine(const Eigen::Vector2f& point, const Eigen::Vector3f& line) {
   return std::abs(line[0] * point.x() + line[1] * point.y() + line[2]) / 
          std::sqrt(line[0] * line[0] + line[1] * line[1]);
 }
 
 // RANSAC for 2D line fitting
+// Robustly fit a line to a set of 2D points, even in the presence of outliers.
 std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitLineRANSAC(
     const pcl::PointCloud<pcl::PointXY>::Ptr& cloud,
     double ransac_distance_threshold,
@@ -41,6 +34,7 @@ std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitLineRANSAC(
   std::uniform_int_distribution<> dis(0, cloud->points.size() - 1);
 
   for (int iter = 0; iter < ransac_max_iterations; ++iter) {
+    // Randomly select two different points from the cluster to define a candidate line.
     int idx1 = dis(gen);
     int idx2 = dis(gen);
     if (idx1 == idx2) continue;
@@ -57,6 +51,7 @@ std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitLineRANSAC(
       }
     }
 
+    // Keep track of the candidate line with the most inliers.
     if (inliers->indices.size() > best_inliers->indices.size()) {
       best_inliers = inliers;
       best_coefficients->values[0] = line[0];
@@ -65,10 +60,12 @@ std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitLineRANSAC(
     }
   }
 
+  // Returns the indices of the inlier points and the best line coefficients found.
   return std::make_tuple(best_inliers, best_coefficients);
 }
 
 // Circle fitting helpers
+// Calculate the center (h, k) and radius r of a circle passing through three points p1, p2, and p3.
 Eigen::Vector3f fitCircle(const Eigen::Vector2f& p1, const Eigen::Vector2f& p2, const Eigen::Vector2f& p3) {
   Eigen::Matrix3f A;
   Eigen::Vector3f b;
@@ -81,11 +78,13 @@ Eigen::Vector3f fitCircle(const Eigen::Vector2f& p1, const Eigen::Vector2f& p2, 
   float radius = std::sqrt(x(0)*x(0) + x(1)*x(1) + x(2));
   return Eigen::Vector3f(x(0), x(1), radius);
 }
+// Calculate the distance from a point to the circumference of a circle.
 float distanceToCircle(const Eigen::Vector2f& point, const Eigen::Vector3f& circle) {
   return std::abs((point - circle.head<2>()).norm() - circle[2]);
 }
 
 // RANSAC for 2D circle fitting
+// Robustly fit a circle to a set of 2D points.
 std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitCircleRANSAC(
     const pcl::PointCloud<pcl::PointXY>::Ptr& cloud,
     double ransac_distance_threshold,
@@ -100,6 +99,7 @@ std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitCircleRANSAC(
   std::uniform_int_distribution<> dis(0, cloud->points.size() - 1);
 
   for (int iter = 0; iter < ransac_max_iterations; ++iter) {
+    // Randomly select three different points to define a candidate circle.
     int idx1 = dis(gen);
     int idx2 = dis(gen);
     int idx3 = dis(gen);
@@ -118,6 +118,7 @@ std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitCircleRANSAC(
       }
     }
 
+    // Keep track of the candidate circle with the most inliers.
     if (inliers->indices.size() > best_inliers->indices.size()) {
       best_inliers = inliers;
       best_coefficients->values[0] = circle[0];  // center x
@@ -125,7 +126,7 @@ std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitCircleRANSAC(
       best_coefficients->values[2] = circle[2];  // radius
     }
   }
-
+  // Return the indices of the inlier points and the best circle coefficients found.
   return std::make_tuple(best_inliers, best_coefficients);
 }
 
