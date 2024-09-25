@@ -1,5 +1,158 @@
 #include "hello_mtc_with_perception/object_segmentation.h"
 
+#include <Eigen/Dense>
+#include <random>
+#include <algorithm>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+
+#include <Eigen/Dense>
+#include <random>
+#include <algorithm>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+
+// Line fitting helpers
+Eigen::Vector3f fitLine(const Eigen::Vector2f& p1, const Eigen::Vector2f& p2) {
+  Eigen::Vector3f line;
+  line[0] = p2.y() - p1.y();  // a
+  line[1] = p1.x() - p2.x();  // b
+  line[2] = p2.x() * p1.y() - p1.x() * p2.y();  // c
+  line.normalize();
+  return line;
+}
+float distanceToLine(const Eigen::Vector2f& point, const Eigen::Vector3f& line) {
+  return std::abs(line[0] * point.x() + line[1] * point.y() + line[2]) / 
+         std::sqrt(line[0] * line[0] + line[1] * line[1]);
+}
+
+// RANSAC for 2D line fitting
+std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitLineRANSAC(
+    const pcl::PointCloud<pcl::PointXY>::Ptr& cloud,
+    double ransac_distance_threshold,
+    int ransac_max_iterations) {
+  
+  pcl::PointIndices::Ptr best_inliers(new pcl::PointIndices);
+  pcl::ModelCoefficients::Ptr best_coefficients(new pcl::ModelCoefficients);
+  best_coefficients->values.resize(3);
+
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<> dis(0, cloud->points.size() - 1);
+
+  for (int iter = 0; iter < ransac_max_iterations; ++iter) {
+    int idx1 = dis(gen);
+    int idx2 = dis(gen);
+    if (idx1 == idx2) continue;
+
+    Eigen::Vector2f p1(cloud->points[idx1].x, cloud->points[idx1].y);
+    Eigen::Vector2f p2(cloud->points[idx2].x, cloud->points[idx2].y);
+    Eigen::Vector3f line = fitLine(p1, p2);
+
+    pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+    for (size_t i = 0; i < cloud->points.size(); ++i) {
+      Eigen::Vector2f pt(cloud->points[i].x, cloud->points[i].y);
+      if (distanceToLine(pt, line) < ransac_distance_threshold) {
+        inliers->indices.push_back(i);
+      }
+    }
+
+    if (inliers->indices.size() > best_inliers->indices.size()) {
+      best_inliers = inliers;
+      best_coefficients->values[0] = line[0];
+      best_coefficients->values[1] = line[1];
+      best_coefficients->values[2] = line[2];
+    }
+  }
+
+  return std::make_tuple(best_inliers, best_coefficients);
+}
+
+// Circle fitting helpers
+Eigen::Vector3f fitCircle(const Eigen::Vector2f& p1, const Eigen::Vector2f& p2, const Eigen::Vector2f& p3) {
+  Eigen::Matrix3f A;
+  Eigen::Vector3f b;
+  for (int i = 0; i < 3; ++i) {
+    const Eigen::Vector2f& p = (i == 0) ? p1 : ((i == 1) ? p2 : p3);
+    A.row(i) << 2*p.x(), 2*p.y(), 1;
+    b(i) = p.x()*p.x() + p.y()*p.y();
+  }
+  Eigen::Vector3f x = A.colPivHouseholderQr().solve(b);
+  float radius = std::sqrt(x(0)*x(0) + x(1)*x(1) + x(2));
+  return Eigen::Vector3f(x(0), x(1), radius);
+}
+float distanceToCircle(const Eigen::Vector2f& point, const Eigen::Vector3f& circle) {
+  return std::abs((point - circle.head<2>()).norm() - circle[2]);
+}
+
+// RANSAC for 2D circle fitting
+std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitCircleRANSAC(
+    const pcl::PointCloud<pcl::PointXY>::Ptr& cloud,
+    double ransac_distance_threshold,
+    int ransac_max_iterations) {
+  
+  pcl::PointIndices::Ptr best_inliers(new pcl::PointIndices);
+  pcl::ModelCoefficients::Ptr best_coefficients(new pcl::ModelCoefficients);
+  best_coefficients->values.resize(3);
+
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<> dis(0, cloud->points.size() - 1);
+
+  for (int iter = 0; iter < ransac_max_iterations; ++iter) {
+    int idx1 = dis(gen);
+    int idx2 = dis(gen);
+    int idx3 = dis(gen);
+    if (idx1 == idx2 || idx1 == idx3 || idx2 == idx3) continue;
+
+    Eigen::Vector2f p1(cloud->points[idx1].x, cloud->points[idx1].y);
+    Eigen::Vector2f p2(cloud->points[idx2].x, cloud->points[idx2].y);
+    Eigen::Vector2f p3(cloud->points[idx3].x, cloud->points[idx3].y);
+    Eigen::Vector3f circle = fitCircle(p1, p2, p3);
+
+    pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+    for (size_t i = 0; i < cloud->points.size(); ++i) {
+      Eigen::Vector2f pt(cloud->points[i].x, cloud->points[i].y);
+      if (distanceToCircle(pt, circle) < ransac_distance_threshold) {
+        inliers->indices.push_back(i);
+      }
+    }
+
+    if (inliers->indices.size() > best_inliers->indices.size()) {
+      best_inliers = inliers;
+      best_coefficients->values[0] = circle[0];  // center x
+      best_coefficients->values[1] = circle[1];  // center y
+      best_coefficients->values[2] = circle[2];  // radius
+    }
+  }
+
+  return std::make_tuple(best_inliers, best_coefficients);
+}
+
+// Helper method to log line and circle model fitting results
+void logModelResults(const std::string& modelType,
+                     const pcl::ModelCoefficients::Ptr& coefficients,
+                     const pcl::PointIndices::Ptr& inliers) {
+  std::ostringstream log_stream;
+  if (inliers->indices.size() > 0) {
+    if (modelType == "Line") {
+      log_stream << "Line model: " << coefficients->values[0] << " x + "
+                 << coefficients->values[1] << " y + "
+                 << coefficients->values[2] << " = 0";
+    } else if (modelType == "Circle") {
+      log_stream << "Circle model: center (" << coefficients->values[0] << ", "
+                 << coefficients->values[1] << "), radius " << coefficients->values[2];
+    }
+    LOG_INFO(log_stream.str());
+
+    log_stream.str("");
+    log_stream << modelType << " model inliers: " << inliers->indices.size();
+    LOG_INFO(log_stream.str());
+  } else {
+    LOG_INFO("Could not estimate a " + modelType + " model for the given dataset.");
+  }
+}
+
 std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     const std::vector<pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr>& cloud_clusters,
     int num_iterations,
@@ -8,7 +161,9 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     int hough_angle_bins,
     int hough_rho_bins,
     int hough_radius_bins,
-    int hough_center_bins) {
+    int hough_center_bins,
+    double ransac_distance_threshold,
+    int ransac_max_iterations) {
   
   std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
   [[maybe_unused]] int box_count = 0;
@@ -60,6 +215,10 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     projected_cloud->width = projected_cloud->points.size();
     projected_cloud->height = 1;  // This is an unorganized point cloud
     projected_cloud->is_dense = true;  // Assuming no invalid (NaN, Inf) points in the projection
+
+    // Create a copy of the original projected cloud
+    pcl::PointCloud<pcl::PointXY>::Ptr original_projected_cloud_copy(new pcl::PointCloud<pcl::PointXY>);
+    pcl::copyPointCloud(*projected_cloud, *original_projected_cloud_copy);
     
     // Log the successful projection
     log_stream.str("");  // Clear the stream
@@ -124,18 +283,54 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
       << "  Note: Each point in the Hough space represents a potential line or circle in the 2D projected space (z=0 plane).";
     LOG_INFO(log_stream.str());
 
-
-    // TODO: Inner Loop (repeated I=25 times)
+    /****************************************************
+     *                                                  *
+     *                Inner Loop                        *
+     *                                                  *
+     ***************************************************/  
     for (int i = 0; i < num_iterations; ++i) {
-      // TODO: RANSAC Model Fitting (pcl::RandomSampleConsensus)
+
+      /****************************************************
+       *                                                  *
+       *                RANSAC Model Fitting              *
+       *                                                  *
+       ***************************************************/ 
       // Line Fitting
       // - Use RANSAC to fit a 2D line to the projected points. This is done to identify potential box-like objects (lines).
+      auto [line_inliers, line_coefficients] = fitLineRANSAC(projected_cloud, 
+                                                           ransac_distance_threshold, 
+                                                           ransac_max_iterations);
+
+
       // Circle Fitting
       // - Use RANSAC to fit a 2D circle to the projected points. This is done to identify cylindrical-like objects (cylinders)
+      auto [circle_inliers, circle_coefficients] = fitCircleRANSAC(projected_cloud, 
+                                                                 ransac_distance_threshold, 
+                                                                 ransac_max_iterations);
 
-      // TODO: Temporarily Remove Inliers
-      // - Temporarily remove the inliers (for both the circle and line models) from this working point cloud cluster. This removal is just temporary.
-      // For the next iteration I, we will begin again with the full point cloud cluster.
+      // Log the results
+      logModelResults("Line", line_coefficients, line_inliers);
+      logModelResults("Circle", circle_coefficients, circle_inliers);
+
+      // Check for overlap in inliers
+      std::vector<int> overlap_inliers;
+      std::set_intersection(line_inliers->indices.begin(), line_inliers->indices.end(),
+                            circle_inliers->indices.begin(), circle_inliers->indices.end(),
+                            std::back_inserter(overlap_inliers));
+
+      log_stream.str("");
+      log_stream << "Number of overlapping inliers: " << overlap_inliers.size();
+      LOG_INFO(log_stream.str());
+
+      // TODO: Temporarily remove inliers
+      // This is where we would remove the inliers (both line and circle) from the projected_cloud
+      // for further processing in this iteration. For example:
+      // 
+      // pcl::PointCloud<pcl::PointXY>::Ptr cloud_without_inliers(new pcl::PointCloud<pcl::PointXY>);
+      // // Use pcl::ExtractIndices to remove inliers from projected_cloud
+      // // Store the result in cloud_without_inliers
+      //
+      // Then use cloud_without_inliers for further processing in this iteration
 
       // TODO: Filter Inliers
       // For the fitted model from the RANSAC Model Fitting step, apply a series of filters to refine the corresponding set of inlier points.
@@ -161,6 +356,10 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
 
       // TODO: Add Model to the Hough Space (pcl::Hough3DGrouping)
       // If a circle or line model made it this far, it is valid. Add a vote for it in the appropriate Hough parameter space (circle or line, respectively).
+    
+      // Restore the full point cloud for the next iteration
+      pcl::copyPointCloud(*original_projected_cloud_copy, *projected_cloud);      
+    
     }
 
     // TODO: Cluster Parameter Spaces
@@ -217,7 +416,5 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
 
   return collision_objects;
 }
-
-// Helper function implementations will be added here as we develop them
 
 
