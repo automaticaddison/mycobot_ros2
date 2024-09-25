@@ -295,78 +295,79 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
      *                                                  *
      ***************************************************/  
     for (int i = 0; i < num_iterations; ++i) {
+      bool test_single_iteration = true;  // Add this flag for testing TODO
 
       /****************************************************
        *                                                  *
        *                RANSAC Model Fitting              *
        *                                                  *
        ***************************************************/ 
-      // Line Fitting
-      // - Use RANSAC to fit a 2D line to the projected points. This is done to identify potential box-like objects (lines).
-      auto [line_inliers, line_coefficients] = fitLineRANSAC(projected_cloud, 
+      while (static_cast<int>(projected_cloud->points.size()) > inlier_threshold) {
+      
+        // Line Fitting
+        // - Use RANSAC to fit a 2D line to the projected points. This is done to identify potential box-like objects (lines).
+        auto [line_inliers, line_coefficients] = fitLineRANSAC(projected_cloud, 
                                                            ransac_distance_threshold, 
                                                            ransac_max_iterations);
 
 
-      // Circle Fitting
-      // - Use RANSAC to fit a 2D circle to the projected points. This is done to identify cylindrical-like objects (cylinders)
-      auto [circle_inliers, circle_coefficients] = fitCircleRANSAC(projected_cloud, 
+        // Circle Fitting
+        // - Use RANSAC to fit a 2D circle to the projected points. This is done to identify cylindrical-like objects (cylinders)
+        auto [circle_inliers, circle_coefficients] = fitCircleRANSAC(projected_cloud, 
                                                                  ransac_distance_threshold, 
                                                                  ransac_max_iterations,
                                                                  hough_max_radius);
 
-      // Log the results
-      logModelResults("Line", line_coefficients, line_inliers);
-      logModelResults("Circle", circle_coefficients, circle_inliers);
+        // Log the results
+        logModelResults("Line", line_coefficients, line_inliers);
+        logModelResults("Circle", circle_coefficients, circle_inliers);
 
-      // Check for overlap in inliers
-      std::vector<int> overlap_inliers;
-      std::set_intersection(line_inliers->indices.begin(), line_inliers->indices.end(),
-                            circle_inliers->indices.begin(), circle_inliers->indices.end(),
-                            std::back_inserter(overlap_inliers));
+        // TODO: Filter Inliers
+        // For the fitted model from the RANSAC Model Fitting step, apply a series of filters to refine the corresponding set of inlier points.
+        // Circle Filtering
+        // - Maximum of Two Clusters
+        // - Height Consistency
+        // - Curvature Filtering
+        // - Radius-based Surface Descriptor Filtering
+        // - Surface Normal Filtering
+        // Line Filtering
+        // - Maximum of 1 Cluster
+        // - Curvature Filtering
+        // - Surface Normal Filtering
 
-      log_stream.str("");
-      log_stream << "Number of overlapping inliers: " << overlap_inliers.size();
-      LOG_INFO(log_stream.str());
+        // TODO: Model Validation
+        // For the circle and line models, check how many inlier points remain.
+        // - If the number of remaining inliers for the model exceeds the threshold (100 points):
+        //   - The model is considered valid.
+        //   - Go to the next step to add the model to the circle or line Hough parameter space (depending on the model)
+        // - If the number of remaining inliers is below the threshold:
+        //   - The model is rejected.
+        //   - Check if there are any remaining points in the cluster. If so, go back to the RANSAC Model Fitting step.
 
-      // TODO: Temporarily remove inliers
-      // This is where we would remove the inliers (both line and circle) from the projected_cloud
-      // for further processing in this iteration. For example:
-      // 
-      // pcl::PointCloud<pcl::PointXY>::Ptr cloud_without_inliers(new pcl::PointCloud<pcl::PointXY>);
-      // // Use pcl::ExtractIndices to remove inliers from projected_cloud
-      // // Store the result in cloud_without_inliers
-      //
-      // Then use cloud_without_inliers for further processing in this iteration
+         // TODO: Create a data structure called inliers_to_remove that to use in the next step to track indices of inliers of valid models
 
-      // TODO: Filter Inliers
-      // For the fitted model from the RANSAC Model Fitting step, apply a series of filters to refine the corresponding set of inlier points.
-      // Circle Filtering
-      // - Maximum of Two Clusters
-      // - Height Consistency
-      // - Curvature Filtering
-      // - Radius-based Surface Descriptor Filtering
-      // - Surface Normal Filtering
-      // Line Filtering
-      // - Maximum of 1 Cluster
-      // - Curvature Filtering
-      // - Surface Normal Filtering
+        // TODO: Add Model to the Hough Space (pcl::Hough3DGrouping)
+        // If a circle or line model made it this far, it is valid. 
+        // If a circle model is valid:
+        // - Add a vote for it in the circle Hough parameter space 
+        // - Store the indices of the inliers for this circle model. 
+        // If a line model is valid:
+        // - Add a vote for it in the line Hough parameter space 
+        // - Store the indices of the inliers for this line model
 
-      // TODO: Model Validation
-      // For the circle and line models, check how many inlier points remain.
-      // - If the number of remaining inliers for the model exceeds the threshold (100 points):
-      //   - The model is considered valid.
-      //   - Go to the next step to add the model to the circle or line Hough parameter space (depending on the model)
-      // - If the number of remaining inliers is below the threshold:
-      //   - The model is rejected.
-      //   - Check if there are any remaining points in the cluster. If so, go back to the RANSAC Model Fitting step.
+        // TODO: Remove duplicate inliers that appear in both the circle and line inlier list (if applicable)
 
-      // TODO: Add Model to the Hough Space (pcl::Hough3DGrouping)
-      // If a circle or line model made it this far, it is valid. Add a vote for it in the appropriate Hough parameter space (circle or line, respectively).
-    
-      // Restore the full point cloud for the next iteration
-      pcl::copyPointCloud(*original_projected_cloud_copy, *projected_cloud);      
-    
+        // TODO: Create a new point cloud called cloud_without_inliers that is the projected cloud with the valid model inliers removed
+        //        -- Update the projected cloud for the next interation of the while loop
+
+        // Otherwise, if no valid models were found, exit this while loop
+        if (test_single_iteration) {
+          LOG_INFO("Breaking after first iteration for testing purposes.");
+          break;
+        }
+      }
+      // Restore the full point cloud for the next iteration I
+      pcl::copyPointCloud(*original_projected_cloud_copy, *projected_cloud);       
     }
 
     // TODO: Cluster Parameter Spaces
