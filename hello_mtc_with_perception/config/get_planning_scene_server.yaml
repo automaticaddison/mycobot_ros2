@@ -56,7 +56,7 @@ get_planning_scene_server:
     hough_rho_bins: 100
     hough_radius_bins: 50
     hough_center_bins: 100
-    ransac_distance_threshold: 0.01
+    ransac_distance_threshold: 0.001
     ransac_max_iterations: 1000
     
     # Legacy parameters (to be removed later)

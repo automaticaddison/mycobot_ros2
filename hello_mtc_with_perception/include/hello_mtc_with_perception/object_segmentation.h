@@ -53,7 +53,7 @@ std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitLineRANSAC(
   const pcl::PointCloud<pcl::PointXY>::Ptr& cloud,
   double ransac_distance_threshold,
   int ransac_max_iterations);
-
+  
 /**
  * @brief Fits a 2D circle to three points.
  * 
@@ -79,13 +79,15 @@ float distanceToCircle(const Eigen::Vector2f& point, const Eigen::Vector3f& circ
  * @param cloud Input point cloud.
  * @param ransac_distance_threshold Distance threshold for inlier determination.
  * @param ransac_max_iterations Maximum number of RANSAC iterations.
+ * @param max_allowable_radius Maximum allowable radius for the fitted circle.
  * @return std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> 
  *         A tuple containing the inlier indices and circle coefficients.
  */
 std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitCircleRANSAC(
   const pcl::PointCloud<pcl::PointXY>::Ptr& cloud,
   double ransac_distance_threshold,
-  int ransac_max_iterations);
+  int ransac_max_iterations,
+  double max_allowable_radius);
 
 /**
  * @brief Logs the results of model fitting.

@@ -64,7 +64,6 @@ std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitLineRANSAC(
   return std::make_tuple(best_inliers, best_coefficients);
 }
 
-// Circle fitting helpers
 // Calculate the center (h, k) and radius r of a circle passing through three points p1, p2, and p3.
 Eigen::Vector3f fitCircle(const Eigen::Vector2f& p1, const Eigen::Vector2f& p2, const Eigen::Vector2f& p3) {
   Eigen::Matrix3f A;
@@ -88,12 +87,13 @@ float distanceToCircle(const Eigen::Vector2f& point, const Eigen::Vector3f& circ
 std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitCircleRANSAC(
     const pcl::PointCloud<pcl::PointXY>::Ptr& cloud,
     double ransac_distance_threshold,
-    int ransac_max_iterations) {
+    int ransac_max_iterations,
+    double max_allowable_radius) {
   
   pcl::PointIndices::Ptr best_inliers(new pcl::PointIndices);
   pcl::ModelCoefficients::Ptr best_coefficients(new pcl::ModelCoefficients);
   best_coefficients->values.resize(3);
-
+  
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<> dis(0, cloud->points.size() - 1);
@@ -109,6 +109,11 @@ std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitCircleRANSAC(
     Eigen::Vector2f p2(cloud->points[idx2].x, cloud->points[idx2].y);
     Eigen::Vector2f p3(cloud->points[idx3].x, cloud->points[idx3].y);
     Eigen::Vector3f circle = fitCircle(p1, p2, p3);
+    
+    // Sanity check: ignore circles with unreasonable radii
+    if (circle[2] > max_allowable_radius || circle[2] <= 0) {
+      continue;
+    }
 
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
     for (size_t i = 0; i < cloud->points.size(); ++i) {
@@ -307,7 +312,8 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
       // - Use RANSAC to fit a 2D circle to the projected points. This is done to identify cylindrical-like objects (cylinders)
       auto [circle_inliers, circle_coefficients] = fitCircleRANSAC(projected_cloud, 
                                                                  ransac_distance_threshold, 
-                                                                 ransac_max_iterations);
+                                                                 ransac_max_iterations,
+                                                                 hough_max_radius);
 
       // Log the results
       logModelResults("Line", line_coefficients, line_inliers);
