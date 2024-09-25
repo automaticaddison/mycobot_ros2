@@ -384,6 +384,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     // Using the parameters from the highest-vote cluster, fit the selected solid geometric primitive model type (box or cylinder) to the original 3D point cloud data.
 
     // TODO: Add Shape as Collision Object
+    // Remove the detected object from the 3D cluster
     // For now, we'll always create a cylinder as a placeholder
     moveit_msgs::msg::CollisionObject collision_object;
     collision_object.header.frame_id = frame_id;
@@ -417,7 +418,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     LOG_INFO(log_stream.str());
 
     // TODO: Check if there are Points Remaining for this Cluster
-    // - If points remain in the point cloud cluster, go back to the top of the Inner Loop (starting with I=0) for the remaining points in the cluster.
+    // - If points remain in the point cloud cluster, create a 3D bounding box for the residual points and add it as a collision object.
     // - If no points remain, move to the next point cloud cluster in the vector (i.e. move to the next iteration of the Outer Loop)
   }
 
