@@ -58,6 +58,14 @@ get_planning_scene_server:
     hough_center_bins: 100
     ransac_distance_threshold: 0.001
     ransac_max_iterations: 1000
+    # Circle inlier filtering parameters
+    circle_min_cluster_size: 10
+    circle_max_clusters: 2
+    circle_height_tolerance: 0.05
+    circle_curvature_threshold: 0.010
+    circle_radius_tolerance: 0.020
+    circle_normal_angle_threshold: 0.1
+    cluster_tolerance: 0.02  
     
     # Legacy parameters (to be removed later)
     shape_fitting_max_iterations: 1000

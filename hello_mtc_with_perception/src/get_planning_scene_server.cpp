@@ -117,6 +117,14 @@ class GetPlanningSceneServer : public rclcpp::Node {
   int hough_center_bins; 
   double ransac_distance_threshold;
   int ransac_max_iterations;
+  // Parameters for circle filtering
+  int circle_min_cluster_size;
+  int circle_max_clusters;
+  double circle_height_tolerance;
+  double circle_curvature_threshold;
+  double circle_radius_tolerance;
+  double circle_normal_angle_threshold;
+  double cluster_tolerance; 
   
   // Legacy...remove later Shape fitting parameters
   int shape_fitting_max_iterations;
@@ -211,6 +219,14 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("hough_center_bins", 100, "Number of center bins (in each dimension) for the circle Hough space");
     declare_parameter("ransac_distance_threshold", 0.01, "Distance threshold for RANSAC (how close a point must be to the model to be considered an inlier)");
     declare_parameter("ransac_max_iterations", 1000, "Maximum number of iterations for the RANSAC algorithm");
+    // Declare parameters for circle filtering
+    declare_parameter("circle_min_cluster_size", 10, "Minimum size for a cluster of circle inliers");
+    declare_parameter("circle_max_clusters", 2, "Maximum number of allowed clusters for circles");
+    declare_parameter("circle_height_tolerance", 0.05, "Tolerance for height difference between circle clusters");
+    declare_parameter("circle_curvature_threshold", 0.010, "Threshold for point curvature in circle fitting");
+    declare_parameter("circle_radius_tolerance", 0.020, "Tolerance for difference between point RSD min value and circle radius");
+    declare_parameter("circle_normal_angle_threshold", 0.1, "Threshold for angle between point normal and circle radial vector");
+    declare_parameter("cluster_tolerance", 0.02, "The maximum distance between two points to be considered in the same cluster");
   
     // Legacy...remove these later
     declare_parameter("shape_fitting_max_iterations", 1000, "Maximum iterations for shape fitting RANSAC");
@@ -281,6 +297,14 @@ class GetPlanningSceneServer : public rclcpp::Node {
     hough_center_bins = this->get_parameter("hough_center_bins").as_int();
     ransac_distance_threshold = this->get_parameter("ransac_distance_threshold").as_double();
     ransac_max_iterations = this->get_parameter("ransac_max_iterations").as_int();
+    // Get parameter values for circle filtering
+    circle_min_cluster_size = this->get_parameter("circle_min_cluster_size").as_int();
+    circle_max_clusters = this->get_parameter("circle_max_clusters").as_int();
+    circle_height_tolerance = this->get_parameter("circle_height_tolerance").as_double();
+    circle_curvature_threshold = this->get_parameter("circle_curvature_threshold").as_double();
+    circle_radius_tolerance = this->get_parameter("circle_radius_tolerance").as_double();
+    circle_normal_angle_threshold = this->get_parameter("circle_normal_angle_threshold").as_double();
+    cluster_tolerance = this->get_parameter("cluster_tolerance").as_double();
     
     // Legacy...remove later Get shape fitting parameter values
     shape_fitting_max_iterations = this->get_parameter("shape_fitting_max_iterations").as_int();
@@ -999,8 +1023,15 @@ class GetPlanningSceneServer : public rclcpp::Node {
       hough_radius_bins,
       hough_center_bins,
       ransac_distance_threshold,
-      ransac_max_iterations
-    );    
+      ransac_max_iterations,
+      circle_min_cluster_size,
+      circle_max_clusters,
+      circle_height_tolerance,
+      circle_curvature_threshold,
+      circle_radius_tolerance,
+      circle_normal_angle_threshold,
+      cluster_tolerance  
+    );
 
     RCLCPP_INFO(this->get_logger(), "Segmented %zu objects from the point cloud clusters", segmented_objects.size());
     

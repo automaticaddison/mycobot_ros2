@@ -23,7 +23,8 @@ float distanceToLine(const Eigen::Vector2f& point, const Eigen::Vector3f& line) 
 std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitLineRANSAC(
     const pcl::PointCloud<pcl::PointXY>::Ptr& cloud,
     double ransac_distance_threshold,
-    int ransac_max_iterations) {
+    int ransac_max_iterations,
+    const std::unordered_map<size_t, size_t>& projection_map) {
   
   pcl::PointIndices::Ptr best_inliers(new pcl::PointIndices);
   pcl::ModelCoefficients::Ptr best_coefficients(new pcl::ModelCoefficients);
@@ -47,7 +48,7 @@ std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitLineRANSAC(
     for (size_t i = 0; i < cloud->points.size(); ++i) {
       Eigen::Vector2f pt(cloud->points[i].x, cloud->points[i].y);
       if (distanceToLine(pt, line) < ransac_distance_threshold) {
-        inliers->indices.push_back(i);
+        inliers->indices.push_back(projection_map.at(i));  // Use the mapping here
       }
     }
 
@@ -88,7 +89,8 @@ std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitCircleRANSAC(
     const pcl::PointCloud<pcl::PointXY>::Ptr& cloud,
     double ransac_distance_threshold,
     int ransac_max_iterations,
-    double max_allowable_radius) {
+    double max_allowable_radius,
+    const std::unordered_map<size_t, size_t>& projection_map) {
   
   pcl::PointIndices::Ptr best_inliers(new pcl::PointIndices);
   pcl::ModelCoefficients::Ptr best_coefficients(new pcl::ModelCoefficients);
@@ -119,7 +121,7 @@ std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitCircleRANSAC(
     for (size_t i = 0; i < cloud->points.size(); ++i) {
       Eigen::Vector2f pt(cloud->points[i].x, cloud->points[i].y);
       if (distanceToCircle(pt, circle) < ransac_distance_threshold) {
-        inliers->indices.push_back(i);
+        inliers->indices.push_back(projection_map.at(i));  // Use the mapping here
       }
     }
 
@@ -159,6 +161,113 @@ void logModelResults(const std::string& modelType,
   }
 }
 
+pcl::PointIndices::Ptr filterCircleInliers(
+    const pcl::PointIndices::Ptr& circle_inliers,
+    const pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr& original_cloud,
+    const pcl::ModelCoefficients::Ptr& circle_coefficients,
+    const std::unordered_map<size_t, size_t>& projection_map,
+    int circle_min_cluster_size,
+    int circle_max_clusters,
+    double circle_height_tolerance,
+    double circle_curvature_threshold,
+    double circle_radius_tolerance,
+    double circle_normal_angle_threshold,
+    double cluster_tolerance) {  
+
+  pcl::PointIndices::Ptr filtered_inliers(new pcl::PointIndices);
+  
+  LOG_INFO("Starting circle inlier filtering with " + std::to_string(circle_inliers->indices.size()) + " initial inliers");
+
+  // 1. Euclidean Clustering
+  pcl::PointCloud<pcl::PointXYZ>::Ptr inlier_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+  for (const auto& idx : circle_inliers->indices) {
+    size_t original_idx = projection_map.at(idx);
+    const auto& point = original_cloud->points[original_idx];
+    inlier_cloud->points.push_back(pcl::PointXYZ(point.x, point.y, point.z));
+  }
+  inlier_cloud->width = inlier_cloud->points.size();
+  inlier_cloud->height = 1;
+  inlier_cloud->is_dense = true;
+
+  // Create a KdTree object for the search method of the extraction
+  pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+  tree->setInputCloud(inlier_cloud);
+
+  std::vector<pcl::PointIndices> clusters;
+  pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+  ec.setClusterTolerance(cluster_tolerance);
+  ec.setMinClusterSize(circle_min_cluster_size);
+  ec.setMaxClusterSize(inlier_cloud->points.size());
+  ec.setSearchMethod(tree);
+  ec.setInputCloud(inlier_cloud);
+  ec.extract(clusters);
+
+  LOG_INFO("Euclidean clustering found " + std::to_string(clusters.size()) + " clusters");
+
+  if (clusters.size() > circle_max_clusters) {
+    LOG_INFO("Rejecting circle: number of clusters (" + std::to_string(clusters.size()) + 
+             ") exceeds maximum allowed (" + std::to_string(circle_max_clusters) + ")");
+    return filtered_inliers; // Return empty PointIndices if more than circle_max_clusters
+  }
+
+  // 2. Height Consistency Check (only if we have two clusters)
+  if (clusters.size() == 2) {
+    double max_height_1 = -std::numeric_limits<double>::max();
+    double max_height_2 = -std::numeric_limits<double>::max();
+
+    for (const auto& idx : clusters[0].indices) {
+      size_t original_idx = projection_map.at(circle_inliers->indices[idx]);
+      max_height_1 = std::max(max_height_1, static_cast<double>(original_cloud->points[original_idx].z));
+    }
+
+    for (const auto& idx : clusters[1].indices) {
+      size_t original_idx = projection_map.at(circle_inliers->indices[idx]);
+      max_height_2 = std::max(max_height_2, static_cast<double>(original_cloud->points[original_idx].z));
+    }
+
+    if (std::abs(max_height_1 - max_height_2) > circle_height_tolerance) {
+      LOG_INFO("Rejecting circle: height difference between clusters (" + 
+               std::to_string(std::abs(max_height_1 - max_height_2)) + 
+               ") exceeds tolerance (" + std::to_string(circle_height_tolerance) + ")");
+      return filtered_inliers; // Return empty PointIndices if height difference is too large
+    }
+  }
+
+  double circle_radius = circle_coefficients->values[2];
+  Eigen::Vector3f circle_center(circle_coefficients->values[0], circle_coefficients->values[1], 0);
+
+  // 3. Curvature, RSD, and Normal Filtering
+  for (const auto& idx : circle_inliers->indices) {
+    size_t original_idx = projection_map.at(idx);
+    const auto& point = original_cloud->points[original_idx];
+    
+    // Curvature Filtering
+    if (point.curvature < circle_curvature_threshold) continue;
+
+    // RSD Filtering
+    if (std::abs(point.r_min - circle_radius) > circle_radius_tolerance) continue;
+
+    // Surface Normal Filtering
+    Eigen::Vector3f point_vector(point.x - circle_center.x(), point.y - circle_center.y(), 0);
+    Eigen::Vector3f normal_vector(point.normal_x, point.normal_y, 0);
+    point_vector.normalize();
+    normal_vector.normalize();
+
+    float dot_product = std::abs(point_vector.dot(normal_vector));
+    float angle = std::acos(dot_product);
+
+    if (std::min(angle, M_PI - angle) > circle_normal_angle_threshold) continue;
+
+    // If all checks pass, add to filtered inliers
+    filtered_inliers->indices.push_back(original_idx);
+  }
+
+  LOG_INFO("Circle inlier filtering complete. Remaining inliers: " + 
+           std::to_string(filtered_inliers->indices.size()));
+
+  return filtered_inliers;
+}
+
 std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     const std::vector<pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr>& cloud_clusters,
     int num_iterations,
@@ -169,7 +278,14 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     int hough_radius_bins,
     int hough_center_bins,
     double ransac_distance_threshold,
-    int ransac_max_iterations) {
+    int ransac_max_iterations,
+    int circle_min_cluster_size,
+    int circle_max_clusters,
+    double circle_height_tolerance,
+    double circle_curvature_threshold,
+    double circle_radius_tolerance,
+    double circle_normal_angle_threshold,
+    double cluster_tolerance) {
   
   std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
   [[maybe_unused]] int box_count = 0;
@@ -308,7 +424,8 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
         // - Use RANSAC to fit a 2D line to the projected points. This is done to identify potential box-like objects (lines).
         auto [line_inliers, line_coefficients] = fitLineRANSAC(projected_cloud, 
                                                            ransac_distance_threshold, 
-                                                           ransac_max_iterations);
+                                                           ransac_max_iterations,
+                                                           projection_map);
 
 
         // Circle Fitting
@@ -316,20 +433,32 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
         auto [circle_inliers, circle_coefficients] = fitCircleRANSAC(projected_cloud, 
                                                                  ransac_distance_threshold, 
                                                                  ransac_max_iterations,
-                                                                 hough_max_radius);
+                                                                 hough_max_radius,
+                                                                 projection_map);
 
         // Log the results
         logModelResults("Line", line_coefficients, line_inliers);
         logModelResults("Circle", circle_coefficients, circle_inliers);
 
-        // TODO: Filter Inliers
-        // For the fitted model from the RANSAC Model Fitting step, apply a series of filters to refine the corresponding set of inlier points.
+        /****************************************************
+         *                                                  *
+         *                Filter Inliers                    *
+         *                                                  *
+         ***************************************************/ 
         // Circle Filtering
-        // - Maximum of Two Clusters
-        // - Height Consistency
-        // - Curvature Filtering
-        // - Radius-based Surface Descriptor Filtering
-        // - Surface Normal Filtering
+        pcl::PointIndices::Ptr filtered_circle_inliers = filterCircleInliers(
+          circle_inliers,
+          cluster,
+          circle_coefficients,
+          projection_map,
+          circle_min_cluster_size,
+          circle_max_clusters,
+          circle_height_tolerance,
+          circle_curvature_threshold,
+          circle_radius_tolerance,
+          circle_normal_angle_threshold,
+          cluster_tolerance);
+
         // Line Filtering
         // - Maximum of 1 Cluster
         // - Curvature Filtering

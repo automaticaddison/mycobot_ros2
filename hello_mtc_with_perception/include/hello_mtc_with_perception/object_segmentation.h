@@ -17,6 +17,8 @@
 #include <pcl/point_cloud.h>                      // For pcl::PointCloud
 #include <pcl/common/io.h>                        // For pcl::copyPointCloud
 #include <pcl/common/projection_matrix.h>         // For point cloud projection
+#include <pcl/search/kdtree.h>                    // For pcl::search::KdTree
+#include <pcl/segmentation/extract_clusters.h>    // For pcl::EuclideanClusterExtraction
 
 #include <moveit_msgs/msg/collision_object.hpp>   // For moveit_msgs::msg::CollisionObject
 
@@ -46,13 +48,15 @@ float distanceToLine(const Eigen::Vector2f& point, const Eigen::Vector3f& line);
  * @param cloud Input point cloud.
  * @param ransac_distance_threshold Distance threshold for inlier determination.
  * @param ransac_max_iterations Maximum number of RANSAC iterations.
+ * @param projection_map Mapping between 2D projected points and original 3D points.
  * @return std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> 
  *         A tuple containing the inlier indices and line coefficients.
  */
 std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitLineRANSAC(
   const pcl::PointCloud<pcl::PointXY>::Ptr& cloud,
   double ransac_distance_threshold,
-  int ransac_max_iterations);
+  int ransac_max_iterations,
+  const std::unordered_map<size_t, size_t>& projection_map);
   
 /**
  * @brief Fits a 2D circle to three points.
@@ -80,6 +84,7 @@ float distanceToCircle(const Eigen::Vector2f& point, const Eigen::Vector3f& circ
  * @param ransac_distance_threshold Distance threshold for inlier determination.
  * @param ransac_max_iterations Maximum number of RANSAC iterations.
  * @param max_allowable_radius Maximum allowable radius for the fitted circle.
+ * @param projection_map Mapping between 2D projected points and original 3D points.
  * @return std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> 
  *         A tuple containing the inlier indices and circle coefficients.
  */
@@ -87,7 +92,8 @@ std::tuple<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> fitCircleRANSAC(
   const pcl::PointCloud<pcl::PointXY>::Ptr& cloud,
   double ransac_distance_threshold,
   int ransac_max_iterations,
-  double max_allowable_radius);
+  double max_allowable_radius,
+  const std::unordered_map<size_t, size_t>& projection_map);
 
 /**
  * @brief Logs the results of model fitting.
@@ -101,11 +107,47 @@ void logModelResults(const std::string& modelType,
                      const pcl::PointIndices::Ptr& inliers);
 
 /**
- * @brief Segments objects from point cloud clusters and creates collision objects.
+ * @brief Filters circle inliers based on various criteria.
  * 
- * This function processes a vector of point cloud clusters to identify geometric primitives 
- * (currently only cylinders are implemented) and returns a vector of collision objects 
- * representing these primitives. It uses RANSAC for object detection and fitting.
+ * This function applies several filters to refine the set of inlier points for a fitted circle:
+ * 1. Uses Euclidean clustering to group inliers and limits the number of clusters.
+ * 2. Checks for height consistency between clusters.
+ * 3. Filters based on point curvature.
+ * 4. Filters based on the Radius-based Surface Descriptor (RSD).
+ * 5. Filters based on surface normal alignment with the circle.
+ * 
+ * @param circle_inliers Initial set of inliers from RANSAC circle fitting.
+ * @param original_cloud Original 3D point cloud.
+ * @param circle_coefficients Coefficients of the fitted circle.
+ * @param projection_map Mapping between 2D projected points and original 3D points.
+ * @param circle_min_cluster_size Minimum size for a cluster of inliers.
+ * @param circle_max_clusters Maximum number of allowed clusters.
+ * @param circle_height_tolerance Tolerance for height difference between clusters.
+ * @param circle_curvature_threshold Threshold for point curvature.
+ * @param circle_radius_tolerance Tolerance for difference between point Radius-based Surface Descriptor (RSD) min value and circle radius.
+ * @param circle_normal_angle_threshold Threshold for angle between point normal and circle radial vector.
+ * @param cluster_tolerance The maximum distance between two points to be considered in the same cluster.
+ * @return pcl::PointIndices::Ptr Filtered set of inlier indices.
+ */
+pcl::PointIndices::Ptr filterCircleInliers(
+    const pcl::PointIndices::Ptr& circle_inliers,
+    const pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr& original_cloud,
+    const pcl::ModelCoefficients::Ptr& circle_coefficients,
+    const std::unordered_map<size_t, size_t>& projection_map,
+    int circle_min_cluster_size,
+    int circle_max_clusters,
+    double circle_height_tolerance,
+    double circle_curvature_threshold,
+    double circle_radius_tolerance,
+    double circle_normal_angle_threshold,
+    double cluster_tolerance);
+
+/**
+ * @brief Segments objects from point cloud clusters and creates collision objects.
+ *
+ * This function processes a vector of point cloud clusters to identify geometric primitives
+ * (cylinder and box) and returns a vector of collision objects
+ * representing these primitives.
  *
  * @param cloud_clusters Vector of point cloud clusters to process.
  * @param num_iterations Number of iterations for the inner loop of processing each cluster.
@@ -117,6 +159,13 @@ void logModelResults(const std::string& modelType,
  * @param hough_center_bins Number of center bins (in each dimension) for the circle Hough space.
  * @param ransac_distance_threshold Distance threshold for RANSAC.
  * @param ransac_max_iterations Maximum number of iterations for RANSAC.
+ * @param circle_min_cluster_size Minimum size for a cluster of circle inliers.
+ * @param circle_max_clusters Maximum number of allowed clusters for circles.
+ * @param circle_height_tolerance Tolerance for height difference between circle clusters.
+ * @param circle_curvature_threshold Threshold for point curvature in circle fitting.
+ * @param circle_radius_tolerance Tolerance for difference between point RSD min value and circle radius.
+ * @param circle_normal_angle_threshold Threshold for angle between point normal and circle radial vector.
+ * @param cluster_tolerance The maximum distance between two points to be considered in the same cluster.
  * @return std::vector<moveit_msgs::msg::CollisionObject> Vector of collision objects.
  */
 std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
@@ -129,6 +178,13 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     int hough_radius_bins,
     int hough_center_bins,
     double ransac_distance_threshold,
-    int ransac_max_iterations);
+    int ransac_max_iterations,
+    int circle_min_cluster_size,
+    int circle_max_clusters,
+    double circle_height_tolerance,
+    double circle_curvature_threshold,
+    double circle_radius_tolerance,
+    double circle_normal_angle_threshold,
+    double cluster_tolerance);
 
 #endif // OBJECT_SEGMENTATION_H
