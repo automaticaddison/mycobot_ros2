@@ -20,6 +20,8 @@
 #include <pcl/features/normal_3d.h>
 #include <pcl/segmentation/region_growing.h>
 #include <pcl/common/centroid.h>
+#include <limits>
+#include <algorithm>
 
 /**
  * @brief Extract clusters from a point cloud using region growing algorithm.

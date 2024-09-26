@@ -83,7 +83,11 @@ extractClusters(
      << std::setw(10) << "R"
      << std::setw(10) << "G"
      << std::setw(10) << "B"
-     << std::setw(10) << "Curv"
+     << std::setw(10) << "MinCurv"
+     << std::setw(10) << "AvgCurv"
+     << std::setw(10) << "MedCurv"
+     << std::setw(10) << "90Curv"
+     << std::setw(10) << "MaxCurv"
      << std::setw(10) << "RMin"
      << std::setw(10) << "RMax"
      << "\n";
@@ -93,12 +97,18 @@ extractClusters(
     Eigen::Vector4f centroid;
     pcl::compute3DCentroid(*cluster, centroid);
     
-    float avg_curvature = 0.0f;
+    std::vector<float> curvatures;
+    float min_curvature = std::numeric_limits<float>::max();
+    float max_curvature = std::numeric_limits<float>::lowest();
+    float sum_curvature = 0.0f;
     float avg_r = 0.0f, avg_g = 0.0f, avg_b = 0.0f;
     float avg_rsd_min = 0.0f, avg_rsd_max = 0.0f;
 
     for (const auto& point : cluster->points) {
-      avg_curvature += point.curvature;
+      curvatures.push_back(point.curvature);
+      min_curvature = std::min(min_curvature, point.curvature);
+      max_curvature = std::max(max_curvature, point.curvature);
+      sum_curvature += point.curvature;
       avg_r += point.r;
       avg_g += point.g;
       avg_b += point.b;
@@ -107,12 +117,19 @@ extractClusters(
     }
 
     float cluster_size = static_cast<float>(cluster->size());
-    avg_curvature /= cluster_size;
+    float avg_curvature = sum_curvature / cluster_size;
     avg_r /= cluster_size;
     avg_g /= cluster_size;
     avg_b /= cluster_size;
     avg_rsd_min /= cluster_size;
     avg_rsd_max /= cluster_size;
+
+    // Calculate median curvature
+    std::sort(curvatures.begin(), curvatures.end());
+    float median_curvature = curvatures[curvatures.size() / 2];
+
+    // Calculate 90th percentile curvature
+    float percentile_90_curvature = curvatures[static_cast<size_t>(curvatures.size() * 0.9)];
 
     ss << std::setw(8) << i
        << std::setw(10) << cluster->size()
@@ -124,7 +141,11 @@ extractClusters(
        << std::setw(10) << std::round(avg_g)
        << std::setw(10) << std::round(avg_b)
        << std::fixed << std::setprecision(3)
+       << std::setw(10) << min_curvature
        << std::setw(10) << avg_curvature
+       << std::setw(10) << median_curvature
+       << std::setw(10) << percentile_90_curvature
+       << std::setw(10) << max_curvature
        << std::setw(10) << avg_rsd_min
        << std::setw(10) << avg_rsd_max
        << "\n";
@@ -135,7 +156,11 @@ extractClusters(
      << "Size: Number of points in the cluster\n"
      << "X, Y, Z: Coordinates of the cluster centroid\n"
      << "R, G, B: Average RGB color values of the cluster\n"
-     << "Curv: Average curvature of the cluster\n"
+     << "MinCurv: Minimum curvature of the cluster\n"
+     << "AvgCurv: Average curvature of the cluster\n"
+     << "MedCurv: Median curvature of the cluster\n"
+     << "90Curv: 90th percentile curvature of the cluster\n"
+     << "MaxCurv: Maximum curvature of the cluster\n"
      << "RMin, RMax: Average minimum and maximum radii from Radius-Based Surface Descriptor (RSD)\n";
 
   LOG_INFO("Cluster extraction completed. Number of clusters found: " + std::to_string(clusters.size()));
@@ -143,5 +168,3 @@ extractClusters(
 
   return clusters;
 }
-
-
