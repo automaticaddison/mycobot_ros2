@@ -143,6 +143,34 @@ pcl::PointIndices::Ptr filterCircleInliers(
     double circle_cluster_tolerance);
 
 /**
+ * @brief Filters line inliers based on various criteria.
+ * 
+ * This function applies several filters to refine the set of inlier points for a fitted line:
+ * 1. Uses Euclidean clustering to group inliers and limits the number of clusters.
+ * 2. Filters based on point curvature.
+ * 3. Filters based on surface normal alignment with the line.
+ * 
+ * @param line_inliers Initial set of inliers from RANSAC line fitting.
+ * @param original_cloud Original 3D point cloud.
+ * @param line_coefficients Coefficients of the fitted line.
+ * @param projection_map Mapping between 2D projected points and original 3D points.
+ * @param line_max_clusters Maximum number of allowed clusters.
+ * @param line_curvature_threshold Threshold for point curvature.
+ * @param line_normal_angle_threshold Threshold for angle between point normal and line normal.
+ * @param line_cluster_tolerance The maximum distance between two points to be considered in the same cluster.
+ * @return pcl::PointIndices::Ptr Filtered set of inlier indices.
+ */
+pcl::PointIndices::Ptr filterLineInliers(
+    const pcl::PointIndices::Ptr& line_inliers,
+    const pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr& original_cloud,
+    const pcl::ModelCoefficients::Ptr& line_coefficients,
+    const std::unordered_map<size_t, size_t>& projection_map,
+    int line_max_clusters,
+    double line_curvature_threshold,
+    double line_normal_angle_threshold,
+    double line_cluster_tolerance);
+
+/**
  * @brief Segments objects from point cloud clusters and creates collision objects.
  *
  * This function processes a vector of point cloud clusters to identify geometric primitives

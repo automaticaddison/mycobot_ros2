@@ -277,6 +277,90 @@ pcl::PointIndices::Ptr filterCircleInliers(
   return filtered_inliers;
 }
 
+pcl::PointIndices::Ptr filterLineInliers(
+    const pcl::PointIndices::Ptr& line_inliers,
+    const pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr& original_cloud,
+    const pcl::ModelCoefficients::Ptr& line_coefficients,
+    const std::unordered_map<size_t, size_t>& projection_map,
+    int line_max_clusters,
+    double line_curvature_threshold,
+    double line_normal_angle_threshold,
+    double line_cluster_tolerance) {
+  pcl::PointIndices::Ptr filtered_inliers(new pcl::PointIndices);
+
+  // Step 1: Euclidean Clustering
+  pcl::PointCloud<pcl::PointXYZ>::Ptr inlier_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+  for (const auto& idx : line_inliers->indices) {
+    size_t original_idx = projection_map.at(idx);
+    const auto& point = original_cloud->points[original_idx];
+    inlier_cloud->points.push_back(pcl::PointXYZ(point.x, point.y, point.z));
+  }
+  inlier_cloud->width = inlier_cloud->points.size();
+  inlier_cloud->height = 1;
+  inlier_cloud->is_dense = true;
+
+  LOG_INFO("- Line inlier cloud size before filtering: " + std::to_string(inlier_cloud->points.size()));
+
+  pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+  tree->setInputCloud(inlier_cloud);
+
+  std::vector<pcl::PointIndices> clusters;
+  pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+  ec.setClusterTolerance(line_cluster_tolerance);
+  ec.setMinClusterSize(1);  // Allow clusters of any size
+  ec.setMaxClusterSize(inlier_cloud->points.size());
+  ec.setSearchMethod(tree);
+  ec.setInputCloud(inlier_cloud);
+  ec.extract(clusters);
+
+  LOG_INFO("- Line inliers clusters found: " + std::to_string(clusters.size()));
+
+  // Reject if number of clusters exceeds the maximum allowed
+  if (clusters.size() > static_cast<size_t>(line_max_clusters)) {
+    LOG_INFO("- Rejecting line: number of clusters (" + std::to_string(clusters.size()) + 
+             ") exceeds maximum allowed (" + std::to_string(line_max_clusters) + ")");
+    return filtered_inliers;
+  }
+
+  // Extract line parameters
+  Eigen::Vector3f line_direction(line_coefficients->values[0], line_coefficients->values[1], 0);
+  line_direction.normalize();
+  Eigen::Vector3f line_normal(-line_direction.y(), line_direction.x(), 0);
+
+  // Calculate a point on the line (e.g., the midpoint of the line segment)
+  Eigen::Vector3f line_point(line_coefficients->values[0], line_coefficients->values[1], 0);
+
+  // Step 2: Curvature and Normal Filtering
+  for (const auto& idx : line_inliers->indices) {
+    size_t original_idx = projection_map.at(idx);
+    const auto& point = original_cloud->points[original_idx];
+    
+    // Curvature Filtering: Skip points with high curvature
+    if (point.curvature > line_curvature_threshold) continue;
+
+    // Surface Normal Filtering
+    Eigen::Vector3f point_vector(point.x - line_point.x(), point.y - line_point.y(), 0);
+    point_vector.normalize();
+    Eigen::Vector3f normal_vector(point.normal_x, point.normal_y, 0);
+    normal_vector.normalize();
+
+    float dot_product = std::abs(point_vector.dot(normal_vector));
+    float angle = std::acos(dot_product);
+
+    // Check if the angle between the normal and the line direction is close to 90 degrees
+    if (std::abs(angle - M_PI/2) > line_normal_angle_threshold) continue;
+
+    // If all checks pass, add to filtered inliers
+    filtered_inliers->indices.push_back(original_idx);
+  }
+
+  // Log the number of inliers remaining after filtering
+  LOG_INFO("- Line inlier cloud size after filtering: " + 
+           std::to_string(filtered_inliers->indices.size()));
+
+  return filtered_inliers;
+}
+
 std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     const std::vector<pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr>& cloud_clusters,
     int num_iterations,
@@ -294,7 +378,11 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     double circle_curvature_threshold,
     double circle_radius_tolerance,
     double circle_normal_angle_threshold,
-    double circle_cluster_tolerance) {
+    double circle_cluster_tolerance,
+    int line_max_clusters,
+    double line_curvature_threshold,
+    double line_normal_angle_threshold,
+    double line_cluster_tolerance) {
   
   std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
   [[maybe_unused]] int box_count = 0;
@@ -471,9 +559,15 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
           circle_cluster_tolerance);
 
         // Line Filtering
-        // - Maximum of 1 Cluster
-        // - Curvature Filtering
-        // - Surface Normal Filtering
+        pcl::PointIndices::Ptr filtered_line_inliers = filterLineInliers(
+          line_inliers,
+          cluster,
+          line_coefficients,
+          projection_map,
+          line_max_clusters,
+          line_curvature_threshold,
+          line_normal_angle_threshold,
+          line_cluster_tolerance);
 
         // TODO: Model Validation
         // For the circle and line models, check how many inlier points remain.
