@@ -220,13 +220,13 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("ransac_distance_threshold", 0.01, "Distance threshold for RANSAC (how close a point must be to the model to be considered an inlier)");
     declare_parameter("ransac_max_iterations", 1000, "Maximum number of iterations for the RANSAC algorithm");
     // Declare parameters for circle filtering
-    declare_parameter("circle_min_cluster_size", 10, "Minimum size for a cluster of circle inliers");
+    declare_parameter("circle_min_cluster_size", 50, "Minimum size for a cluster of circle inliers");
     declare_parameter("circle_max_clusters", 2, "Maximum number of allowed clusters for circles");
     declare_parameter("circle_height_tolerance", 0.05, "Tolerance for height difference between circle clusters");
-    declare_parameter("circle_curvature_threshold", 0.010, "Threshold for point curvature in circle fitting");
-    declare_parameter("circle_radius_tolerance", 0.020, "Tolerance for difference between point RSD min value and circle radius");
-    declare_parameter("circle_normal_angle_threshold", 0.1, "Threshold for angle between point normal and circle radial vector");
-    declare_parameter("circle_cluster_tolerance", 0.02, "The maximum distance between two points to be considered in the same cluster");
+    declare_parameter("circle_curvature_threshold", 0.004, "Threshold for point curvature in circle fitting");
+    declare_parameter("circle_radius_tolerance", 0.030, "Tolerance for difference between point RSD min value and circle radius");
+    declare_parameter("circle_normal_angle_threshold", 0.2, "Threshold for angle between point normal and circle radial vector");
+    declare_parameter("circle_cluster_tolerance", 0.025, "The maximum distance between two points to be considered in the same cluster");
   
     // Legacy...remove these later
     declare_parameter("shape_fitting_max_iterations", 1000, "Maximum iterations for shape fitting RANSAC");
@@ -304,7 +304,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     circle_curvature_threshold = this->get_parameter("circle_curvature_threshold").as_double();
     circle_radius_tolerance = this->get_parameter("circle_radius_tolerance").as_double();
     circle_normal_angle_threshold = this->get_parameter("circle_normal_angle_threshold").as_double();
-    cluster_tolerance = this->get_parameter("circle_cluster_tolerance").as_double();
+    circle_cluster_tolerance = this->get_parameter("circle_cluster_tolerance").as_double();
     
     // Legacy...remove later Get shape fitting parameter values
     shape_fitting_max_iterations = this->get_parameter("shape_fitting_max_iterations").as_int();

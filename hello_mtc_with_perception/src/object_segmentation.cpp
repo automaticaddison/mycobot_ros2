@@ -172,16 +172,12 @@ pcl::PointIndices::Ptr filterCircleInliers(
     double circle_curvature_threshold,
     double circle_radius_tolerance,
     double circle_normal_angle_threshold,
-    double circle_cluster_tolerance) {  
-
-  // Initialize the output: a set of filtered inlier indices
+    double circle_cluster_tolerance) {
   pcl::PointIndices::Ptr filtered_inliers(new pcl::PointIndices);
   
-  // Log the start of the filtering process
   LOG_INFO("Starting circle inlier filtering with " + std::to_string(circle_inliers->indices.size()) + " initial inliers");
 
   // Step 1: Euclidean Clustering
-  // Create a new point cloud for the inlier points
   pcl::PointCloud<pcl::PointXYZ>::Ptr inlier_cloud(new pcl::PointCloud<pcl::PointXYZ>);
   for (const auto& idx : circle_inliers->indices) {
     size_t original_idx = projection_map.at(idx);
@@ -192,11 +188,34 @@ pcl::PointIndices::Ptr filterCircleInliers(
   inlier_cloud->height = 1;
   inlier_cloud->is_dense = true;
 
-  // Create a KdTree object for the search method of the extraction
+  LOG_INFO("Inlier cloud size: " + std::to_string(inlier_cloud->points.size()));
+
+  // Calculate and log the bounding box of the inlier cloud
+  pcl::PointXYZ min_pt, max_pt;
+  pcl::getMinMax3D(*inlier_cloud, min_pt, max_pt);
+  LOG_INFO("Inlier cloud bounding box:");
+  LOG_INFO("  Min point: (" + std::to_string(min_pt.x) + ", " + std::to_string(min_pt.y) + ", " + std::to_string(min_pt.z) + ")");
+  LOG_INFO("  Max point: (" + std::to_string(max_pt.x) + ", " + std::to_string(max_pt.y) + ", " + std::to_string(max_pt.z) + ")");
+
+  // Calculate and log the average distance between points
+  double total_distance = 0.0;
+  int count = 0;
+  for (size_t i = 0; i < inlier_cloud->points.size(); ++i) {
+    for (size_t j = i + 1; j < inlier_cloud->points.size(); ++j) {
+      // Inline Euclidean distance calculation
+      float dx = inlier_cloud->points[i].x - inlier_cloud->points[j].x;
+      float dy = inlier_cloud->points[i].y - inlier_cloud->points[j].y;
+      float dz = inlier_cloud->points[i].z - inlier_cloud->points[j].z;
+      total_distance += std::sqrt(dx*dx + dy*dy + dz*dz);
+      count++;
+    }
+  }
+  double avg_distance = (count > 0) ? (total_distance / count) : 0.0;
+  LOG_INFO("Average distance between points: " + std::to_string(avg_distance));
+
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
   tree->setInputCloud(inlier_cloud);
 
-  // Perform Euclidean Clustering
   std::vector<pcl::PointIndices> clusters;
   pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
   ec.setClusterTolerance(circle_cluster_tolerance);
@@ -206,15 +225,21 @@ pcl::PointIndices::Ptr filterCircleInliers(
   ec.setInputCloud(inlier_cloud);
   ec.extract(clusters);
 
-  // Log the number of clusters found
   LOG_INFO("Euclidean clustering found " + std::to_string(clusters.size()) + " clusters");
+  LOG_INFO("Clustering parameters:");
+  LOG_INFO("  Cluster tolerance: " + std::to_string(circle_cluster_tolerance));
+  LOG_INFO("  Min cluster size: " + std::to_string(circle_min_cluster_size));
+  LOG_INFO("  Max cluster size: " + std::to_string(inlier_cloud->points.size()));
 
-  // Check if the number of clusters exceeds the maximum allowed
-  // Note: We cast circle_max_clusters to size_t to avoid signed/unsigned comparison warning
+  if (clusters.empty()) {
+    LOG_INFO("No clusters found. Consider adjusting clustering parameters.");
+    return filtered_inliers;
+  }
+
   if (clusters.size() > static_cast<size_t>(circle_max_clusters)) {
     LOG_INFO("Rejecting circle: number of clusters (" + std::to_string(clusters.size()) + 
              ") exceeds maximum allowed (" + std::to_string(circle_max_clusters) + ")");
-    return filtered_inliers; // Return empty PointIndices if more than circle_max_clusters
+    return filtered_inliers;
   }
 
   // Step 2: Height Consistency Check (only if we have exactly two clusters)
