@@ -559,30 +559,25 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
 
         // TODO: Model Validation
         // For the circle and line models, check how many inlier points remain.
-        // - If the number of remaining inliers for the model exceeds the threshold (100 points):
+        // - If the number of remaining inliers for the model exceeds the inlier_threshold (i.e. 100 points):
         //   - The model is considered valid.
-        //   - Go to the next step to add the model to the circle or line Hough parameter space (depending on the model)
+        //   - Add the model (circle or line depending on the inlier group) to the valid models list. It will be added to the Hough parameter space in the next step.
         // - If the number of remaining inliers is below the threshold:
-        //   - The model is rejected.
-        //   - Check if there are any remaining points in the cluster. If so, go back to the RANSAC Model Fitting step.
+        //   - The model (circle or line as applicable) is rejected.
 
-         // TODO: Create a data structure called inliers_to_remove that to use in the next step to track indices of inliers of valid models
+        // TODO: Create a data structure called inliers_to_remove that contains the indices of the inliers for the valid models you just found.
+        // TODO: Remove duplicates (only if you have both valid circle and line models from the previous step) from this inliers_to_remove list
 
-        // TODO: Add Model to the Hough Space (pcl::Hough3DGrouping)
-        // If a circle or line model made it this far, it is valid. 
-        // If a circle model is valid:
+        // TODO: Add valid models to the the Hough Space you created in an earlier step
+         // If a circle model is valid:
         // - Add a vote for it in the circle Hough parameter space 
-        // - Store the indices of the inliers for this circle model. 
-        // If a line model is valid:
+          // If a line model is valid:
         // - Add a vote for it in the line Hough parameter space 
-        // - Store the indices of the inliers for this line model
 
-        // TODO: Remove duplicate inliers that appear in both the circle and line inlier list (if applicable)
+        // TODO: Create a new point cloud called cloud_without_inliers that is the projected cloud minus the inliers_to_remove 
+        // TODO: Update the projected_cloud (i.e. projected_cloud = cloud_without_inliers) for the next iteration of the while loop
 
-        // TODO: Create a new point cloud called cloud_without_inliers that is the projected cloud with the valid model inliers removed
-        //        -- Update the projected cloud for the next interation of the while loop
-
-        // Otherwise, if no valid models were found, exit this while loop
+        // If no valid models were found, break out of this while loop (just  exit the while loop and go to the pcl::copyPointCloud step below)
         if (test_single_iteration) {
           LOG_INFO("Breaking after first iteration for testing purposes.");
           LOG_INFO("");
@@ -604,7 +599,8 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     // Based on which parameter space (line or circle) contains the highest concentration of votes, decide whether to fit a box or a cylinder model.
 
     // TODO: Estimate 3D Shape
-    // Using the parameters from the highest-vote cluster, fit the selected solid geometric primitive model type (box or cylinder) to the original 3D point cloud data.
+    // Using the parameters from the highest-vote cluster and the XYZ values of the points for the cluster, 
+    // fit the selected solid geometric primitive model type (box or cylinder) to the original 3D point cloud cluster data.
 
     // TODO: Add Shape as Collision Object
     // Remove the detected object from the 3D cluster
@@ -640,11 +636,8 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
                << ", " << cylinder_pose.position.z << ")";
     LOG_INFO(log_stream.str());
 
-    // TODO: Check if there are Points Remaining for this Cluster
-    // - If points remain in the point cloud cluster, create a 3D bounding box for the residual points and add it as a collision object.
-    // - If no points remain, move to the next point cloud cluster in the vector (i.e. move to the next iteration of the Outer Loop)
+    // Go to the next point cloud cluster in the vector (i.e. move to the next iteration of the Outer Loop)
   }
-
 
   return collision_objects;
 }
