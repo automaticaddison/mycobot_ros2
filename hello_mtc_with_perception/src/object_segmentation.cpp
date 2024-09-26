@@ -278,106 +278,74 @@ pcl::PointIndices::Ptr filterCircleInliers(
 }
 
 pcl::PointIndices::Ptr filterLineInliers(
-    const pcl::PointIndices::Ptr& line_inliers,
-    const pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr& original_cloud,
-    const pcl::ModelCoefficients::Ptr& line_coefficients,
-    const std::unordered_map<size_t, size_t>& projection_map,
-    int line_min_cluster_size,
-    int line_max_clusters,
-    double line_curvature_threshold,
-    double line_normal_angle_threshold,
-    double line_cluster_tolerance) {
-    
-    pcl::PointIndices::Ptr filtered_inliers(new pcl::PointIndices);
+  const pcl::PointIndices::Ptr& line_inliers,
+  const pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr& original_cloud,
+  [[maybe_unused]] const pcl::ModelCoefficients::Ptr& line_coefficients,
+  const std::unordered_map<size_t, size_t>& projection_map,
+  int line_min_cluster_size,
+  int line_max_clusters,
+  double line_curvature_threshold,
+  [[maybe_unused]] double line_normal_angle_threshold,
+  double line_cluster_tolerance) {
+  
+  pcl::PointIndices::Ptr filtered_inliers(new pcl::PointIndices);
 
-    // Step 1: Euclidean Clustering
-    pcl::PointCloud<pcl::PointXYZ>::Ptr inlier_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    for (const auto& idx : line_inliers->indices) {
-        size_t original_idx = projection_map.at(idx);
-        const auto& point = original_cloud->points[original_idx];
-        inlier_cloud->points.push_back(pcl::PointXYZ(point.x, point.y, point.z));
-    }
-    inlier_cloud->width = inlier_cloud->points.size();
-    inlier_cloud->height = 1;
-    inlier_cloud->is_dense = true;
+  // Step 1: Euclidean Clustering
+  pcl::PointCloud<pcl::PointXYZ>::Ptr inlier_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+  for (const auto& idx : line_inliers->indices) {
+    size_t original_idx = projection_map.at(idx);
+    const auto& point = original_cloud->points[original_idx];
+    inlier_cloud->points.push_back(pcl::PointXYZ(point.x, point.y, point.z));
+  }
+  inlier_cloud->width = inlier_cloud->points.size();
+  inlier_cloud->height = 1;
+  inlier_cloud->is_dense = true;
 
-    LOG_INFO("- Line inlier cloud size before filtering: " + std::to_string(inlier_cloud->points.size()));
+  LOG_INFO("- Line inlier cloud size before filtering: " + std::to_string(inlier_cloud->points.size()));
 
-    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
-    tree->setInputCloud(inlier_cloud);
+  pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+  tree->setInputCloud(inlier_cloud);
 
-    std::vector<pcl::PointIndices> clusters;
-    pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-    ec.setClusterTolerance(line_cluster_tolerance);
-    ec.setMinClusterSize(line_min_cluster_size);
-    ec.setMaxClusterSize(inlier_cloud->points.size());
-    ec.setSearchMethod(tree);
-    ec.setInputCloud(inlier_cloud);
-    ec.extract(clusters);
+  std::vector<pcl::PointIndices> clusters;
+  pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+  ec.setClusterTolerance(line_cluster_tolerance);
+  ec.setMinClusterSize(line_min_cluster_size);
+  ec.setMaxClusterSize(inlier_cloud->points.size());
+  ec.setSearchMethod(tree);
+  ec.setInputCloud(inlier_cloud);
+  ec.extract(clusters);
 
-    LOG_INFO("- Line inliers clusters found: " + std::to_string(clusters.size()));
+  LOG_INFO("- Line inliers clusters found: " + std::to_string(clusters.size()));
 
-    // Reject if number of clusters exceeds the maximum allowed
-    if (clusters.size() > static_cast<size_t>(line_max_clusters)) {
-        LOG_INFO("- Rejecting line: number of clusters (" + std::to_string(clusters.size()) +
-                 ") exceeds maximum allowed (" + std::to_string(line_max_clusters) + ")");
-        return filtered_inliers;
-    }
-
-    // Extract line parameters
-    Eigen::Vector3f line_direction(line_coefficients->values[0], line_coefficients->values[1], 0);
-    line_direction.normalize();
-
-    // Calculate a point on the line (e.g., the midpoint of the line segment)
-    Eigen::Vector3f line_point(line_coefficients->values[0], line_coefficients->values[1], 0);
-
-    // Step 2: Curvature and Normal Filtering
-    int curvature_filtered = 0;
-    int normal_filtered = 0;
-
-    for (const auto& idx : line_inliers->indices) {
-        size_t original_idx = projection_map.at(idx);
-        const auto& point = original_cloud->points[original_idx];
-
-        // Curvature Filtering: Skip points with high curvature
-        if (point.curvature > line_curvature_threshold) {
-            curvature_filtered++;
-            continue;
-        }
-
-        // Surface Normal Filtering
-        Eigen::Vector3f inlier_point(point.x, point.y, 0);  
-        Eigen::Vector3f u = inlier_point - line_point;
-        u.normalize();
-
-        Eigen::Vector3f normal_vector(point.normal_x, point.normal_y, 0);  
-        normal_vector.normalize();
-
-        float dot_product = std::abs(u.dot(normal_vector));
-        float angle = std::acos(dot_product);
-
-        // For a flat surface (line), the angle should be close to π/2
-        if (std::abs(angle - M_PI/2) > line_normal_angle_threshold) {
-            normal_filtered++;
-            continue;
-        }
-
-        // If all checks pass, add to filtered inliers
-        filtered_inliers->indices.push_back(original_idx);
-
-        // Log sample angles (e.g., every 100th point)
-        if (filtered_inliers->indices.size() % 100 == 0) {
-            float angle_degrees = angle * 180.0 / M_PI;
-            LOG_INFO("Sample angle: " + std::to_string(angle_degrees) + " degrees");
-        }
-    }
-
-    // Log the number of inliers remaining after filtering
-    LOG_INFO("- Line inlier cloud size after filtering: " + std::to_string(filtered_inliers->indices.size()));
-    LOG_INFO("- Points filtered due to high curvature: " + std::to_string(curvature_filtered));
-    LOG_INFO("- Points filtered due to normal angle: " + std::to_string(normal_filtered));
-
+  // Reject if number of clusters exceeds the maximum allowed
+  if (clusters.size() > static_cast<size_t>(line_max_clusters)) {
+    LOG_INFO("- Rejecting line: number of clusters (" + std::to_string(clusters.size()) +
+             ") exceeds maximum allowed (" + std::to_string(line_max_clusters) + ")");
     return filtered_inliers;
+  }
+
+  // Step 2: Curvature Filtering
+  int curvature_filtered = 0;
+
+  for (const auto& idx : line_inliers->indices) {
+    size_t original_idx = projection_map.at(idx);
+    const auto& point = original_cloud->points[original_idx];
+
+    // Curvature Filtering: Skip points with high curvature
+    if (point.curvature > line_curvature_threshold) {
+      curvature_filtered++;
+      continue;
+    }
+
+    // If curvature check passes, add to filtered inliers
+    filtered_inliers->indices.push_back(original_idx);
+  }
+
+  // Log the number of inliers remaining after filtering
+  LOG_INFO("- Line inlier cloud size after filtering: " + std::to_string(filtered_inliers->indices.size()));
+  LOG_INFO("- Points filtered due to high curvature: " + std::to_string(curvature_filtered));
+
+  return filtered_inliers;
 }
 
 std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
