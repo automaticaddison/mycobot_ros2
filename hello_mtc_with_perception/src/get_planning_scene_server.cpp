@@ -223,7 +223,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("circle_min_cluster_size", 50, "Minimum size for a cluster of circle inliers");
     declare_parameter("circle_max_clusters", 2, "Maximum number of allowed clusters for circles");
     declare_parameter("circle_height_tolerance", 0.05, "Tolerance for height difference between circle clusters");
-    declare_parameter("circle_curvature_threshold", 0.004, "Threshold for point curvature in circle fitting");
+    declare_parameter("circle_curvature_threshold", 0.0015, "Threshold for point curvature in circle fitting");
     declare_parameter("circle_radius_tolerance", 0.030, "Tolerance for difference between point RSD min value and circle radius");
     declare_parameter("circle_normal_angle_threshold", 0.2, "Threshold for angle between point normal and circle radial vector");
     declare_parameter("circle_cluster_tolerance", 0.025, "The maximum distance between two points to be considered in the same cluster");

@@ -200,15 +200,15 @@ pcl::PointIndices::Ptr filterCircleInliers(
   ec.setInputCloud(inlier_cloud);
   ec.extract(clusters);
 
-  LOG_INFO("Euclidean clustering of circle inliers found " + std::to_string(clusters.size()) + " clusters");
+  LOG_INFO("- Euclidean clustering of circle inliers found " + std::to_string(clusters.size()) + " clusters");
 
   if (clusters.empty()) {
-    LOG_INFO("No clusters found. Consider adjusting clustering parameters.");
+    LOG_INFO("- No clusters found. Consider adjusting clustering parameters.");
     return filtered_inliers;
   }
 
   if (clusters.size() > static_cast<size_t>(circle_max_clusters)) {
-    LOG_INFO("Rejecting circle: number of clusters (" + std::to_string(clusters.size()) + 
+    LOG_INFO("- Rejecting circle: number of clusters (" + std::to_string(clusters.size()) + 
              ") exceeds maximum allowed (" + std::to_string(circle_max_clusters) + ")");
     return filtered_inliers;
   }
@@ -232,7 +232,7 @@ pcl::PointIndices::Ptr filterCircleInliers(
 
     // Check if the height difference between clusters exceeds the tolerance
     if (std::abs(max_height_1 - max_height_2) > circle_height_tolerance) {
-      LOG_INFO("Rejecting circle: height difference between clusters (" + 
+      LOG_INFO("- Rejecting circle: height difference between clusters (" + 
                std::to_string(std::abs(max_height_1 - max_height_2)) + 
                ") exceeds tolerance (" + std::to_string(circle_height_tolerance) + ")");
       return filtered_inliers; // Return empty PointIndices if height difference is too large
@@ -271,7 +271,7 @@ pcl::PointIndices::Ptr filterCircleInliers(
   }
 
   // Log the number of inliers remaining after filtering
-  LOG_INFO("Circle inlier filtering complete. Remaining inliers: " + 
+  LOG_INFO("- Circle inlier filtering complete. Remaining circle inliers: " + 
            std::to_string(filtered_inliers->indices.size()));
 
   return filtered_inliers;
@@ -352,10 +352,13 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     pcl::copyPointCloud(*projected_cloud, *original_projected_cloud_copy);
     
     // Log the successful projection
-    log_stream.str("");  // Clear the stream
-    log_stream << "Successfully projected " << cluster->points.size() 
-               << " 3D points onto the z=0 plane. Resulting 2D cloud has " 
-               << projected_cloud->points.size() << " points.";
+    log_stream.str(""); // Clear the stream
+    log_stream << "\n\n\n"  // Add three blank lines
+           << "***********************************************************************************************\n"
+           << "Successfully projected " << cluster->points.size()
+           << " 3D points onto the z=0 plane. Resulting 2D cloud has "
+           << projected_cloud->points.size() << " points.\n"
+           << "***********************************************************************************************";
     LOG_INFO(log_stream.str());
       
     /****************************************************
