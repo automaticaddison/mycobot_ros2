@@ -186,7 +186,7 @@ pcl::PointIndices::Ptr filterCircleInliers(
   inlier_cloud->height = 1;
   inlier_cloud->is_dense = true;
 
-  LOG_INFO("Circle inlier cloud size before filtering: " + std::to_string(inlier_cloud->points.size()));
+  LOG_INFO("- Circle inlier cloud size before filtering: " + std::to_string(inlier_cloud->points.size()));
 
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
   tree->setInputCloud(inlier_cloud);
@@ -504,6 +504,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
         // Otherwise, if no valid models were found, exit this while loop
         if (test_single_iteration) {
           LOG_INFO("Breaking after first iteration for testing purposes.");
+          LOG_INFO("");
           break;
         }
       }
