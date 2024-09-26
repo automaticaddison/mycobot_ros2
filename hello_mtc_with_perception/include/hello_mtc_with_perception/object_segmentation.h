@@ -193,7 +193,11 @@ pcl::PointIndices::Ptr filterLineInliers(
  * @param circle_curvature_threshold Threshold for point curvature in circle fitting.
  * @param circle_radius_tolerance Tolerance for difference between point RSD min value and circle radius.
  * @param circle_normal_angle_threshold Threshold for angle between point normal and circle radial vector.
- * @param circle_cluster_tolerance The maximum distance between two points to be considered in the same cluster.
+ * @param circle_cluster_tolerance The maximum distance between two points to be considered in the same cluster for circles.
+ * @param line_max_clusters Maximum number of allowed clusters for lines.
+ * @param line_curvature_threshold Threshold for point curvature in line fitting.
+ * @param line_normal_angle_threshold Threshold for angle between point normal and line normal.
+ * @param line_cluster_tolerance The maximum distance between two points to be considered in the same cluster for lines.
  * @return std::vector<moveit_msgs::msg::CollisionObject> Vector of collision objects.
  */
 std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
@@ -213,6 +217,10 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     double circle_curvature_threshold,
     double circle_radius_tolerance,
     double circle_normal_angle_threshold,
-    double cluster_tolerance);
+    double circle_cluster_tolerance,
+    int line_max_clusters,
+    double line_curvature_threshold,
+    double line_normal_angle_threshold,
+    double line_cluster_tolerance);
 
 #endif // OBJECT_SEGMENTATION_H

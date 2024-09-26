@@ -533,17 +533,15 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
                                                                  ransac_distance_threshold, 
                                                                  ransac_max_iterations,
                                                                  hough_max_radius,
-                                                                 projection_map);
-
-        // Log the results
-        logModelResults("Line", line_coefficients, line_inliers);
-        logModelResults("Circle", circle_coefficients, circle_inliers);
+                                                                 projection_map);      
 
         /****************************************************
          *                                                  *
          *                Filter Inliers                    *
          *                                                  *
          ***************************************************/ 
+        logModelResults("Circle", circle_coefficients, circle_inliers);
+
         // Circle Filtering
         pcl::PointIndices::Ptr filtered_circle_inliers = filterCircleInliers(
           circle_inliers,
@@ -557,6 +555,8 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
           circle_radius_tolerance,
           circle_normal_angle_threshold,
           circle_cluster_tolerance);
+
+        logModelResults("Line", line_coefficients, line_inliers);
 
         // Line Filtering
         pcl::PointIndices::Ptr filtered_line_inliers = filterLineInliers(
