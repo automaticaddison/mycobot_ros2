@@ -65,7 +65,7 @@ get_planning_scene_server:
     circle_curvature_threshold: 0.010
     circle_radius_tolerance: 0.020
     circle_normal_angle_threshold: 0.1
-    cluster_tolerance: 0.02  
+    circle_cluster_tolerance: 0.02  
     
     # Legacy parameters (to be removed later)
     shape_fitting_max_iterations: 1000

@@ -172,13 +172,16 @@ pcl::PointIndices::Ptr filterCircleInliers(
     double circle_curvature_threshold,
     double circle_radius_tolerance,
     double circle_normal_angle_threshold,
-    double cluster_tolerance) {  
+    double circle_cluster_tolerance) {  
 
+  // Initialize the output: a set of filtered inlier indices
   pcl::PointIndices::Ptr filtered_inliers(new pcl::PointIndices);
   
+  // Log the start of the filtering process
   LOG_INFO("Starting circle inlier filtering with " + std::to_string(circle_inliers->indices.size()) + " initial inliers");
 
-  // 1. Euclidean Clustering
+  // Step 1: Euclidean Clustering
+  // Create a new point cloud for the inlier points
   pcl::PointCloud<pcl::PointXYZ>::Ptr inlier_cloud(new pcl::PointCloud<pcl::PointXYZ>);
   for (const auto& idx : circle_inliers->indices) {
     size_t original_idx = projection_map.at(idx);
@@ -193,38 +196,45 @@ pcl::PointIndices::Ptr filterCircleInliers(
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
   tree->setInputCloud(inlier_cloud);
 
+  // Perform Euclidean Clustering
   std::vector<pcl::PointIndices> clusters;
   pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-  ec.setClusterTolerance(cluster_tolerance);
+  ec.setClusterTolerance(circle_cluster_tolerance);
   ec.setMinClusterSize(circle_min_cluster_size);
   ec.setMaxClusterSize(inlier_cloud->points.size());
   ec.setSearchMethod(tree);
   ec.setInputCloud(inlier_cloud);
   ec.extract(clusters);
 
+  // Log the number of clusters found
   LOG_INFO("Euclidean clustering found " + std::to_string(clusters.size()) + " clusters");
 
-  if (clusters.size() > circle_max_clusters) {
+  // Check if the number of clusters exceeds the maximum allowed
+  // Note: We cast circle_max_clusters to size_t to avoid signed/unsigned comparison warning
+  if (clusters.size() > static_cast<size_t>(circle_max_clusters)) {
     LOG_INFO("Rejecting circle: number of clusters (" + std::to_string(clusters.size()) + 
              ") exceeds maximum allowed (" + std::to_string(circle_max_clusters) + ")");
     return filtered_inliers; // Return empty PointIndices if more than circle_max_clusters
   }
 
-  // 2. Height Consistency Check (only if we have two clusters)
+  // Step 2: Height Consistency Check (only if we have exactly two clusters)
   if (clusters.size() == 2) {
     double max_height_1 = -std::numeric_limits<double>::max();
     double max_height_2 = -std::numeric_limits<double>::max();
 
+    // Find the maximum height of points in the first cluster
     for (const auto& idx : clusters[0].indices) {
       size_t original_idx = projection_map.at(circle_inliers->indices[idx]);
       max_height_1 = std::max(max_height_1, static_cast<double>(original_cloud->points[original_idx].z));
     }
 
+    // Find the maximum height of points in the second cluster
     for (const auto& idx : clusters[1].indices) {
       size_t original_idx = projection_map.at(circle_inliers->indices[idx]);
       max_height_2 = std::max(max_height_2, static_cast<double>(original_cloud->points[original_idx].z));
     }
 
+    // Check if the height difference between clusters exceeds the tolerance
     if (std::abs(max_height_1 - max_height_2) > circle_height_tolerance) {
       LOG_INFO("Rejecting circle: height difference between clusters (" + 
                std::to_string(std::abs(max_height_1 - max_height_2)) + 
@@ -233,18 +243,19 @@ pcl::PointIndices::Ptr filterCircleInliers(
     }
   }
 
+  // Extract circle parameters
   double circle_radius = circle_coefficients->values[2];
   Eigen::Vector3f circle_center(circle_coefficients->values[0], circle_coefficients->values[1], 0);
 
-  // 3. Curvature, RSD, and Normal Filtering
+  // Step 3: Curvature, RSD, and Normal Filtering
   for (const auto& idx : circle_inliers->indices) {
     size_t original_idx = projection_map.at(idx);
     const auto& point = original_cloud->points[original_idx];
     
-    // Curvature Filtering
+    // Curvature Filtering: Skip points with low curvature
     if (point.curvature < circle_curvature_threshold) continue;
 
-    // RSD Filtering
+    // RSD Filtering: Skip points where the minimum RSD value differs too much from the circle radius
     if (std::abs(point.r_min - circle_radius) > circle_radius_tolerance) continue;
 
     // Surface Normal Filtering
@@ -256,12 +267,14 @@ pcl::PointIndices::Ptr filterCircleInliers(
     float dot_product = std::abs(point_vector.dot(normal_vector));
     float angle = std::acos(dot_product);
 
-    if (std::min(angle, M_PI - angle) > circle_normal_angle_threshold) continue;
+    // Check if the minimum angle between the normal and the radial vector exceeds the threshold
+    if (std::min(angle, static_cast<float>(M_PI) - angle) > circle_normal_angle_threshold) continue;
 
     // If all checks pass, add to filtered inliers
     filtered_inliers->indices.push_back(original_idx);
   }
 
+  // Log the number of inliers remaining after filtering
   LOG_INFO("Circle inlier filtering complete. Remaining inliers: " + 
            std::to_string(filtered_inliers->indices.size()));
 
@@ -285,7 +298,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     double circle_curvature_threshold,
     double circle_radius_tolerance,
     double circle_normal_angle_threshold,
-    double cluster_tolerance) {
+    double circle_cluster_tolerance) {
   
   std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
   [[maybe_unused]] int box_count = 0;
@@ -457,7 +470,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
           circle_curvature_threshold,
           circle_radius_tolerance,
           circle_normal_angle_threshold,
-          cluster_tolerance);
+          circle_cluster_tolerance);
 
         // Line Filtering
         // - Maximum of 1 Cluster

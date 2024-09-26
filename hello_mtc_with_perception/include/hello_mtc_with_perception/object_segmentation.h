@@ -140,7 +140,7 @@ pcl::PointIndices::Ptr filterCircleInliers(
     double circle_curvature_threshold,
     double circle_radius_tolerance,
     double circle_normal_angle_threshold,
-    double cluster_tolerance);
+    double circle_cluster_tolerance);
 
 /**
  * @brief Segments objects from point cloud clusters and creates collision objects.
@@ -165,7 +165,7 @@ pcl::PointIndices::Ptr filterCircleInliers(
  * @param circle_curvature_threshold Threshold for point curvature in circle fitting.
  * @param circle_radius_tolerance Tolerance for difference between point RSD min value and circle radius.
  * @param circle_normal_angle_threshold Threshold for angle between point normal and circle radial vector.
- * @param cluster_tolerance The maximum distance between two points to be considered in the same cluster.
+ * @param circle_cluster_tolerance The maximum distance between two points to be considered in the same cluster.
  * @return std::vector<moveit_msgs::msg::CollisionObject> Vector of collision objects.
  */
 std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(

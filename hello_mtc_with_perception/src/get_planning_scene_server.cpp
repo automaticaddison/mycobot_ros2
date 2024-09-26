@@ -124,7 +124,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
   double circle_curvature_threshold;
   double circle_radius_tolerance;
   double circle_normal_angle_threshold;
-  double cluster_tolerance; 
+  double circle_cluster_tolerance; 
   
   // Legacy...remove later Shape fitting parameters
   int shape_fitting_max_iterations;
@@ -226,7 +226,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("circle_curvature_threshold", 0.010, "Threshold for point curvature in circle fitting");
     declare_parameter("circle_radius_tolerance", 0.020, "Tolerance for difference between point RSD min value and circle radius");
     declare_parameter("circle_normal_angle_threshold", 0.1, "Threshold for angle between point normal and circle radial vector");
-    declare_parameter("cluster_tolerance", 0.02, "The maximum distance between two points to be considered in the same cluster");
+    declare_parameter("circle_cluster_tolerance", 0.02, "The maximum distance between two points to be considered in the same cluster");
   
     // Legacy...remove these later
     declare_parameter("shape_fitting_max_iterations", 1000, "Maximum iterations for shape fitting RANSAC");
@@ -304,7 +304,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     circle_curvature_threshold = this->get_parameter("circle_curvature_threshold").as_double();
     circle_radius_tolerance = this->get_parameter("circle_radius_tolerance").as_double();
     circle_normal_angle_threshold = this->get_parameter("circle_normal_angle_threshold").as_double();
-    cluster_tolerance = this->get_parameter("cluster_tolerance").as_double();
+    cluster_tolerance = this->get_parameter("circle_cluster_tolerance").as_double();
     
     // Legacy...remove later Get shape fitting parameter values
     shape_fitting_max_iterations = this->get_parameter("shape_fitting_max_iterations").as_int();
@@ -1030,7 +1030,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
       circle_curvature_threshold,
       circle_radius_tolerance,
       circle_normal_angle_threshold,
-      cluster_tolerance  
+      circle_cluster_tolerance  
     );
 
     RCLCPP_INFO(this->get_logger(), "Segmented %zu objects from the point cloud clusters", segmented_objects.size());
