@@ -154,6 +154,7 @@ pcl::PointIndices::Ptr filterCircleInliers(
  * @param original_cloud Original 3D point cloud.
  * @param line_coefficients Coefficients of the fitted line.
  * @param projection_map Mapping between 2D projected points and original 3D points.
+ * @param line_min_cluster_size Minimum number of points for a valid cluster.
  * @param line_max_clusters Maximum number of allowed clusters.
  * @param line_curvature_threshold Threshold for point curvature.
  * @param line_normal_angle_threshold Threshold for angle between point normal and line normal.
@@ -165,6 +166,7 @@ pcl::PointIndices::Ptr filterLineInliers(
     const pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr& original_cloud,
     const pcl::ModelCoefficients::Ptr& line_coefficients,
     const std::unordered_map<size_t, size_t>& projection_map,
+    int line_min_cluster_size,
     int line_max_clusters,
     double line_curvature_threshold,
     double line_normal_angle_threshold,
@@ -194,6 +196,7 @@ pcl::PointIndices::Ptr filterLineInliers(
  * @param circle_radius_tolerance Tolerance for difference between point RSD min value and circle radius.
  * @param circle_normal_angle_threshold Threshold for angle between point normal and circle radial vector.
  * @param circle_cluster_tolerance The maximum distance between two points to be considered in the same cluster for circles.
+ * @param line_min_cluster_size Minimum number of points for a valid cluster.
  * @param line_max_clusters Maximum number of allowed clusters for lines.
  * @param line_curvature_threshold Threshold for point curvature in line fitting.
  * @param line_normal_angle_threshold Threshold for angle between point normal and line normal.
@@ -218,6 +221,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     double circle_radius_tolerance,
     double circle_normal_angle_threshold,
     double circle_cluster_tolerance,
+    int line_min_cluster_size,
     int line_max_clusters,
     double line_curvature_threshold,
     double line_normal_angle_threshold,

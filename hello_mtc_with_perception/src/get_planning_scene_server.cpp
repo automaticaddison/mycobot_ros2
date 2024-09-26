@@ -126,6 +126,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
   double circle_normal_angle_threshold;
   double circle_cluster_tolerance; 
   // Parameters for line filtering
+  int line_min_cluster_size;
   int line_max_clusters;
   double line_curvature_threshold;
   double line_normal_angle_threshold;
@@ -233,6 +234,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("circle_normal_angle_threshold", 0.2, "Threshold for angle between point normal and circle radial vector");
     declare_parameter("circle_cluster_tolerance", 0.025, "The maximum distance between two points to be considered in the same cluster");
     // Declare new parameters for line filtering
+    declare_parameter("line_min_cluster_size", 20, "Minimum number of points for a valid cluster");
     declare_parameter("line_max_clusters", 1, "Maximum number of allowed clusters for lines");
     declare_parameter("line_curvature_threshold", 0.0015, "Threshold for point curvature in line fitting");
     declare_parameter("line_normal_angle_threshold", 0.2, "Threshold for angle between point normal and line normal (in radians)");
@@ -316,6 +318,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     circle_normal_angle_threshold = this->get_parameter("circle_normal_angle_threshold").as_double();
     circle_cluster_tolerance = this->get_parameter("circle_cluster_tolerance").as_double();
     // Get parameter values for line filtering
+    line_min_cluster_size = this->get_parameter("line_min_cluster_size").as_int();
     line_max_clusters = this->get_parameter("line_max_clusters").as_int();
     line_curvature_threshold = this->get_parameter("line_curvature_threshold").as_double();
     line_normal_angle_threshold = this->get_parameter("line_normal_angle_threshold").as_double();
@@ -1046,6 +1049,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
       circle_radius_tolerance,
       circle_normal_angle_threshold,
       circle_cluster_tolerance,
+      line_min_cluster_size,
       line_max_clusters,
       line_curvature_threshold,
       line_normal_angle_threshold,
