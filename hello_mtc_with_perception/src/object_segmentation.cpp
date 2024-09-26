@@ -200,7 +200,7 @@ pcl::PointIndices::Ptr filterCircleInliers(
   ec.setInputCloud(inlier_cloud);
   ec.extract(clusters);
 
-  LOG_INFO("- Euclidean clustering of circle inliers found " + std::to_string(clusters.size()) + " clusters");
+  LOG_INFO("- Circle inliers clusters found: " + std::to_string(clusters.size()));
 
   if (clusters.empty()) {
     LOG_INFO("- No clusters found. Consider adjusting clustering parameters.");
@@ -271,7 +271,7 @@ pcl::PointIndices::Ptr filterCircleInliers(
   }
 
   // Log the number of inliers remaining after filtering
-  LOG_INFO("- Circle inlier filtering complete. Remaining circle inliers: " + 
+  LOG_INFO("- Circle inlier cloud size after filtering: " + 
            std::to_string(filtered_inliers->indices.size()));
 
   return filtered_inliers;
