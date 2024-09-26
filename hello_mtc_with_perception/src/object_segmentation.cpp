@@ -343,7 +343,6 @@ pcl::PointIndices::Ptr filterLineInliers(
 
   // Log the number of inliers remaining after filtering
   LOG_INFO("- Line inlier cloud size after filtering: " + std::to_string(filtered_inliers->indices.size()));
-  LOG_INFO("- Points filtered due to high curvature: " + std::to_string(curvature_filtered));
 
   return filtered_inliers;
 }
