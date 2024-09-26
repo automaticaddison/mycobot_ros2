@@ -413,8 +413,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
       << "  Projected 2D Space Dimensions:\n"
       << "    - X-range: " << projected_x_range << " m\n"
       << "    - Y-range: " << projected_y_range << " m\n"
-      << "    - Diagonal: " << hough_max_distance << " m\n"
-      << "  Note: Each point in the Hough space represents a potential line or circle in the 2D projected space (z=0 plane).";
+      << "    - Diagonal: " << hough_max_distance << " m\n";
     LOG_INFO(log_stream.str());
 
     /****************************************************
