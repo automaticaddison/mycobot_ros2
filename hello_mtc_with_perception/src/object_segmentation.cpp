@@ -287,6 +287,7 @@ pcl::PointIndices::Ptr filterLineInliers(
     double line_curvature_threshold,
     double line_normal_angle_threshold,
     double line_cluster_tolerance) {
+    
     pcl::PointIndices::Ptr filtered_inliers(new pcl::PointIndices);
 
     // Step 1: Euclidean Clustering
@@ -308,7 +309,7 @@ pcl::PointIndices::Ptr filterLineInliers(
     std::vector<pcl::PointIndices> clusters;
     pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
     ec.setClusterTolerance(line_cluster_tolerance);
-    ec.setMinClusterSize(line_min_cluster_size); 
+    ec.setMinClusterSize(line_min_cluster_size);
     ec.setMaxClusterSize(inlier_cloud->points.size());
     ec.setSearchMethod(tree);
     ec.setInputCloud(inlier_cloud);
@@ -327,6 +328,9 @@ pcl::PointIndices::Ptr filterLineInliers(
     Eigen::Vector3f line_direction(line_coefficients->values[0], line_coefficients->values[1], 0);
     line_direction.normalize();
 
+    // Calculate a point on the line (e.g., the midpoint of the line segment)
+    Eigen::Vector3f line_point(line_coefficients->values[0], line_coefficients->values[1], 0);
+
     // Step 2: Curvature and Normal Filtering
     int curvature_filtered = 0;
     int normal_filtered = 0;
@@ -342,12 +346,17 @@ pcl::PointIndices::Ptr filterLineInliers(
         }
 
         // Surface Normal Filtering
-        Eigen::Vector3f normal_vector(point.normal_x, point.normal_y, 0);
+        Eigen::Vector3f inlier_point(point.x, point.y, 0);  
+        Eigen::Vector3f u = inlier_point - line_point;
+        u.normalize();
+
+        Eigen::Vector3f normal_vector(point.normal_x, point.normal_y, 0);  
         normal_vector.normalize();
-        float dot_product = std::abs(line_direction.dot(normal_vector));
+
+        float dot_product = std::abs(u.dot(normal_vector));
         float angle = std::acos(dot_product);
 
-        // Check if the angle between the normal and the line direction is close to 90 degrees
+        // For a flat surface (line), the angle should be close to π/2
         if (std::abs(angle - M_PI/2) > line_normal_angle_threshold) {
             normal_filtered++;
             continue;
@@ -355,6 +364,12 @@ pcl::PointIndices::Ptr filterLineInliers(
 
         // If all checks pass, add to filtered inliers
         filtered_inliers->indices.push_back(original_idx);
+
+        // Log sample angles (e.g., every 100th point)
+        if (filtered_inliers->indices.size() % 100 == 0) {
+            float angle_degrees = angle * 180.0 / M_PI;
+            LOG_INFO("Sample angle: " + std::to_string(angle_degrees) + " degrees");
+        }
     }
 
     // Log the number of inliers remaining after filtering
