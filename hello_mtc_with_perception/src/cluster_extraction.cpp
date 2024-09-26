@@ -86,7 +86,7 @@ extractClusters(
      << std::setw(10) << "MinCurv"
      << std::setw(10) << "AvgCurv"
      << std::setw(10) << "MedCurv"
-     << std::setw(10) << "90Curv"
+     << std::setw(10) << "80Curv"
      << std::setw(10) << "MaxCurv"
      << std::setw(10) << "RMin"
      << std::setw(10) << "RMax"
@@ -128,8 +128,8 @@ extractClusters(
     std::sort(curvatures.begin(), curvatures.end());
     float median_curvature = curvatures[curvatures.size() / 2];
 
-    // Calculate 90th percentile curvature
-    float percentile_90_curvature = curvatures[static_cast<size_t>(curvatures.size() * 0.9)];
+    // Calculate 80th percentile curvature
+    float percentile_80_curvature = curvatures[static_cast<size_t>(curvatures.size() * 0.8)];
 
     ss << std::setw(8) << i
        << std::setw(10) << cluster->size()
@@ -144,7 +144,7 @@ extractClusters(
        << std::setw(10) << min_curvature
        << std::setw(10) << avg_curvature
        << std::setw(10) << median_curvature
-       << std::setw(10) << percentile_90_curvature
+       << std::setw(10) << percentile_80_curvature
        << std::setw(10) << max_curvature
        << std::setw(10) << avg_rsd_min
        << std::setw(10) << avg_rsd_max
@@ -159,7 +159,7 @@ extractClusters(
      << "MinCurv: Minimum curvature of the cluster\n"
      << "AvgCurv: Average curvature of the cluster\n"
      << "MedCurv: Median curvature of the cluster\n"
-     << "90Curv: 90th percentile curvature of the cluster\n"
+     << "80Curv: 80th percentile curvature of the cluster\n"
      << "MaxCurv: Maximum curvature of the cluster\n"
      << "RMin, RMax: Average minimum and maximum radii from Radius-Based Surface Descriptor (RSD)\n";
 
