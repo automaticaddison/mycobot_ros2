@@ -236,7 +236,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // Declare new parameters for line filtering
     declare_parameter("line_min_cluster_size", 20, "Minimum number of points for a valid cluster");
     declare_parameter("line_max_clusters", 1, "Maximum number of allowed clusters for lines");
-    declare_parameter("line_curvature_threshold", 0.0015, "Threshold for point curvature in line fitting");
+    declare_parameter("line_curvature_threshold", 0.0011, "Threshold for point curvature in line fitting");
     declare_parameter("line_normal_angle_threshold", 0.2, "Threshold for angle between point normal and line normal (in radians)");
     declare_parameter("line_cluster_tolerance", 0.025, "The maximum distance between two points to be considered in the same cluster for lines");
   
