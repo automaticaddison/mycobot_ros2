@@ -497,7 +497,6 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
      *                                                  *
      ***************************************************/  
     for (int i = 0; i < num_iterations; ++i) {
-      bool test_single_iteration = true;  // Add this flag for testing TODO
 
       /****************************************************
        *                                                  *
@@ -624,6 +623,11 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
                                 [](const ValidModel& m) { return m.type == "line"; })));
         LOG_INFO("==============================");
 
+        // If no valid models were found, break out of this while loop
+        if (valid_models.empty()) {
+          break;
+        }
+
         // Create a data structure called inliers_to_remove that contains the indices of the inliers for the valid models you just found.
         std::set<int> inliers_to_remove;
         for (const auto& model : valid_models) {
@@ -689,16 +693,23 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
         projected_cloud = cloud_without_inliers;
 
         LOG_INFO("Removed " + std::to_string(inliers_to_remove.size()) + " inliers. New projected cloud size: " + std::to_string(projected_cloud->points.size()));
+        LOG_INFO("");
         
-        // If no valid models were found, break out of this while loop (just  exit the while loop and go to the pcl::copyPointCloud step below)
-        if (test_single_iteration) {
-          LOG_INFO("Breaking after first iteration for testing purposes.");
-          LOG_INFO("");
-          break;
-        }
       }
-      // Restore the full point cloud for the next iteration I
-      pcl::copyPointCloud(*original_projected_cloud_copy, *projected_cloud);       
+      // Log the reason for exiting the while loop
+      if (static_cast<int>(projected_cloud->points.size()) <= inlier_threshold) {
+        LOG_INFO("Exiting RANSAC loop: Insufficient points remain. Points left: " + 
+                 std::to_string(projected_cloud->points.size()) + 
+                 ", Threshold: " + std::to_string(inlier_threshold));
+      } else {
+        LOG_INFO("Exiting RANSAC loop: No more valid models found.");
+      }
+      
+      // Restore the full point cloud for the next iteration
+      pcl::copyPointCloud(*original_projected_cloud_copy, *projected_cloud);
+      LOG_INFO("Restored full point cloud for next iteration. Cloud size: " + std::to_string(projected_cloud->points.size()));
+      LOG_INFO("Finished iteration " + std::to_string(i+1) + " of " + std::to_string(num_iterations));
+      LOG_INFO("");      
     }
 
     // TODO: Cluster Parameter Spaces
