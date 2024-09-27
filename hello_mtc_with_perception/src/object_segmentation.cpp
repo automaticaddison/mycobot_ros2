@@ -718,20 +718,43 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
 
     // TODO: Cluster Parameter Spaces
     // After all iterations on a point cloud cluster, tally the votes.
-    // 1. Input: The Hough parameter spaces (for lines and circles) containing accumulated votes from RANSAC iterations.
+    // 1. Input: 
+    //      The Hough parameter spaces (for lines and circles) containing accumulated votes from RANSAC iterations.
+    //      These votes represent 2D line or 2D circle models.
+    //      I want to cluster bins that are close to each other to find the dominant models in the projected 2D point cloud we processed in the previous steps. 
     // 2. Method:
-    //    - Use a region growing approach based on nearest neighbor to group nearby votes in the parameter spaces into clusters.
-    // 3. Output: Clusters in the parameter spaces, where each cluster represents a potential object in the original scene.
+    //    - Use a region growing approach based on nearest neighbor to group Hough parameter space votes that neighbor each other into a single bin. 
+    //    - This helps consolidate the circle and line models that are very similar.
+    // 3. Output: A more simplified hough parameter space which contains bins with accumulated votes. Each bin represents a 2D circle or 2D line model.
 
-    // TODO: Select Model with Most Votes
-    // Based on which parameter space (line or circle) contains the highest concentration of votes, decide whether to fit a box or a cylinder model.
+    // TODO: Select Models with the Most Votes
+    // Identify the top 4 vote-getting models in the Hough parameter spaces (doesn't matter whether they are line or circle models...we just want to see which models got the most votes)
+    // If the model that received the highest vote count is a circle model:
+    //   - Reject all other circle and all line models in the hough parameter space. 
+    //   - We will use this circle model to fit a cylinder to the original 3D point cloud cluster in the next step (Estimate 3D Shape)
+    //   - Take note of the parameters of this highest-vote-count circle model because we will need it in the Estimate 3D Shape step. 
+    // If the model that received the highest vote count is a line model:
+    //   - Discard all circle models in the hough parameter space. 
+    //   - We will use this line model to fit a box to the original 3D point cloud cluster in the Estimate 3D Shape step. 
+    //   - Keep the next (up to 3 additional) vote-getting line models. Store these line models because we will use them to fit a box to the original 3D point cloud cluster in the next step (Estimate 3D Shape). These 4 lines together will be the edges of our box in the next step.
 
     // TODO: Estimate 3D Shape
-    // Using the parameters from the highest-vote cluster and the XYZ values of the points for the cluster, 
-    // fit the selected solid geometric primitive model type (box or cylinder) to the original 3D point cloud cluster data.
+    // If we need to fit a cylinder to the 3D point cloud cluster:
+    // - The center of the circle is the (x, y) position of the cylinder.
+    // - The base of the cylinder is the minimum z value among the 3D point cloud cluster.
+    // - The top of the cylinder is the maximum z value among the 3D point cloud cluster.
+    // - The radius of the cylinder is the radius of the circle. 
+    // If we need to fit a box to the 3D point cloud cluster:
+    // - Use the (up to 4) 2D line models to define the boundaries of the box. Each line represents an edge of the box ((i.e. as seen from above))
+    // - The height of the box (i.e. along the z dimension) must be equal to the the maximum z value in the 3D point cloud cluster
+    // - Use the inlier points on each line model to determine the width (x dimensions) and length (y dimensions) of each side (you can't assume the box sides are aligned with the x and y axes.
+    // - Use the lines to determine the center of the box footprint on the 2D z=0 plane.
+    // - If you only have 1 line model (i.e. this would occur if the point cloud only shows one side of the box, assume all sides are equal length). 
+    // - If you have two or three lines, make a best estimate of box width and length from the inlier points as well as box orientation.
 
     // TODO: Add Shape as Collision Object
-    // Remove the detected object from the 3D cluster
+    // Create a moveit_msgs/CollisionObject for the 3D shape you created in the previous step. And add it to the std::vector<moveit_msgs::msg::CollisionObject> collision_objects
+    
     // For now, we'll always create a cylinder as a placeholder
     moveit_msgs::msg::CollisionObject collision_object;
     collision_object.header.frame_id = frame_id;
