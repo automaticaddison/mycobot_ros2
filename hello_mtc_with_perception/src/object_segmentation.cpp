@@ -144,6 +144,7 @@ void logModelResults(const std::string& modelType,
   std::ostringstream log_stream;
   if (inliers->indices.size() > 0) {
     if (modelType == "Line") {
+      LOG_INFO("");
       log_stream << "Line model: " << coefficients->values[0] << " x + "
                  << coefficients->values[1] << " y + "
                  << coefficients->values[2] << " = 0";
@@ -580,12 +581,14 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
           };
           circle_model.inlier_indices = filtered_circle_inliers->indices;
           valid_models.push_back(circle_model);
+          LOG_INFO("");
           LOG_INFO("=== Circle Model Validated ===");
           LOG_INFO("  Inliers: " + std::to_string(circle_model.inlier_indices.size()));
           LOG_INFO("  Center: (" + std::to_string(circle_model.parameters[0]) + ", " + 
                    std::to_string(circle_model.parameters[1]) + ")");
           LOG_INFO("  Radius: " + std::to_string(circle_model.parameters[2]));
         } else {
+          LOG_INFO("");
           LOG_INFO("=== Circle Model Rejected ===");
           LOG_INFO("  Inliers: " + std::to_string(filtered_circle_inliers->indices.size()) + 
              " (Threshold: " + std::to_string(inlier_threshold) + ")");
@@ -605,16 +608,18 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
           line_model.parameters = {rho, theta};
           line_model.inlier_indices = filtered_line_inliers->indices;
           valid_models.push_back(line_model);
+          LOG_INFO("");
           LOG_INFO("=== Line Model Validated ===");
           LOG_INFO("  Inliers: " + std::to_string(line_model.inlier_indices.size()));
           LOG_INFO("  Rho: " + std::to_string(rho));
           LOG_INFO("  Theta: " + std::to_string(theta) + " radians");
         } else {
+          LOG_INFO("");
           LOG_INFO("=== Line Model Rejected ===");
           LOG_INFO("  Inliers: " + std::to_string(filtered_line_inliers->indices.size()) + 
                    " (Threshold: " + std::to_string(inlier_threshold) + ")");
         }
-
+        LOG_INFO("");
         LOG_INFO("=== Model Validation Summary ===");
         LOG_INFO("  Total valid models: " + std::to_string(valid_models.size()));
         LOG_INFO("  Circle models: " + std::to_string(std::count_if(valid_models.begin(), valid_models.end(), 
@@ -693,8 +698,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
         projected_cloud = cloud_without_inliers;
 
         LOG_INFO("Removed " + std::to_string(inliers_to_remove.size()) + " inliers. New projected cloud size: " + std::to_string(projected_cloud->points.size()));
-        LOG_INFO("");
-        
+        LOG_INFO("");  
       }
       // Log the reason for exiting the while loop
       if (static_cast<int>(projected_cloud->points.size()) <= inlier_threshold) {
