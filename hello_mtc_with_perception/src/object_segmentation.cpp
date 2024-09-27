@@ -360,8 +360,7 @@ static bool areBinsNeighbors(const std::vector<int>& bin1, const std::vector<int
 std::vector<HoughBin> clusterLineHoughSpace(
     const Eigen::MatrixXi& houghSpaceLine,
     double houghAngleStep,
-    double houghRhoStep,
-    double houghMaxDistance) {
+    double houghRhoStep) {
   
   std::vector<HoughBin> clusters;
   std::vector<std::tuple<int, int, int>> voteBins; // (votes, i, j)
@@ -391,7 +390,7 @@ std::vector<HoughBin> clusterLineHoughSpace(
     newCluster.indices = {i, j};
     newCluster.votes = votes;
     newCluster.parameters = {
-      j * houghRhoStep - houghMaxDistance,  // rho
+      j * houghRhoStep,  // rho (directly from bin index)
       i * houghAngleStep  // theta
     };
     
@@ -409,7 +408,7 @@ std::vector<HoughBin> clusterLineHoughSpace(
         // Update parameters (weighted average)
         double totalVotes = newCluster.votes;
         newCluster.parameters[0] = (newCluster.parameters[0] * (totalVotes - neighborVotes) + 
-                                    (nj * houghRhoStep - houghMaxDistance) * neighborVotes) / totalVotes;
+                                    nj * houghRhoStep * neighborVotes) / totalVotes;
         newCluster.parameters[1] = (newCluster.parameters[1] * (totalVotes - neighborVotes) + 
                                     ni * houghAngleStep * neighborVotes) / totalVotes;
         processed[l] = true;
@@ -620,7 +619,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
       << "  Line Hough Space (2D):\n"
       << "    - Dimensions: " << hough_angle_bins << " x " << hough_rho_bins << "\n"
       << "    - θ (angle): " << hough_angle_bins << " bins (range: 0 to π, step: " << hough_angle_step << " radians)\n"
-      << "    - ρ (distance): " << hough_rho_bins << " bins (range: -" << hough_max_distance << " to " << hough_max_distance << " m, step: " << hough_rho_step << " m)\n"
+      << "    - ρ (distance): " << hough_rho_bins << " bins (range: 0 to " << hough_max_distance << " m, step: " << hough_rho_step << " m)\n"
       << "  Circle Hough Space (3D):\n"
       << "    - Dimensions: " << hough_center_bins << " x " << hough_center_bins << " x " << hough_radius_bins << "\n"
       << "    - Center X: " << hough_center_bins << " bins (range: " << min_pt.x << " to " << max_pt.x << " m, step: " << hough_center_x_step << " m)\n"
@@ -809,10 +808,9 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
             // Calculate indices for line Hough space
             double rho = model.parameters[0];
             double theta = model.parameters[1];
-
+            
             int theta_bin = static_cast<int>(theta / hough_angle_step);
-            // Add hough_max_distance to shift rho to positive range
-            int rho_bin = static_cast<int>((rho + hough_max_distance) / hough_rho_step);
+            int rho_bin = static_cast<int>(rho / hough_rho_step);
 
             // Ensure indices are within bounds
             theta_bin = std::clamp(theta_bin, 0, hough_angle_bins - 1);
@@ -874,8 +872,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     std::vector<HoughBin> clusteredLineModels = clusterLineHoughSpace(
         hough_space_line,
         hough_angle_step,
-        hough_rho_step,
-        hough_max_distance);
+        hough_rho_step);
 
     std::vector<HoughBin> clusteredCircleModels = clusterCircleHoughSpace(
         hough_space_circle,
