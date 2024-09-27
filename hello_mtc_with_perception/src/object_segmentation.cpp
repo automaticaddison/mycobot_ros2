@@ -674,9 +674,22 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
           }
         }
 
-        // TODO: Create a new point cloud called cloud_without_inliers that is the projected cloud minus the inliers_to_remove 
-        // TODO: Update the projected_cloud (i.e. projected_cloud = cloud_without_inliers) for the next iteration of the while loop
+        // Create a new point cloud called cloud_without_inliers that is the projected cloud minus the inliers_to_remove 
+        pcl::PointCloud<pcl::PointXY>::Ptr cloud_without_inliers(new pcl::PointCloud<pcl::PointXY>);
+        for (size_t i = 0; i < projected_cloud->points.size(); ++i) {
+          if (inliers_to_remove.find(i) == inliers_to_remove.end()) {
+            cloud_without_inliers->points.push_back(projected_cloud->points[i]);
+          }
+        }
+        cloud_without_inliers->width = cloud_without_inliers->points.size();
+        cloud_without_inliers->height = 1;
+        cloud_without_inliers->is_dense = true;
 
+        // Update the projected_cloud (i.e. projected_cloud = cloud_without_inliers) for the next iteration of the while loop
+        projected_cloud = cloud_without_inliers;
+
+        LOG_INFO("Removed " + std::to_string(inliers_to_remove.size()) + " inliers. New projected cloud size: " + std::to_string(projected_cloud->points.size()));
+        
         // If no valid models were found, break out of this while loop (just  exit the while loop and go to the pcl::copyPointCloud step below)
         if (test_single_iteration) {
           LOG_INFO("Breaking after first iteration for testing purposes.");
