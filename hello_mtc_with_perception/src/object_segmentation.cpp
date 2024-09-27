@@ -357,66 +357,51 @@ static bool areBinsNeighbors(const std::vector<int>& bin1, const std::vector<int
   return true;
 }
 
-std::vector<HoughBin> clusterLineHoughSpace(
-    const Eigen::MatrixXi& houghSpaceLine,
-    double houghAngleStep,
-    double houghRhoStep) {
+std::vector<HoughBin> clusterLineModels(
+    const std::vector<LineModel>& lineModels,
+    double rhoThreshold,
+    double thetaThreshold) {
   
   std::vector<HoughBin> clusters;
-  std::vector<std::tuple<int, int, int>> voteBins; // (votes, i, j)
+  std::vector<bool> processed(lineModels.size(), false);
   
-  // Collect all bins with non-zero votes
-  for (int i = 0; i < houghSpaceLine.rows(); ++i) {
-    for (int j = 0; j < houghSpaceLine.cols(); ++j) {
-      if (houghSpaceLine(i, j) > 0) {
-        voteBins.emplace_back(houghSpaceLine(i, j), i, j);
-      }
-    }
-  }
-  
-  // Sort bins by vote count in descending order
-  std::sort(voteBins.begin(), voteBins.end(),
-            [](const auto& a, const auto& b) { return std::get<0>(a) > std::get<0>(b); });
-  
-  std::vector<bool> processed(voteBins.size(), false);
-  
-  for (size_t k = 0; k < voteBins.size(); ++k) {
-    if (processed[k]) continue;
-    
-    int votes, i, j;
-    std::tie(votes, i, j) = voteBins[k];
+  for (size_t i = 0; i < lineModels.size(); ++i) {
+    if (processed[i]) continue;
     
     HoughBin newCluster;
-    newCluster.indices = {i, j};
-    newCluster.votes = votes;
-    newCluster.parameters = {
-      j * houghRhoStep,  // rho (directly from bin index)
-      i * houghAngleStep  // theta
-    };
+    newCluster.votes = lineModels[i].votes;
+    newCluster.inlierCount = lineModels[i].inlierCount;  // Initialize inlierCount
+    newCluster.parameters = {lineModels[i].rho, lineModels[i].theta};
     
-    processed[k] = true;
+    processed[i] = true;
     
     // Check for neighbors and merge
-    for (size_t l = k + 1; l < voteBins.size(); ++l) {
-      if (processed[l]) continue;
+    for (size_t j = i + 1; j < lineModels.size(); ++j) {
+      if (processed[j]) continue;
       
-      int neighborVotes, ni, nj;
-      std::tie(neighborVotes, ni, nj) = voteBins[l];
+      double rho_diff = std::abs(lineModels[i].rho - lineModels[j].rho);
+      double theta_diff = std::min(std::abs(lineModels[i].theta - lineModels[j].theta), 
+                                   M_PI - std::abs(lineModels[i].theta - lineModels[j].theta));
       
-      if (areBinsNeighbors({i, j}, {ni, nj})) {
-        newCluster.votes += neighborVotes;
-        // Update parameters (weighted average)
-        double totalVotes = newCluster.votes;
-        newCluster.parameters[0] = (newCluster.parameters[0] * (totalVotes - neighborVotes) + 
-                                    nj * houghRhoStep * neighborVotes) / totalVotes;
-        newCluster.parameters[1] = (newCluster.parameters[1] * (totalVotes - neighborVotes) + 
-                                    ni * houghAngleStep * neighborVotes) / totalVotes;
-        processed[l] = true;
+      if (rho_diff < rhoThreshold && theta_diff < thetaThreshold) {
+        // Weighted average for parameters
+        double totalInliers = newCluster.inlierCount + lineModels[j].inlierCount;
+        newCluster.parameters[0] = (newCluster.parameters[0] * newCluster.inlierCount + 
+                                    lineModels[j].rho * lineModels[j].inlierCount) / totalInliers;
+        newCluster.parameters[1] = (newCluster.parameters[1] * newCluster.inlierCount + 
+                                    lineModels[j].theta * lineModels[j].inlierCount) / totalInliers;
+        newCluster.votes += lineModels[j].votes;
+        newCluster.inlierCount += lineModels[j].inlierCount;
+        processed[j] = true;
       }
     }
     
     clusters.push_back(newCluster);
   }
+  
+  // Sort clusters by votes
+  std::sort(clusters.begin(), clusters.end(), 
+            [](const HoughBin& a, const HoughBin& b) { return a.votes > b.votes; });
   
   return clusters;
 }
@@ -492,8 +477,6 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     int num_iterations,
     const std::string& frame_id,
     int inlier_threshold,
-    int hough_angle_bins,
-    int hough_rho_bins,
     int hough_radius_bins,
     int hough_center_bins,
     double ransac_distance_threshold,
@@ -509,7 +492,9 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     int line_max_clusters,
     double line_curvature_threshold,
     double line_normal_angle_threshold,
-    double line_cluster_tolerance) {
+    double line_cluster_tolerance,
+    double line_rho_threshold,
+    double line_theta_threshold) {
   
   std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
   [[maybe_unused]] int box_count = 0;
@@ -599,10 +584,8 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     double projected_y_range = max_pt.y - min_pt.y;
     double hough_max_distance = std::sqrt(projected_x_range * projected_x_range + projected_y_range * projected_y_range);
 
-    // Line Hough space setup
-    Eigen::MatrixXi hough_space_line = Eigen::MatrixXi::Zero(hough_angle_bins, hough_rho_bins);
-    double hough_angle_step = M_PI / hough_angle_bins;
-    double hough_rho_step = hough_max_distance / hough_rho_bins;
+    // Line voting setup
+    std::vector<LineModel> lineModels;
     
     // Circle Hough space setup
     Eigen::Tensor<int, 3> hough_space_circle(hough_center_bins, hough_center_bins, hough_radius_bins);
@@ -615,11 +598,10 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
 
     // Log the initialization of Hough spaces
     log_stream.str("");
-    log_stream << "Hough Parameter Spaces Initialization\n"
-      << "  Line Hough Space (2D):\n"
-      << "    - Dimensions: " << hough_angle_bins << " x " << hough_rho_bins << "\n"
-      << "    - θ (angle): " << hough_angle_bins << " bins (range: 0 to π, step: " << hough_angle_step << " radians)\n"
-      << "    - ρ (distance): " << hough_rho_bins << " bins (range: 0 to " << hough_max_distance << " m, step: " << hough_rho_step << " m)\n"
+    log_stream << "Parameter Spaces Initialization for Circles\n"
+      << "  Line Model Storage:\n"
+      << "    - Storing individual line models with rho, theta, votes, and inlier count\n"
+      << "    - Line models will be clustered later based on similarity\n"
       << "  Circle Hough Space (3D):\n"
       << "    - Dimensions: " << hough_center_bins << " x " << hough_center_bins << " x " << hough_radius_bins << "\n"
       << "    - Center X: " << hough_center_bins << " bins (range: " << min_pt.x << " to " << max_pt.x << " m, step: " << hough_center_x_step << " m)\n"
@@ -758,6 +740,36 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
           LOG_INFO("  Inliers: " + std::to_string(filtered_line_inliers->indices.size()) + 
                    " (Threshold: " + std::to_string(inlier_threshold) + ")");
         }
+        
+        // Additional validation step: Compare inlier counts between circle and line models
+        if (!valid_models.empty()) {
+            size_t circle_inliers = 0;
+            size_t line_inliers = 0;
+
+            for (const auto& model : valid_models) {
+                if (model.type == "circle") {
+                    circle_inliers = std::max(circle_inliers, model.inlier_indices.size());
+                } else if (model.type == "line") {
+                    line_inliers = std::max(line_inliers, model.inlier_indices.size());
+                }
+            }
+
+            // Remove models with fewer inliers
+            valid_models.erase(
+                std::remove_if(valid_models.begin(), valid_models.end(),
+                    [circle_inliers, line_inliers](const ValidModel& model) {
+                        return (model.type == "circle" && model.inlier_indices.size() < line_inliers) ||
+                               (model.type == "line" && model.inlier_indices.size() < circle_inliers);
+                    }),
+                valid_models.end()
+            );
+
+            LOG_INFO("=== Additional Model Validation ===");
+            LOG_INFO("  Max circle inliers: " + std::to_string(circle_inliers));
+            LOG_INFO("  Max line inliers: " + std::to_string(line_inliers));
+            LOG_INFO("  Remaining valid models: " + std::to_string(valid_models.size()));
+        }
+        
         LOG_INFO("");
         LOG_INFO("=== Model Validation Summary ===");
         LOG_INFO("  Total valid models: " + std::to_string(valid_models.size()));
@@ -780,14 +792,14 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
 
         /****************************************************
          *                                                  *
-         *      Add Valid Models to the Hough Space         *
+         *      Add Valid Models to the Parameter Space     *
          *                                                  *
          ***************************************************/         
-        // Add valid models to the the Hough Space you created in an earlier step
+        // Add valid models to the the Parameter Space you created in an earlier step
         // If a circle model is valid:
         // - Add a vote for it in the circle Hough parameter space 
         // If a line model is valid:
-        // - Add a vote for it in the line Hough parameter space 
+        // - Add a vote for it in the line parameter space 
         for (const auto& model : valid_models) {
           if (model.type == "circle") {
             // Calculate indices for circle Hough space
@@ -805,20 +817,12 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
 
           }
           else if (model.type == "line") {
-            // Calculate indices for line Hough space
-            double rho = model.parameters[0];
-            double theta = model.parameters[1];
-            
-            int theta_bin = static_cast<int>(theta / hough_angle_step);
-            int rho_bin = static_cast<int>(rho / hough_rho_step);
-
-            // Ensure indices are within bounds
-            theta_bin = std::clamp(theta_bin, 0, hough_angle_bins - 1);
-            rho_bin = std::clamp(rho_bin, 0, hough_rho_bins - 1);
-
-            // Add vote to line Hough space
-            hough_space_line(theta_bin, rho_bin) += 1;
-
+            LineModel lineModel;
+            lineModel.rho = model.parameters[0];
+            lineModel.theta = model.parameters[1];
+            lineModel.votes = 1; 
+            lineModel.inlierCount = model.inlier_indices.size();   
+            lineModels.push_back(lineModel);
           }
         }
 
@@ -861,28 +865,20 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
      *                                                  *
      ***************************************************/  
     // After all iterations on a point cloud cluster, tally the votes.
-    // 1. Input: 
-    //      The Hough parameter spaces (for lines and circles) containing accumulated votes from RANSAC iterations.
-    //      These votes represent 2D line or 2D circle models.
-    //      I want to cluster bins that are close to each other to find the dominant models in the projected 2D point cloud we processed in the previous steps. 
-    // 2. Method:
-    //    - Use a region growing approach based on nearest neighbor to group Hough parameter space votes that neighbor each other into a single bin. 
-    //    - This helps consolidate the circle and line models that are very similar.
-    // 3. Output: A more simplified hough parameter space which contains bins with accumulated votes. Each bin represents a 2D circle or 2D line model.
-    std::vector<HoughBin> clusteredLineModels = clusterLineHoughSpace(
-        hough_space_line,
-        hough_angle_step,
-        hough_rho_step);
+    std::vector<HoughBin> clusteredLineModels = clusterLineModels(
+      lineModels,
+      line_rho_threshold,
+      line_theta_threshold);
 
     std::vector<HoughBin> clusteredCircleModels = clusterCircleHoughSpace(
-        hough_space_circle,
-        hough_center_x_step,
-        hough_center_y_step,
-        hough_radius_step,
-        min_pt.x,
-        min_pt.y);
+      hough_space_circle,
+      hough_center_x_step,
+      hough_center_y_step,
+      hough_radius_step,
+      min_pt.x,
+      min_pt.y);
 
-    LOG_INFO("Clustered Hough parameters:");
+    LOG_INFO("Clustered models:");
     LOG_INFO("  Line clusters: " + std::to_string(clusteredLineModels.size()));
     LOG_INFO("  Circle clusters: " + std::to_string(clusteredCircleModels.size()));
 

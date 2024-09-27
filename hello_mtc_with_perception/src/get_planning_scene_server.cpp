@@ -111,8 +111,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
   // Parameters for object segmentation
   int num_iterations;
   int inlier_threshold; 
-  int hough_angle_bins;
-  int hough_rho_bins;
   int hough_radius_bins;
   int hough_center_bins; 
   double ransac_distance_threshold;
@@ -131,6 +129,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
   double line_curvature_threshold;
   double line_normal_angle_threshold;
   double line_cluster_tolerance;
+  double line_rho_threshold;
+  double line_theta_threshold;
   
   // Legacy...remove later Shape fitting parameters
   int shape_fitting_max_iterations;
@@ -219,8 +219,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // Declare new parameters for object segmentation
     declare_parameter("num_iterations", 5, "Number of iterations for the inner loop");
     declare_parameter("inlier_threshold", 85, "Threshold for the number of inliers to consider a model valid");
-    declare_parameter("hough_angle_bins", 180, "Number of angle bins for the line Hough space");
-    declare_parameter("hough_rho_bins", 1000, "Number of distance bins for the line Hough space");
     declare_parameter("hough_radius_bins", 25, "Number of radius bins for the circle Hough space");
     declare_parameter("hough_center_bins", 50, "Number of center bins (in each dimension) for the circle Hough space");
     declare_parameter("ransac_distance_threshold", 0.01, "Distance threshold for RANSAC (how close a point must be to the model to be considered an inlier)");
@@ -239,7 +237,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("line_curvature_threshold", 0.0011, "Threshold for point curvature in line fitting");
     declare_parameter("line_normal_angle_threshold", 0.2, "Threshold for angle between point normal and line normal (in radians)");
     declare_parameter("line_cluster_tolerance", 0.025, "The maximum distance between two points to be considered in the same cluster for lines");
-  
+    declare_parameter("line_rho_threshold", 0.05, "Tolerance for rho");
+    declare_parameter("line_theta_threshold", 0.1, "Tolerance for theta");  
     // Legacy...remove these later
     declare_parameter("shape_fitting_max_iterations", 1000, "Maximum iterations for shape fitting RANSAC");
     declare_parameter("shape_fitting_distance_threshold", 0.01, "Distance threshold for shape fitting (in meters)");
@@ -303,8 +302,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
     // Get object segmentation values
     num_iterations = this->get_parameter("num_iterations").as_int();
     inlier_threshold = this->get_parameter("inlier_threshold").as_int();
-    hough_angle_bins = this->get_parameter("hough_angle_bins").as_int();
-    hough_rho_bins = this->get_parameter("hough_rho_bins").as_int();
     hough_radius_bins = this->get_parameter("hough_radius_bins").as_int();
     hough_center_bins = this->get_parameter("hough_center_bins").as_int();
     ransac_distance_threshold = this->get_parameter("ransac_distance_threshold").as_double();
@@ -323,6 +320,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
     line_curvature_threshold = this->get_parameter("line_curvature_threshold").as_double();
     line_normal_angle_threshold = this->get_parameter("line_normal_angle_threshold").as_double();
     line_cluster_tolerance = this->get_parameter("line_cluster_tolerance").as_double();
+    line_rho_threshold = this->get_parameter("line_rho_threshold").as_double();
+    line_theta_threshold = this->get_parameter("line_theta_threshold").as_double();
     
     // Legacy...remove later Get shape fitting parameter values
     shape_fitting_max_iterations = this->get_parameter("shape_fitting_max_iterations").as_int();
@@ -1036,8 +1035,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
       num_iterations,
       target_frame,
       inlier_threshold,
-      hough_angle_bins,
-      hough_rho_bins,
       hough_radius_bins,
       hough_center_bins,
       ransac_distance_threshold,
@@ -1053,7 +1050,9 @@ class GetPlanningSceneServer : public rclcpp::Node {
       line_max_clusters,
       line_curvature_threshold,
       line_normal_angle_threshold,
-      line_cluster_tolerance
+      line_cluster_tolerance,
+      line_rho_threshold,
+      line_theta_threshold
     );
 
     RCLCPP_INFO(this->get_logger(), "Segmented %zu objects from the point cloud clusters", segmented_objects.size());

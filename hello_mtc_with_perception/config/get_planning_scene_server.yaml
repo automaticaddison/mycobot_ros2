@@ -52,8 +52,6 @@ get_planning_scene_server:
     # Object segmentation parameters
     num_iterations: 5
     inlier_threshold: 85  
-    hough_angle_bins: 180
-    hough_rho_bins: 1000
     hough_radius_bins: 25
     hough_center_bins: 50
     ransac_distance_threshold: 0.001
@@ -72,6 +70,8 @@ get_planning_scene_server:
     line_curvature_threshold: 0.0011
     line_normal_angle_threshold: 0.2 # Not used in this implementation
     line_cluster_tolerance: 0.025
+    line_rho_threshold: 0.05
+    line_theta_threshold: 0.1
     
     # Legacy parameters (to be removed later)
     shape_fitting_max_iterations: 1000

@@ -186,23 +186,34 @@ struct ValidModel {
  * @brief Represents a clustered Hough bin for lines or circles.
  */
 struct HoughBin {
-  std::vector<int> indices;  // Indices in the Hough space
-  int votes;                 // Total votes for this cluster
-  std::vector<double> parameters;  // Average parameters for this cluster
+  std::vector<int> indices;
+  int votes;
+  int inlierCount;  
+  std::vector<double> parameters;
 };
 
 /**
- * @brief Clusters the line Hough space.
+ * @brief Represents a line model with its parameters and vote count.
+ */
+struct LineModel {
+    double rho;
+    double theta;
+    int votes;
+    int inlierCount; 
+};
+
+/**
+ * @brief Clusters line models based on their rho and theta values.
  * 
- * @param houghSpaceLine The 2D Hough space for lines.
- * @param houghAngleStep Step size for the angle dimension in the Hough space.
- * @param houghRhoStep Step size for the rho dimension in the Hough space.
+ * @param lineModels Vector of line models to cluster.
+ * @param rhoThreshold Threshold for considering two rho values similar.
+ * @param thetaThreshold Threshold for considering two theta values similar.
  * @return std::vector<HoughBin> Vector of clustered line models.
  */
-std::vector<HoughBin> clusterLineHoughSpace(
-    const Eigen::MatrixXi& houghSpaceLine,
-    double houghAngleStep,
-    double houghRhoStep);
+std::vector<HoughBin> clusterLineModels(
+    const std::vector<LineModel>& lineModels,
+    double rhoThreshold,
+    double thetaThreshold);
 
 /**
  * @brief Clusters the circle Hough space.
@@ -227,15 +238,12 @@ std::vector<HoughBin> clusterCircleHoughSpace(
  * @brief Segments objects from point cloud clusters and creates collision objects.
  *
  * This function processes a vector of point cloud clusters to identify geometric primitives
- * (cylinder and box) and returns a vector of collision objects
- * representing these primitives.
+ * (cylinders and boxes) and returns a vector of collision objects representing these primitives.
  *
  * @param cloud_clusters Vector of point cloud clusters to process.
  * @param num_iterations Number of iterations for the inner loop of processing each cluster.
  * @param frame_id Frame ID for the collision objects.
  * @param inlier_threshold Threshold for the number of inliers to consider a model valid.
- * @param hough_angle_bins Number of angle bins for the line Hough space.
- * @param hough_rho_bins Number of distance bins for the line Hough space.
  * @param hough_radius_bins Number of radius bins for the circle Hough space.
  * @param hough_center_bins Number of center bins (in each dimension) for the circle Hough space.
  * @param ransac_distance_threshold Distance threshold for RANSAC.
@@ -247,11 +255,13 @@ std::vector<HoughBin> clusterCircleHoughSpace(
  * @param circle_radius_tolerance Tolerance for difference between point RSD min value and circle radius.
  * @param circle_normal_angle_threshold Threshold for angle between point normal and circle radial vector.
  * @param circle_cluster_tolerance The maximum distance between two points to be considered in the same cluster for circles.
- * @param line_min_cluster_size Minimum number of points for a valid cluster.
+ * @param line_min_cluster_size Minimum number of points for a valid line cluster.
  * @param line_max_clusters Maximum number of allowed clusters for lines.
  * @param line_curvature_threshold Threshold for point curvature in line fitting.
  * @param line_normal_angle_threshold Threshold for angle between point normal and line normal.
  * @param line_cluster_tolerance The maximum distance between two points to be considered in the same cluster for lines.
+ * @param line_rho_threshold Threshold for considering two rho values similar when clustering lines.
+ * @param line_theta_threshold Threshold for considering two theta values similar when clustering lines.
  * @return std::vector<moveit_msgs::msg::CollisionObject> Vector of collision objects.
  */
 std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
@@ -259,8 +269,6 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     int num_iterations,
     const std::string& frame_id,
     int inlier_threshold,
-    int hough_angle_bins,
-    int hough_rho_bins,
     int hough_radius_bins,
     int hough_center_bins,
     double ransac_distance_threshold,
@@ -276,6 +284,8 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     int line_max_clusters,
     double line_curvature_threshold,
     double line_normal_angle_threshold,
-    double line_cluster_tolerance);
+    double line_cluster_tolerance,
+    double line_rho_threshold,
+    double line_theta_threshold);
 
 #endif // OBJECT_SEGMENTATION_H
