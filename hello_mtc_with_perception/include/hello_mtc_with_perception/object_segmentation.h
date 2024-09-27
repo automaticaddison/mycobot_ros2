@@ -197,12 +197,14 @@ struct HoughBin {
  * @param houghSpaceLine The 2D Hough space for lines.
  * @param houghAngleStep Step size for the angle dimension in the Hough space.
  * @param houghRhoStep Step size for the rho dimension in the Hough space.
+ * @param houghMaxDistance Maximum distance used in Hough transform for lines.
  * @return std::vector<HoughBin> Vector of clustered line models.
  */
 std::vector<HoughBin> clusterLineHoughSpace(
     const Eigen::MatrixXi& houghSpaceLine,
     double houghAngleStep,
-    double houghRhoStep);
+    double houghRhoStep,
+    double houghMaxDistance);
 
 /**
  * @brief Clusters the circle Hough space.

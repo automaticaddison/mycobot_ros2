@@ -54,8 +54,8 @@ get_planning_scene_server:
     inlier_threshold: 85  
     hough_angle_bins: 180
     hough_rho_bins: 100
-    hough_radius_bins: 50
-    hough_center_bins: 100
+    hough_radius_bins: 25
+    hough_center_bins: 50
     ransac_distance_threshold: 0.001
     ransac_max_iterations: 1000
     # Circle inlier filtering parameters

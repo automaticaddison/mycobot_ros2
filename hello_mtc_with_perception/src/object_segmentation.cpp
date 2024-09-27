@@ -360,7 +360,8 @@ static bool areBinsNeighbors(const std::vector<int>& bin1, const std::vector<int
 std::vector<HoughBin> clusterLineHoughSpace(
     const Eigen::MatrixXi& houghSpaceLine,
     double houghAngleStep,
-    double houghRhoStep) {
+    double houghRhoStep,
+    double houghMaxDistance) {
   
   std::vector<HoughBin> clusters;
   std::vector<std::tuple<int, int, int>> voteBins; // (votes, i, j)
@@ -389,7 +390,10 @@ std::vector<HoughBin> clusterLineHoughSpace(
     HoughBin newCluster;
     newCluster.indices = {i, j};
     newCluster.votes = votes;
-    newCluster.parameters = {j * houghRhoStep, i * houghAngleStep};
+    newCluster.parameters = {
+      j * houghRhoStep - houghMaxDistance,  // rho
+      i * houghAngleStep  // theta
+    };
     
     processed[k] = true;
     
@@ -404,8 +408,10 @@ std::vector<HoughBin> clusterLineHoughSpace(
         newCluster.votes += neighborVotes;
         // Update parameters (weighted average)
         double totalVotes = newCluster.votes;
-        newCluster.parameters[0] = (newCluster.parameters[0] * (totalVotes - neighborVotes) + nj * houghRhoStep * neighborVotes) / totalVotes;
-        newCluster.parameters[1] = (newCluster.parameters[1] * (totalVotes - neighborVotes) + ni * houghAngleStep * neighborVotes) / totalVotes;
+        newCluster.parameters[0] = (newCluster.parameters[0] * (totalVotes - neighborVotes) + 
+                                    (nj * houghRhoStep - houghMaxDistance) * neighborVotes) / totalVotes;
+        newCluster.parameters[1] = (newCluster.parameters[1] * (totalVotes - neighborVotes) + 
+                                    ni * houghAngleStep * neighborVotes) / totalVotes;
         processed[l] = true;
       }
     }
@@ -805,6 +811,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
             double theta = model.parameters[1];
 
             int theta_bin = static_cast<int>(theta / hough_angle_step);
+            // Add hough_max_distance to shift rho to positive range
             int rho_bin = static_cast<int>((rho + hough_max_distance) / hough_rho_step);
 
             // Ensure indices are within bounds
@@ -867,7 +874,8 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     std::vector<HoughBin> clusteredLineModels = clusterLineHoughSpace(
         hough_space_line,
         hough_angle_step,
-        hough_rho_step);
+        hough_rho_step,
+        hough_max_distance);
 
     std::vector<HoughBin> clusteredCircleModels = clusterCircleHoughSpace(
         hough_space_circle,
