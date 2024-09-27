@@ -629,12 +629,58 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
         for (const auto& model : valid_models) {
           inliers_to_remove.insert(model.inlier_indices.begin(), model.inlier_indices.end());
         }
-        
-        //  TODO: Add valid models to the the Hough Space you created in an earlier step
-         // If a circle model is valid:
+
+        /****************************************************
+         *                                                  *
+         *      Add Valid Models to the Hough Space         *
+         *                                                  *
+         ***************************************************/         
+        // Add valid models to the the Hough Space you created in an earlier step
+        // If a circle model is valid:
         // - Add a vote for it in the circle Hough parameter space 
-          // If a line model is valid:
+        // If a line model is valid:
         // - Add a vote for it in the line Hough parameter space 
+        for (const auto& model : valid_models) {
+          if (model.type == "circle") {
+            // Calculate indices for circle Hough space
+            int center_x_bin = static_cast<int>((model.parameters[0] - min_pt.x) / hough_center_x_step);
+            int center_y_bin = static_cast<int>((model.parameters[1] - min_pt.y) / hough_center_y_step);
+            int radius_bin = static_cast<int>(model.parameters[2] / hough_radius_step);
+
+            // Ensure indices are within bounds
+            center_x_bin = std::clamp(center_x_bin, 0, hough_center_bins - 1);
+            center_y_bin = std::clamp(center_y_bin, 0, hough_center_bins - 1);
+            radius_bin = std::clamp(radius_bin, 0, hough_radius_bins - 1);
+
+            // Add vote to circle Hough space
+            hough_space_circle(center_x_bin, center_y_bin, radius_bin) += 1;
+
+            LOG_INFO("Added vote for circle model: center (" + 
+                     std::to_string(model.parameters[0]) + ", " + 
+                     std::to_string(model.parameters[1]) + "), radius " + 
+                     std::to_string(model.parameters[2]));
+          }
+          else if (model.type == "line") {
+            // Calculate indices for line Hough space
+            double rho = model.parameters[0];
+            double theta = model.parameters[1];
+
+            int theta_bin = static_cast<int>(theta / hough_angle_step);
+            int rho_bin = static_cast<int>((rho + hough_max_distance) / hough_rho_step);
+
+            // Ensure indices are within bounds
+            theta_bin = std::clamp(theta_bin, 0, hough_angle_bins - 1);
+            rho_bin = std::clamp(rho_bin, 0, hough_rho_bins - 1);
+
+            // Add vote to line Hough space
+            hough_space_line(theta_bin, rho_bin) += 1;
+
+            LOG_INFO("Added vote for line model: rho " + 
+                     std::to_string(rho) + ", theta " + 
+                     std::to_string(theta));
+          }
+        }
+        LOG_INFO("Finished adding votes to Hough spaces");         
 
         // TODO: Create a new point cloud called cloud_without_inliers that is the projected cloud minus the inliers_to_remove 
         // TODO: Update the projected_cloud (i.e. projected_cloud = cloud_without_inliers) for the next iteration of the while loop
