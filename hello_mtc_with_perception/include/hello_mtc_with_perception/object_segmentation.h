@@ -183,6 +183,47 @@ struct ValidModel {
 };
 
 /**
+ * @brief Represents a clustered Hough bin for lines or circles.
+ */
+struct HoughBin {
+  std::vector<int> indices;  // Indices in the Hough space
+  int votes;                 // Total votes for this cluster
+  std::vector<double> parameters;  // Average parameters for this cluster
+};
+
+/**
+ * @brief Clusters the line Hough space.
+ * 
+ * @param houghSpaceLine The 2D Hough space for lines.
+ * @param houghAngleStep Step size for the angle dimension in the Hough space.
+ * @param houghRhoStep Step size for the rho dimension in the Hough space.
+ * @return std::vector<HoughBin> Vector of clustered line models.
+ */
+std::vector<HoughBin> clusterLineHoughSpace(
+    const Eigen::MatrixXi& houghSpaceLine,
+    double houghAngleStep,
+    double houghRhoStep);
+
+/**
+ * @brief Clusters the circle Hough space.
+ * 
+ * @param houghSpaceCircle The 3D Hough space for circles.
+ * @param houghCenterXStep Step size for the center x dimension in the Hough space.
+ * @param houghCenterYStep Step size for the center y dimension in the Hough space.
+ * @param houghRadiusStep Step size for the radius dimension in the Hough space.
+ * @param minPt_x Minimum x coordinate of the original point cloud.
+ * @param minPt_y Minimum y coordinate of the original point cloud.
+ * @return std::vector<HoughBin> Vector of clustered circle models.
+ */
+std::vector<HoughBin> clusterCircleHoughSpace(
+    const Eigen::Tensor<int, 3>& houghSpaceCircle,
+    double houghCenterXStep,
+    double houghCenterYStep,
+    double houghRadiusStep,
+    double minPt_x,
+    double minPt_y);
+
+/**
  * @brief Segments objects from point cloud clusters and creates collision objects.
  *
  * This function processes a vector of point cloud clusters to identify geometric primitives

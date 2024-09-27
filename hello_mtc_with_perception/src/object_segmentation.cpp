@@ -348,6 +348,105 @@ pcl::PointIndices::Ptr filterLineInliers(
   return filtered_inliers;
 }
 
+// Helper function to check if two bins are neighbors in the Hough space
+bool areBinsNeighbors(const std::vector<int>& bin1, const std::vector<int>& bin2, int maxDistance = 1) {
+  if (bin1.size() != bin2.size()) return false;
+  for (size_t i = 0; i < bin1.size(); ++i) {
+    if (std::abs(bin1[i] - bin2[i]) > maxDistance) return false;
+  }
+  return true;
+}
+
+std::vector<HoughBin> clusterLineHoughSpace(
+    const Eigen::MatrixXi& houghSpaceLine,
+    double houghAngleStep,
+    double houghRhoStep) {
+  
+  std::vector<HoughBin> clusters;
+  
+  for (int i = 0; i < houghSpaceLine.rows(); ++i) {
+    for (int j = 0; j < houghSpaceLine.cols(); ++j) {
+      if (houghSpaceLine(i, j) > 0) {
+        std::vector<int> indices = {i, j};
+        bool addedToExisting = false;
+        
+        for (auto& cluster : clusters) {
+          if (areBinsNeighbors(cluster.indices, indices)) {
+            cluster.votes += houghSpaceLine(i, j);
+            cluster.indices = indices;  // Update to the last added bin
+            // Update parameters (rho, theta)
+            cluster.parameters[0] = (cluster.parameters[0] * cluster.votes + j * houghRhoStep) / (cluster.votes + houghSpaceLine(i, j));
+            cluster.parameters[1] = (cluster.parameters[1] * cluster.votes + i * houghAngleStep) / (cluster.votes + houghSpaceLine(i, j));
+            addedToExisting = true;
+            break;
+          }
+        }
+        
+        if (!addedToExisting) {
+          double rho = j * houghRhoStep;
+          double theta = i * houghAngleStep;
+          clusters.push_back({indices, houghSpaceLine(i, j), {rho, theta}});
+        }
+      }
+    }
+  }
+  
+  // Sort clusters by votes in descending order
+  std::sort(clusters.begin(), clusters.end(),
+            [](const HoughBin& a, const HoughBin& b) { return a.votes > b.votes; });
+  
+  return clusters;
+}
+
+std::vector<HoughBin> clusterCircleHoughSpace(
+    const Eigen::Tensor<int, 3>& houghSpaceCircle,
+    double houghCenterXStep,
+    double houghCenterYStep,
+    double houghRadiusStep,
+    double minPt_x,
+    double minPt_y) {
+  
+  std::vector<HoughBin> clusters;
+  
+  for (int i = 0; i < houghSpaceCircle.dimension(0); ++i) {
+    for (int j = 0; j < houghSpaceCircle.dimension(1); ++j) {
+      for (int k = 0; k < houghSpaceCircle.dimension(2); ++k) {
+        if (houghSpaceCircle(i, j, k) > 0) {
+          std::vector<int> indices = {i, j, k};
+          bool addedToExisting = false;
+          
+          for (auto& cluster : clusters) {
+            if (areBinsNeighbors(cluster.indices, indices)) {
+              cluster.votes += houghSpaceCircle(i, j, k);
+              cluster.indices = indices;  // Update to the last added bin
+              // Update parameters (centerX, centerY, radius)
+              cluster.parameters[0] = (cluster.parameters[0] * cluster.votes + (minPt_x + i * houghCenterXStep) * houghSpaceCircle(i, j, k)) / (cluster.votes + houghSpaceCircle(i, j, k));
+              cluster.parameters[1] = (cluster.parameters[1] * cluster.votes + (minPt_y + j * houghCenterYStep) * houghSpaceCircle(i, j, k)) / (cluster.votes + houghSpaceCircle(i, j, k));
+              cluster.parameters[2] = (cluster.parameters[2] * cluster.votes + k * houghRadiusStep * houghSpaceCircle(i, j, k)) / (cluster.votes + houghSpaceCircle(i, j, k));
+              addedToExisting = true;
+              break;
+            }
+          }
+          
+          if (!addedToExisting) {
+            double centerX = minPt_x + i * houghCenterXStep;
+            double centerY = minPt_y + j * houghCenterYStep;
+            double radius = k * houghRadiusStep;
+            clusters.push_back({indices, houghSpaceCircle(i, j, k), {centerX, centerY, radius}});
+          }
+        }
+      }
+    }
+  }
+  
+  // Sort clusters by votes in descending order
+  std::sort(clusters.begin(), clusters.end(),
+            [](const HoughBin& a, const HoughBin& b) { return a.votes > b.votes; });
+  
+  return clusters;
+}
+
+
 std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     const std::vector<pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr>& cloud_clusters,
     int num_iterations,
@@ -716,7 +815,11 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
       LOG_INFO("\n\n\n");    
     }
 
-    // TODO: Cluster Parameter Spaces
+    /****************************************************
+     *                                                  *
+     *      Cluster Parameter Spaces                    *
+     *                                                  *
+     ***************************************************/  
     // After all iterations on a point cloud cluster, tally the votes.
     // 1. Input: 
     //      The Hough parameter spaces (for lines and circles) containing accumulated votes from RANSAC iterations.
@@ -726,6 +829,44 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     //    - Use a region growing approach based on nearest neighbor to group Hough parameter space votes that neighbor each other into a single bin. 
     //    - This helps consolidate the circle and line models that are very similar.
     // 3. Output: A more simplified hough parameter space which contains bins with accumulated votes. Each bin represents a 2D circle or 2D line model.
+    std::vector<HoughBin> clusteredLineModels = clusterLineHoughSpace(
+        hough_space_line,
+        hough_angle_step,
+        hough_rho_step);
+
+    std::vector<HoughBin> clusteredCircleModels = clusterCircleHoughSpace(
+        hough_space_circle,
+        hough_center_x_step,
+        hough_center_y_step,
+        hough_radius_step,
+        min_pt.x,
+        min_pt.y);
+
+    LOG_INFO("Clustered Hough parameters:");
+    LOG_INFO("  Line clusters: " + std::to_string(clusteredLineModels.size()));
+    LOG_INFO("  Circle clusters: " + std::to_string(clusteredCircleModels.size()));
+
+    // Log the top clusters
+    int topClustersToLog = 4;
+    LOG_INFO("Top line clusters:");
+    for (int i = 0; i < std::min(topClustersToLog, static_cast<int>(clusteredLineModels.size())); ++i) {
+      const auto& cluster = clusteredLineModels[i];
+      log_stream.str("");
+      log_stream << "  Cluster " << i + 1 << ": Votes = " << cluster.votes
+                 << ", Rho = " << cluster.parameters[0]
+                 << ", Theta = " << cluster.parameters[1];
+      LOG_INFO(log_stream.str());
+    }
+
+    LOG_INFO("Top circle clusters:");
+    for (int i = 0; i < std::min(topClustersToLog, static_cast<int>(clusteredCircleModels.size())); ++i) {
+      const auto& cluster = clusteredCircleModels[i];
+      log_stream.str("");
+      log_stream << "  Cluster " << i + 1 << ": Votes = " << cluster.votes
+                 << ", Center = (" << cluster.parameters[0] << ", " << cluster.parameters[1] << ")"
+                 << ", Radius = " << cluster.parameters[2];
+      LOG_INFO(log_stream.str());
+    }
 
     // TODO: Select Models with the Most Votes
     // Identify the top 4 vote-getting models in the Hough parameter spaces (doesn't matter whether they are line or circle models...we just want to see which models got the most votes)
