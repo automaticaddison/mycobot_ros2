@@ -171,6 +171,15 @@ pcl::PointIndices::Ptr filterLineInliers(
     double line_curvature_threshold,
     double line_normal_angle_threshold,
     double line_cluster_tolerance);
+    
+/**
+ * @brief Represents a validated model (circle or line) with its parameters and inlier indices.
+ */
+struct ValidModel {
+  std::string type;  // "circle" or "line"
+  std::vector<double> parameters;  // Store model parameters
+  std::vector<int> inlier_indices;  // Store indices of inlier points
+};
 
 /**
  * @brief Segments objects from point cloud clusters and creates collision objects.

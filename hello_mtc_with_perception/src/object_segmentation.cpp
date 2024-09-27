@@ -557,13 +557,72 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
           line_normal_angle_threshold,
           line_cluster_tolerance);
 
-        // TODO: Model Validation
+        /****************************************************
+         *                                                  *
+         *                Model Validation                  *
+         *                                                  *
+         ***************************************************/ 
         // For the circle and line models, check how many inlier points remain.
         // - If the number of remaining inliers for the model exceeds the inlier_threshold (i.e. 100 points):
         //   - The model is considered valid.
         //   - Add the model (circle or line depending on the inlier group) to the valid models list. It will be added to the Hough parameter space in the next step.
         // - If the number of remaining inliers is below the threshold:
         //   - The model (circle or line as applicable) is rejected.
+        std::vector<ValidModel> valid_models;
+
+        // Validate Circle Model
+        if (static_cast<int>(filtered_circle_inliers->indices.size()) > inlier_threshold) {
+          ValidModel circle_model;
+          circle_model.type = "circle";
+          circle_model.parameters = {
+            circle_coefficients->values[0],  // center_x
+            circle_coefficients->values[1],  // center_y
+            circle_coefficients->values[2]   // radius
+          };
+          circle_model.inlier_indices = filtered_circle_inliers->indices;
+          valid_models.push_back(circle_model);
+          LOG_INFO("=== Circle Model Validated ===");
+          LOG_INFO("  Inliers: " + std::to_string(circle_model.inlier_indices.size()));
+          LOG_INFO("  Center: (" + std::to_string(circle_model.parameters[0]) + ", " + 
+                   std::to_string(circle_model.parameters[1]) + ")");
+          LOG_INFO("  Radius: " + std::to_string(circle_model.parameters[2]));
+        } else {
+          LOG_INFO("=== Circle Model Rejected ===");
+          LOG_INFO("  Inliers: " + std::to_string(filtered_circle_inliers->indices.size()) + 
+             " (Threshold: " + std::to_string(inlier_threshold) + ")");
+        }
+
+        // Validate Line Model
+        if (static_cast<int>(filtered_line_inliers->indices.size()) > inlier_threshold) {
+          ValidModel line_model;
+          line_model.type = "line";
+          // Convert line coefficients to rho and theta form
+          double a = line_coefficients->values[0];
+          double b = line_coefficients->values[1];
+          double c = line_coefficients->values[2];
+          double rho = std::abs(c) / std::sqrt(a*a + b*b);
+          double theta = std::atan2(b, a);
+          if (theta < 0) theta += M_PI;  // Ensure theta is in [0, π)
+          line_model.parameters = {rho, theta};
+          line_model.inlier_indices = filtered_line_inliers->indices;
+          valid_models.push_back(line_model);
+          LOG_INFO("=== Line Model Validated ===");
+          LOG_INFO("  Inliers: " + std::to_string(line_model.inlier_indices.size()));
+          LOG_INFO("  Rho: " + std::to_string(rho));
+          LOG_INFO("  Theta: " + std::to_string(theta) + " radians");
+        } else {
+          LOG_INFO("=== Line Model Rejected ===");
+          LOG_INFO("  Inliers: " + std::to_string(filtered_line_inliers->indices.size()) + 
+                   " (Threshold: " + std::to_string(inlier_threshold) + ")");
+        }
+
+        LOG_INFO("=== Model Validation Summary ===");
+        LOG_INFO("  Total valid models: " + std::to_string(valid_models.size()));
+        LOG_INFO("  Circle models: " + std::to_string(std::count_if(valid_models.begin(), valid_models.end(), 
+                                      [](const ValidModel& m) { return m.type == "circle"; })));
+        LOG_INFO("  Line models: " + std::to_string(std::count_if(valid_models.begin(), valid_models.end(), 
+                                [](const ValidModel& m) { return m.type == "line"; })));
+        LOG_INFO("==============================");
 
         // TODO: Create a data structure called inliers_to_remove that contains the indices of the inliers for the valid models you just found.
         // TODO: Remove duplicates (only if you have both valid circle and line models from the previous step) from this inliers_to_remove list
