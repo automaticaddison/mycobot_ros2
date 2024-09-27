@@ -8,6 +8,7 @@
 #include <limits>                                 // For std::numeric_limits
 #include <algorithm>                              // For std::min, std::max, std::set_intersection
 #include <sstream>                                // For std::ostringstream in logging
+#include <set>                                    // For removing inliers of valid models from a point cloud cluster
 #include <random>                                 // For RANSAC-based model fitting
 
 #include <Eigen/Dense>                            // For Eigen::MatrixXi

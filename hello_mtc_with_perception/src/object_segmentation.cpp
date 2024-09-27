@@ -624,9 +624,12 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
                                 [](const ValidModel& m) { return m.type == "line"; })));
         LOG_INFO("==============================");
 
-        // TODO: Create a data structure called inliers_to_remove that contains the indices of the inliers for the valid models you just found.
-        // TODO: Remove duplicates (only if you have both valid circle and line models from the previous step) from this inliers_to_remove list
-
+        // Create a data structure called inliers_to_remove that contains the indices of the inliers for the valid models you just found.
+        std::set<int> inliers_to_remove;
+        for (const auto& model : valid_models) {
+          inliers_to_remove.insert(model.inlier_indices.begin(), model.inlier_indices.end());
+        }
+        
         // TODO: Add valid models to the the Hough Space you created in an earlier step
          // If a circle model is valid:
         // - Add a vote for it in the circle Hough parameter space 
