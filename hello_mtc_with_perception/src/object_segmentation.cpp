@@ -655,10 +655,6 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
             // Add vote to circle Hough space
             hough_space_circle(center_x_bin, center_y_bin, radius_bin) += 1;
 
-            LOG_INFO("Added vote for circle model: center (" + 
-                     std::to_string(model.parameters[0]) + ", " + 
-                     std::to_string(model.parameters[1]) + "), radius " + 
-                     std::to_string(model.parameters[2]));
           }
           else if (model.type == "line") {
             // Calculate indices for line Hough space
@@ -675,12 +671,8 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
             // Add vote to line Hough space
             hough_space_line(theta_bin, rho_bin) += 1;
 
-            LOG_INFO("Added vote for line model: rho " + 
-                     std::to_string(rho) + ", theta " + 
-                     std::to_string(theta));
           }
         }
-        LOG_INFO("Finished adding votes to Hough spaces");         
 
         // TODO: Create a new point cloud called cloud_without_inliers that is the projected cloud minus the inliers_to_remove 
         // TODO: Update the projected_cloud (i.e. projected_cloud = cloud_without_inliers) for the next iteration of the while loop
