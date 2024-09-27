@@ -10,8 +10,6 @@
 #include <sstream>                                // For std::ostringstream in logging
 #include <set>                                    // For removing inliers of valid models from a point cloud cluster
 #include <random>                                 // For RANSAC-based model fitting
-#include <queue>                                  // For std::queue used in region growing
-#include <functional>                             // For std::function used in lambda functions
 
 #include <Eigen/Dense>                            // For Eigen::MatrixXi
 #include <unsupported/Eigen/CXX11/Tensor>         // For Eigen::Tensor
@@ -183,47 +181,6 @@ struct ValidModel {
   std::vector<double> parameters;  // Store model parameters
   std::vector<int> inlier_indices;  // Store indices of inlier points
 };
-
-/**
- * @brief Represents a cluster in the Hough parameter space.
- */
-struct HoughCluster {
-  std::string type;  // "circle" or "line"
-  std::vector<double> parameters;  // Store model parameters
-  int votes;  // Number of votes for this cluster
-  std::vector<size_t> inlier_indices;  // Indices of inlier points in the original 3D point cloud
-};
-
-/**
- * @brief Clusters the Hough parameter spaces for lines and circles using region growing.
- * 
- * @param hough_space_line The Hough parameter space for lines.
- * @param hough_space_circle The Hough parameter space for circles.
- * @param hough_angle_step The step size for the angle dimension in the line Hough space.
- * @param hough_rho_step The step size for the rho dimension in the line Hough space.
- * @param hough_center_x_step The step size for the x-center dimension in the circle Hough space.
- * @param hough_center_y_step The step size for the y-center dimension in the circle Hough space.
- * @param hough_radius_step The step size for the radius dimension in the circle Hough space.
- * @param min_pt_x The minimum x-coordinate of the point cloud.
- * @param min_pt_y The minimum y-coordinate of the point cloud.
- * @param min_votes The minimum number of votes required for a bin to be considered.
- * @param line_inliers The inlier indices for each bin in the line Hough space.
- * @param circle_inliers The inlier indices for each bin in the circle Hough space.
- * @return std::vector<HoughCluster> A vector of clustered Hough parameters.
- */
-std::vector<HoughCluster> clusterParameterSpaces(
-    const Eigen::MatrixXi& hough_space_line,
-    const Eigen::Tensor<int, 3>& hough_space_circle,
-    double hough_angle_step,
-    double hough_rho_step,
-    double hough_center_x_step,
-    double hough_center_y_step,
-    double hough_radius_step,
-    double min_pt_x,
-    double min_pt_y,
-    int min_votes,
-    const std::vector<std::vector<size_t>>& line_inliers,
-    const std::vector<std::vector<size_t>>& circle_inliers);
 
 /**
  * @brief Segments objects from point cloud clusters and creates collision objects.
