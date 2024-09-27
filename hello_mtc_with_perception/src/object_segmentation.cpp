@@ -348,6 +348,100 @@ pcl::PointIndices::Ptr filterLineInliers(
   return filtered_inliers;
 }
 
+std::vector<HoughCluster> clusterParameterSpaces(
+    const Eigen::MatrixXi& hough_space_line,
+    const Eigen::Tensor<int, 3>& hough_space_circle,
+    double hough_angle_step,
+    double hough_rho_step,
+    double hough_center_x_step,
+    double hough_center_y_step,
+    double hough_radius_step,
+    double min_pt_x,
+    double min_pt_y,
+    int min_votes,
+    const std::vector<std::vector<size_t>>& line_inliers,
+    const std::vector<std::vector<size_t>>& circle_inliers) {
+  
+  std::vector<HoughCluster> clusters;
+
+  // Helper function for region growing
+  auto region_grow = [&](auto& hough_space, auto& inliers, const std::string& type,
+                         const std::function<bool(const std::vector<int>&, const std::vector<int>&)>& is_neighbor) {
+    std::vector<std::vector<bool>> visited(hough_space.dimensions()[0],
+                                           std::vector<bool>(hough_space.dimensions()[1], false));
+    
+    for (int i = 0; i < hough_space.dimensions()[0]; ++i) {
+      for (int j = 0; j < hough_space.dimensions()[1]; ++j) {
+        if (hough_space(i, j) >= min_votes && !visited[i][j]) {
+          HoughCluster cluster;
+          cluster.type = type;
+          cluster.votes = 0;
+          cluster.parameters.resize(type == "line" ? 2 : 3, 0.0);
+          
+          std::queue<std::vector<int>> queue;
+          queue.push({i, j});
+          visited[i][j] = true;
+
+          while (!queue.empty()) {
+            auto current = queue.front();
+            queue.pop();
+            
+            int votes = hough_space(current[0], current[1]);
+            cluster.votes += votes;
+            
+            if (type == "line") {
+              cluster.parameters[0] += current[0] * hough_angle_step * votes;
+              cluster.parameters[1] += (current[1] * hough_rho_step - hough_space.dimensions()[1] / 2.0 * hough_rho_step) * votes;
+            } else {
+              cluster.parameters[0] += (min_pt_x + current[0] * hough_center_x_step) * votes;
+              cluster.parameters[1] += (min_pt_y + current[1] * hough_center_y_step) * votes;
+              cluster.parameters[2] += current[2] * hough_radius_step * votes;
+            }
+            
+            size_t index = current[0] * hough_space.dimensions()[1] + current[1];
+            cluster.inlier_indices.insert(cluster.inlier_indices.end(), inliers[index].begin(), inliers[index].end());
+
+            for (int di = -1; di <= 1; ++di) {
+              for (int dj = -1; dj <= 1; ++dj) {
+                std::vector<int> neighbor = {current[0] + di, current[1] + dj};
+                if (is_neighbor(current, neighbor) && !visited[neighbor[0]][neighbor[1]] &&
+                    hough_space(neighbor[0], neighbor[1]) >= min_votes) {
+                  queue.push(neighbor);
+                  visited[neighbor[0]][neighbor[1]] = true;
+                }
+              }
+            }
+          }
+
+          for (auto& param : cluster.parameters) {
+            param /= cluster.votes;
+          }
+          clusters.push_back(cluster);
+        }
+      }
+    }
+  };
+
+  // Cluster line Hough space
+  region_grow(hough_space_line, line_inliers, "line",
+              [&](const std::vector<int>& a, const std::vector<int>& b) {
+                return b[0] >= 0 && b[0] < hough_space_line.rows() &&
+                       b[1] >= 0 && b[1] < hough_space_line.cols();
+              });
+
+  // Cluster circle Hough space
+  auto circle_hough_space_2d = hough_space_circle.reshape(
+      Eigen::array<int, 2>{hough_space_circle.dimension(0) * hough_space_circle.dimension(1),
+                           hough_space_circle.dimension(2)});
+  region_grow(circle_hough_space_2d, circle_inliers, "circle",
+              [&](const std::vector<int>& a, const std::vector<int>& b) {
+                return b[0] >= 0 && b[0] < circle_hough_space_2d.dimensions()[0] &&
+                       b[1] >= 0 && b[1] < circle_hough_space_2d.dimensions()[1];
+              });
+
+  return clusters;
+}
+
 std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     const std::vector<pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr>& cloud_clusters,
     int num_iterations,
@@ -716,7 +810,12 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
       LOG_INFO("\n\n\n");    
     }
 
-    // TODO: Cluster Parameter Spaces
+    /****************************************************
+     *                                                  *
+     *      Cluster Parameter Spaces                    *
+     *                                                  *
+     ***************************************************/
+    // Cluster Parameter Spaces
     // After all iterations on a point cloud cluster, tally the votes.
     // 1. Input: 
     //      The Hough parameter spaces (for lines and circles) containing accumulated votes from RANSAC iterations.
@@ -726,7 +825,65 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     //    - Use a region growing approach based on nearest neighbor to group Hough parameter space votes that neighbor each other into a single bin. 
     //    - This helps consolidate the circle and line models that are very similar.
     // 3. Output: A more simplified hough parameter space which contains bins with accumulated votes. Each bin represents a 2D circle or 2D line model.
+    // Prepare inlier information for Hough spaces
+    
+    std::vector<std::vector<size_t>> line_inliers(hough_angle_bins * hough_rho_bins);
+    std::vector<std::vector<size_t>> circle_inliers(hough_center_bins * hough_center_bins * hough_radius_bins);
 
+    for (const auto& model : valid_models) {
+      if (model.type == "line") {
+        int theta_bin = static_cast<int>(model.parameters[1] / hough_angle_step);
+        int rho_bin = static_cast<int>((model.parameters[0] + hough_max_distance) / hough_rho_step);
+        theta_bin = std::clamp(theta_bin, 0, hough_angle_bins - 1);
+        rho_bin = std::clamp(rho_bin, 0, hough_rho_bins - 1);
+        size_t index = theta_bin * hough_rho_bins + rho_bin;
+        line_inliers[index].insert(line_inliers[index].end(), model.inlier_indices.begin(), model.inlier_indices.end());
+      } else if (model.type == "circle") {
+        int center_x_bin = static_cast<int>((model.parameters[0] - min_pt.x) / hough_center_x_step);
+        int center_y_bin = static_cast<int>((model.parameters[1] - min_pt.y) / hough_center_y_step);
+        int radius_bin = static_cast<int>(model.parameters[2] / hough_radius_step);
+        center_x_bin = std::clamp(center_x_bin, 0, hough_center_bins - 1);
+        center_y_bin = std::clamp(center_y_bin, 0, hough_center_bins - 1);
+        radius_bin = std::clamp(radius_bin, 0, hough_radius_bins - 1);
+        size_t index = (center_x_bin * hough_center_bins + center_y_bin) * hough_radius_bins + radius_bin;
+        circle_inliers[index].insert(circle_inliers[index].end(), model.inlier_indices.begin(), model.inlier_indices.end());
+      }
+    }
+
+    // Cluster the Hough spaces
+    int min_votes = 2;  // Minimum votes required to consider a bin
+    std::vector<HoughCluster> clustered_models = clusterParameterSpaces(
+        hough_space_line, 
+        hough_space_circle,
+        hough_angle_step,
+        hough_rho_step,
+        hough_center_x_step,
+        hough_center_y_step,
+        hough_radius_step,
+        min_pt.x,
+        min_pt.y,
+        min_votes,
+        line_inliers,
+        circle_inliers);
+
+    // Sort clustered models by votes (descending order)
+    std::sort(clustered_models.begin(), clustered_models.end(),
+              [](const HoughCluster& a, const HoughCluster& b) {
+                return a.votes > b.votes;
+              });
+
+    LOG_INFO("Clustered Hough parameter spaces:");
+    LOG_INFO("  Total clusters: " + std::to_string(clustered_models.size()));
+    LOG_INFO("  Line clusters: " + std::to_string(std::count_if(clustered_models.begin(), clustered_models.end(), 
+                                  [](const HoughCluster& c) { return c.type == "line"; })));
+    LOG_INFO("  Circle clusters: " + std::to_string(std::count_if(clustered_models.begin(), clustered_models.end(), 
+                                    [](const HoughCluster& c) { return c.type == "circle"; })));
+
+    /****************************************************
+     *                                                  *
+     *        Select Models with the Most Votes         *
+     *                                                  *
+     ***************************************************/
     // TODO: Select Models with the Most Votes
     // Identify the top 4 vote-getting models in the Hough parameter spaces (doesn't matter whether they are line or circle models...we just want to see which models got the most votes)
     // If the model that received the highest vote count is a circle model:
@@ -736,7 +893,36 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     // If the model that received the highest vote count is a line model:
     //   - Discard all circle models in the hough parameter space. 
     //   - We will use this line model to fit a box to the original 3D point cloud cluster in the Estimate 3D Shape step. 
-    //   - Keep the next (up to 3 additional) vote-getting line models. Store these line models because we will use them to fit a box to the original 3D point cloud cluster in the next step (Estimate 3D Shape). These 4 lines together will be the edges of our box in the next step.
+    //   - Keep the next (up to 3 additional) vote-getting line models. 
+    // Store these line models because we will use them to fit a box to the original 3D point cloud cluster in the next step (Estimate 3D Shape). 
+    // These 4 lines together will be the edges of our box in the next step.
+    std::vector<HoughCluster> selected_models;
+    
+    if (!clustered_models.empty()) {
+      if (clustered_models[0].type == "circle") {
+        // If the top model is a circle, select only this circle model
+        selected_models.push_back(clustered_models[0]);
+        LOG_INFO("Selected top circle model for cylinder fitting");
+        LOG_INFO("  Center: (" + std::to_string(selected_models[0].parameters[0]) + ", " 
+                               + std::to_string(selected_models[0].parameters[1]) + ")");
+        LOG_INFO("  Radius: " + std::to_string(selected_models[0].parameters[2]));
+        LOG_INFO("  Votes: " + std::to_string(selected_models[0].votes));
+      } else {
+        // If the top model is a line, select up to 4 line models
+        for (const auto& model : clustered_models) {
+          if (model.type == "line" && selected_models.size() < 4) {
+            selected_models.push_back(model);
+          }
+        }
+        LOG_INFO("Selected top " + std::to_string(selected_models.size()) + " line models for box fitting");
+        for (size_t i = 0; i < selected_models.size(); ++i) {
+          LOG_INFO("  Line " + std::to_string(i+1) + ":");
+          LOG_INFO("    Rho: " + std::to_string(selected_models[i].parameters[0]));
+          LOG_INFO("    Theta: " + std::to_string(selected_models[i].parameters[1]));
+          LOG_INFO("    Votes: " + std::to_string(selected_models[i].votes));
+        }
+      }
+    }
 
     // TODO: Estimate 3D Shape
     // If we need to fit a cylinder to the 3D point cloud cluster:
