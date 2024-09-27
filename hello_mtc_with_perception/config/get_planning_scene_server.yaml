@@ -51,7 +51,7 @@ get_planning_scene_server:
     
     # Object segmentation parameters
     num_iterations: 5
-    inlier_threshold: 100  
+    inlier_threshold: 85  
     hough_angle_bins: 180
     hough_rho_bins: 100
     hough_radius_bins: 50

@@ -218,7 +218,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     
     // Declare new parameters for object segmentation
     declare_parameter("num_iterations", 5, "Number of iterations for the inner loop");
-    declare_parameter("inlier_threshold", 100, "Threshold for the number of inliers to consider a model valid");
+    declare_parameter("inlier_threshold", 85, "Threshold for the number of inliers to consider a model valid");
     declare_parameter("hough_angle_bins", 180, "Number of angle bins for the line Hough space");
     declare_parameter("hough_rho_bins", 100, "Number of distance bins for the line Hough space");
     declare_parameter("hough_radius_bins", 50, "Number of radius bins for the circle Hough space");

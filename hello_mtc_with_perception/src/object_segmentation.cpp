@@ -709,7 +709,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
       pcl::copyPointCloud(*original_projected_cloud_copy, *projected_cloud);
       LOG_INFO("Restored full point cloud for next iteration. Cloud size: " + std::to_string(projected_cloud->points.size()));
       LOG_INFO("Finished iteration " + std::to_string(i+1) + " of " + std::to_string(num_iterations));
-      LOG_INFO("");      
+      LOG_INFO("\n\n\n");    
     }
 
     // TODO: Cluster Parameter Spaces
