@@ -349,7 +349,7 @@ pcl::PointIndices::Ptr filterLineInliers(
 }
 
 // Helper function to check if two bins are neighbors in the Hough space
-bool areBinsNeighbors(const std::vector<int>& bin1, const std::vector<int>& bin2, int maxDistance = 1) {
+static bool areBinsNeighbors(const std::vector<int>& bin1, const std::vector<int>& bin2, int maxDistance = 1) {
   if (bin1.size() != bin2.size()) return false;
   for (size_t i = 0; i < bin1.size(); ++i) {
     if (std::abs(bin1[i] - bin2[i]) > maxDistance) return false;
@@ -363,37 +363,55 @@ std::vector<HoughBin> clusterLineHoughSpace(
     double houghRhoStep) {
   
   std::vector<HoughBin> clusters;
+  std::vector<std::tuple<int, int, int>> voteBins; // (votes, i, j)
   
+  // Collect all bins with non-zero votes
   for (int i = 0; i < houghSpaceLine.rows(); ++i) {
     for (int j = 0; j < houghSpaceLine.cols(); ++j) {
       if (houghSpaceLine(i, j) > 0) {
-        std::vector<int> indices = {i, j};
-        bool addedToExisting = false;
-        
-        for (auto& cluster : clusters) {
-          if (areBinsNeighbors(cluster.indices, indices)) {
-            cluster.votes += houghSpaceLine(i, j);
-            cluster.indices = indices;  // Update to the last added bin
-            // Update parameters (rho, theta)
-            cluster.parameters[0] = (cluster.parameters[0] * cluster.votes + j * houghRhoStep) / (cluster.votes + houghSpaceLine(i, j));
-            cluster.parameters[1] = (cluster.parameters[1] * cluster.votes + i * houghAngleStep) / (cluster.votes + houghSpaceLine(i, j));
-            addedToExisting = true;
-            break;
-          }
-        }
-        
-        if (!addedToExisting) {
-          double rho = j * houghRhoStep;
-          double theta = i * houghAngleStep;
-          clusters.push_back({indices, houghSpaceLine(i, j), {rho, theta}});
-        }
+        voteBins.emplace_back(houghSpaceLine(i, j), i, j);
       }
     }
   }
   
-  // Sort clusters by votes in descending order
-  std::sort(clusters.begin(), clusters.end(),
-            [](const HoughBin& a, const HoughBin& b) { return a.votes > b.votes; });
+  // Sort bins by vote count in descending order
+  std::sort(voteBins.begin(), voteBins.end(),
+            [](const auto& a, const auto& b) { return std::get<0>(a) > std::get<0>(b); });
+  
+  std::vector<bool> processed(voteBins.size(), false);
+  
+  for (size_t k = 0; k < voteBins.size(); ++k) {
+    if (processed[k]) continue;
+    
+    int votes, i, j;
+    std::tie(votes, i, j) = voteBins[k];
+    
+    HoughBin newCluster;
+    newCluster.indices = {i, j};
+    newCluster.votes = votes;
+    newCluster.parameters = {j * houghRhoStep, i * houghAngleStep};
+    
+    processed[k] = true;
+    
+    // Check for neighbors and merge
+    for (size_t l = k + 1; l < voteBins.size(); ++l) {
+      if (processed[l]) continue;
+      
+      int neighborVotes, ni, nj;
+      std::tie(neighborVotes, ni, nj) = voteBins[l];
+      
+      if (areBinsNeighbors({i, j}, {ni, nj})) {
+        newCluster.votes += neighborVotes;
+        // Update parameters (weighted average)
+        double totalVotes = newCluster.votes;
+        newCluster.parameters[0] = (newCluster.parameters[0] * (totalVotes - neighborVotes) + nj * houghRhoStep * neighborVotes) / totalVotes;
+        newCluster.parameters[1] = (newCluster.parameters[1] * (totalVotes - neighborVotes) + ni * houghAngleStep * neighborVotes) / totalVotes;
+        processed[l] = true;
+      }
+    }
+    
+    clusters.push_back(newCluster);
+  }
   
   return clusters;
 }
@@ -407,41 +425,58 @@ std::vector<HoughBin> clusterCircleHoughSpace(
     double minPt_y) {
   
   std::vector<HoughBin> clusters;
+  std::vector<std::tuple<int, int, int, int>> voteBins; // (votes, i, j, k)
   
+  // Collect all bins with non-zero votes
   for (int i = 0; i < houghSpaceCircle.dimension(0); ++i) {
     for (int j = 0; j < houghSpaceCircle.dimension(1); ++j) {
       for (int k = 0; k < houghSpaceCircle.dimension(2); ++k) {
         if (houghSpaceCircle(i, j, k) > 0) {
-          std::vector<int> indices = {i, j, k};
-          bool addedToExisting = false;
-          
-          for (auto& cluster : clusters) {
-            if (areBinsNeighbors(cluster.indices, indices)) {
-              cluster.votes += houghSpaceCircle(i, j, k);
-              cluster.indices = indices;  // Update to the last added bin
-              // Update parameters (centerX, centerY, radius)
-              cluster.parameters[0] = (cluster.parameters[0] * cluster.votes + (minPt_x + i * houghCenterXStep) * houghSpaceCircle(i, j, k)) / (cluster.votes + houghSpaceCircle(i, j, k));
-              cluster.parameters[1] = (cluster.parameters[1] * cluster.votes + (minPt_y + j * houghCenterYStep) * houghSpaceCircle(i, j, k)) / (cluster.votes + houghSpaceCircle(i, j, k));
-              cluster.parameters[2] = (cluster.parameters[2] * cluster.votes + k * houghRadiusStep * houghSpaceCircle(i, j, k)) / (cluster.votes + houghSpaceCircle(i, j, k));
-              addedToExisting = true;
-              break;
-            }
-          }
-          
-          if (!addedToExisting) {
-            double centerX = minPt_x + i * houghCenterXStep;
-            double centerY = minPt_y + j * houghCenterYStep;
-            double radius = k * houghRadiusStep;
-            clusters.push_back({indices, houghSpaceCircle(i, j, k), {centerX, centerY, radius}});
-          }
+          voteBins.emplace_back(houghSpaceCircle(i, j, k), i, j, k);
         }
       }
     }
   }
   
-  // Sort clusters by votes in descending order
-  std::sort(clusters.begin(), clusters.end(),
-            [](const HoughBin& a, const HoughBin& b) { return a.votes > b.votes; });
+  // Sort bins by vote count in descending order
+  std::sort(voteBins.begin(), voteBins.end(),
+            [](const auto& a, const auto& b) { return std::get<0>(a) > std::get<0>(b); });
+  
+  std::vector<bool> processed(voteBins.size(), false);
+  
+  for (size_t m = 0; m < voteBins.size(); ++m) {
+    if (processed[m]) continue;
+    
+    int votes, i, j, k;
+    std::tie(votes, i, j, k) = voteBins[m];
+    
+    HoughBin newCluster;
+    newCluster.indices = {i, j, k};
+    newCluster.votes = votes;
+    newCluster.parameters = {minPt_x + i * houghCenterXStep, minPt_y + j * houghCenterYStep, k * houghRadiusStep};
+    
+    processed[m] = true;
+    
+    // Check for neighbors and merge
+    for (size_t n = m + 1; n < voteBins.size(); ++n) {
+      if (processed[n]) continue;
+      
+      int neighborVotes, ni, nj, nk;
+      std::tie(neighborVotes, ni, nj, nk) = voteBins[n];
+      
+      if (areBinsNeighbors({i, j, k}, {ni, nj, nk})) {
+        newCluster.votes += neighborVotes;
+        // Update parameters (weighted average)
+        double totalVotes = newCluster.votes;
+        newCluster.parameters[0] = (newCluster.parameters[0] * (totalVotes - neighborVotes) + (minPt_x + ni * houghCenterXStep) * neighborVotes) / totalVotes;
+        newCluster.parameters[1] = (newCluster.parameters[1] * (totalVotes - neighborVotes) + (minPt_y + nj * houghCenterYStep) * neighborVotes) / totalVotes;
+        newCluster.parameters[2] = (newCluster.parameters[2] * (totalVotes - neighborVotes) + nk * houghRadiusStep * neighborVotes) / totalVotes;
+        processed[n] = true;
+      }
+    }
+    
+    clusters.push_back(newCluster);
+  }
   
   return clusters;
 }
