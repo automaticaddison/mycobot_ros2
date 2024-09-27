@@ -220,7 +220,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("num_iterations", 5, "Number of iterations for the inner loop");
     declare_parameter("inlier_threshold", 85, "Threshold for the number of inliers to consider a model valid");
     declare_parameter("hough_angle_bins", 180, "Number of angle bins for the line Hough space");
-    declare_parameter("hough_rho_bins", 100, "Number of distance bins for the line Hough space");
+    declare_parameter("hough_rho_bins", 1000, "Number of distance bins for the line Hough space");
     declare_parameter("hough_radius_bins", 25, "Number of radius bins for the circle Hough space");
     declare_parameter("hough_center_bins", 50, "Number of center bins (in each dimension) for the circle Hough space");
     declare_parameter("ransac_distance_threshold", 0.01, "Distance threshold for RANSAC (how close a point must be to the model to be considered an inlier)");

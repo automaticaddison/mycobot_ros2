@@ -53,7 +53,7 @@ get_planning_scene_server:
     num_iterations: 5
     inlier_threshold: 85  
     hough_angle_bins: 180
-    hough_rho_bins: 100
+    hough_rho_bins: 1000
     hough_radius_bins: 25
     hough_center_bins: 50
     ransac_distance_threshold: 0.001
