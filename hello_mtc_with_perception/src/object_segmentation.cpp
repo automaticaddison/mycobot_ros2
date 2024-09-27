@@ -630,7 +630,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
           inliers_to_remove.insert(model.inlier_indices.begin(), model.inlier_indices.end());
         }
         
-        // TODO: Add valid models to the the Hough Space you created in an earlier step
+        //  TODO: Add valid models to the the Hough Space you created in an earlier step
          // If a circle model is valid:
         // - Add a vote for it in the circle Hough parameter space 
           // If a line model is valid:
