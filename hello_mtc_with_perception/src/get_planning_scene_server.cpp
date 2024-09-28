@@ -217,11 +217,11 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("curvature_threshold", 0.2f, "Curvature threshold for the region growing algorithm");
     
     // Declare new parameters for object segmentation
-    declare_parameter("num_iterations", 5, "Number of iterations for the inner loop");
+    declare_parameter("num_iterations", 25, "Number of iterations for the inner loop");
     declare_parameter("inlier_threshold", 85, "Threshold for the number of inliers to consider a model valid");
-    declare_parameter("hough_radius_bins", 25, "Number of radius bins for the circle Hough space");
+    declare_parameter("hough_radius_bins", 50, "Number of radius bins for the circle Hough space");
     declare_parameter("hough_center_bins", 50, "Number of center bins (in each dimension) for the circle Hough space");
-    declare_parameter("ransac_distance_threshold", 0.01, "Distance threshold for RANSAC (how close a point must be to the model to be considered an inlier)");
+    declare_parameter("ransac_distance_threshold", 0.001, "Distance threshold for RANSAC (how close a point must be to the model to be considered an inlier)");
     declare_parameter("ransac_max_iterations", 1000, "Maximum number of iterations for the RANSAC algorithm");
     // Declare parameters for circle filtering
     declare_parameter("circle_min_cluster_size", 20, "Minimum size for a cluster of circle inliers");
@@ -237,7 +237,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("line_curvature_threshold", 0.0011, "Threshold for point curvature in line fitting");
     declare_parameter("line_normal_angle_threshold", 0.2, "Threshold for angle between point normal and line normal (in radians)");
     declare_parameter("line_cluster_tolerance", 0.025, "The maximum distance between two points to be considered in the same cluster for lines");
-    declare_parameter("line_rho_threshold", 0.05, "Tolerance for rho");
+    declare_parameter("line_rho_threshold", 0.01, "Tolerance for rho");
     declare_parameter("line_theta_threshold", 0.1, "Tolerance for theta");  
     // Legacy...remove these later
     declare_parameter("shape_fitting_max_iterations", 1000, "Maximum iterations for shape fitting RANSAC");
