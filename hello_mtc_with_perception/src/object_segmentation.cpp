@@ -944,6 +944,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     }
 
     // Log the selected top model
+    LOG_INFO("");
     LOG_INFO("Selected top model:");
     if (top_model_type == "line") {
       LOG_INFO("  Type: Line");
@@ -960,21 +961,65 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     }
 
     // TODO: Estimate 3D Shape
-    // If we need to fit a cylinder to the 3D point cloud cluster:
-    // - The center of the circle is the (x, y) position of the cylinder.
-    // - The base of the cylinder is the minimum z value among the 3D point cloud cluster.
-    // - The top of the cylinder is the maximum z value among the 3D point cloud cluster.
-    // - The radius of the cylinder is the radius of the circle. 
-    // If we need to fit a box to the 3D point cloud cluster:
-    // - Use the (up to 4) 2D line models to define the boundaries of the box. Each line represents an edge of the box ((i.e. as seen from above))
-    // - The height of the box (i.e. along the z dimension) must be equal to the the maximum z value in the 3D point cloud cluster
-    // - Use the inlier points on each line model to determine the width (x dimensions) and length (y dimensions) of each side (you can't assume the box sides are aligned with the x and y axes.
-    // - Use the lines to determine the center of the box footprint on the 2D z=0 plane.
-    // - If you only have 1 line model (i.e. this would occur if the point cloud only shows one side of the box, assume all sides are equal length). 
-    // - If you have two or three lines, make a best estimate of box width and length from the inlier points as well as box orientation.
+    // If the top model was a circle, fit a cylinder to the 3D point cloud cluster using the following method:
+    // - Radius: The radius of the cylinder is directly taken from the radius of the detected circle in the 2D plane.
+    // - Position (x, y,z):
+    // -   The x and y coordinates of the cylinder's center are the same as those of the circle's center. 
+    // -   Calculate the minimum and maximum z-values from the 3D point cloud cluster that corresponds to the cylinder. 
+    // -   The z coordinate of the cylinder's center is the average of minimum z and maximum z.
+    // - Height: The height of the cylinder is the difference between the maximum and minimum z-values of the 3D point cloud cluster.
+    // - Orientation: Assume the cylinder standing upright. The top of the cylinder (the flat part) is facing the sky (i.e. +z direction).
+    // If the top model was a line, fit a box to the 3D point cloud cluster
+    // 1. Compute Box Orientation:
+    //    - Calculate φ = θ + π/2, where θ is the angle of the line model.
+    //    - Adjust φ to be within [0, 2π) if necessary.
+    //    - φ is in radians. Quaternion conversion will be done in a later step.
+    
+    // 2. Determine Box Position in x-y Plane:
+    //    - Use the centroid of the projected points: (centroid_x, centroid_y).
+    
+    // 3. Calculate Box Dimensions:
+    //    - Length: Project all points onto the line model. 
+    //              Find the two points with maximum separation along this projection.
+    //              The distance between these points is the length of the box.
+    //    - Width: Project all points onto the line perpendicular to the model.
+    //             Find the two points with maximum separation along this projection.
+    //             The distance between these points is the width of the box.
+    //    - Height: Calculate the difference between the maximum and minimum z-values of the 3D point cloud cluster.
+    
+    // 4. Determine z-Position of the Box:
+    //    - Use the average of z_max and z_min: z_position.
+    
+    // 5. Compile Box Parameters:
+    //    - Position: (centroid_x, centroid_y, z_position)
+    //    - Dimensions: length, width, height
+    //    - Orientation: φ (rotation around z-axis in radians)
+    
+    // Note: Ensure all calculations respect the convention that positive rotation 
+    // is measured counterclockwise from the positive x-axis in a right-handed coordinate system.
 
     // TODO: Add Shape as Collision Object
     // Create a moveit_msgs/CollisionObject for the 3D shape you created in the previous step. And add it to the std::vector<moveit_msgs::msg::CollisionObject> collision_objects
+    // 1. Create a moveit_msgs::msg::CollisionObject for the 3D shape estimated in the previous step
+    //      - Set the collision object's header frame to match frame_id
+    //    - Set a unique id for the object (e.g., "box_0, box_1, etc." or "cylinder_0, cylinder_1, etc.")
+    //    - Set the pose of the object using what you calculated in the previous step.
+    //
+    // 2. Define the shape of the collision object:
+    //    - For a box:
+    //      - Create a shape_msgs::msg::SolidPrimitive with type set to BOX
+    //      - Set dimensions array to [length, width, height]
+    //    - For a cylinder:
+    //      - Create a shape_msgs::msg::SolidPrimitive with type set to CYLINDER
+    //      - Set dimensions array to [height, radius]
+    //
+    // 3. Add the shape to the collision object:
+    //    - Assign the SolidPrimitive to the primitives array of the CollisionObject
+    //    - Set the corresponding pose in the primitive_poses array
+    //
+    // 4. Set the operation field of the CollisionObject to ADD
+    //
+   // 5. Add the created CollisionObject to the collision_objects vector
     
     // For now, we'll always create a cylinder as a placeholder
     moveit_msgs::msg::CollisionObject collision_object;
