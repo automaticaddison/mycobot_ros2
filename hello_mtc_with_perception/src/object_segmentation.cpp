@@ -370,8 +370,9 @@ std::vector<HoughBin> clusterLineModels(
     
     HoughBin newCluster;
     newCluster.votes = lineModels[i].votes;
-    newCluster.inlierCount = lineModels[i].inlierCount;  // Initialize inlierCount
-    newCluster.parameters = {lineModels[i].rho, lineModels[i].theta};
+    newCluster.inlierCount = lineModels[i].inlierCount;
+    std::vector<double> rhos = {lineModels[i].rho};
+    std::vector<double> thetas = {lineModels[i].theta};
     
     processed[i] = true;
     
@@ -384,16 +385,26 @@ std::vector<HoughBin> clusterLineModels(
                                    M_PI - std::abs(lineModels[i].theta - lineModels[j].theta));
       
       if (rho_diff < rhoThreshold && theta_diff < thetaThreshold) {
-        // Weighted average for parameters
-        double totalInliers = newCluster.inlierCount + lineModels[j].inlierCount;
-        newCluster.parameters[0] = (newCluster.parameters[0] * newCluster.inlierCount + 
-                                    lineModels[j].rho * lineModels[j].inlierCount) / totalInliers;
-        newCluster.parameters[1] = (newCluster.parameters[1] * newCluster.inlierCount + 
-                                    lineModels[j].theta * lineModels[j].inlierCount) / totalInliers;
+        rhos.push_back(lineModels[j].rho);
+        thetas.push_back(lineModels[j].theta);
         newCluster.votes += lineModels[j].votes;
         newCluster.inlierCount += lineModels[j].inlierCount;
         processed[j] = true;
       }
+    }
+    
+    // Calculate median values for rho and theta
+    std::sort(rhos.begin(), rhos.end());
+    std::sort(thetas.begin(), thetas.end());
+    size_t mid = rhos.size() / 2;
+    
+    if (rhos.size() % 2 == 0) {
+      newCluster.parameters = {
+        (rhos[mid-1] + rhos[mid]) / 2.0,
+        (thetas[mid-1] + thetas[mid]) / 2.0
+      };
+    } else {
+      newCluster.parameters = {rhos[mid], thetas[mid]};
     }
     
     clusters.push_back(newCluster);
