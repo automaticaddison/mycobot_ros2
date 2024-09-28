@@ -187,7 +187,7 @@ pcl::PointIndices::Ptr filterCircleInliers(
   inlier_cloud->height = 1;
   inlier_cloud->is_dense = true;
 
-  LOG_INFO("- Circle inlier cloud size before filtering: " + std::to_string(inlier_cloud->points.size()));
+  //LOG_INFO("- Circle inlier cloud size before filtering: " + std::to_string(inlier_cloud->points.size()));
 
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
   tree->setInputCloud(inlier_cloud);
@@ -201,16 +201,16 @@ pcl::PointIndices::Ptr filterCircleInliers(
   ec.setInputCloud(inlier_cloud);
   ec.extract(clusters);
 
-  LOG_INFO("- Circle inliers clusters found: " + std::to_string(clusters.size()));
+  //LOG_INFO("- Circle inliers clusters found: " + std::to_string(clusters.size()));
 
   if (clusters.empty()) {
-    LOG_INFO("- No clusters found. Consider adjusting clustering parameters.");
+    //LOG_INFO("- No clusters found. Consider adjusting clustering parameters.");
     return filtered_inliers;
   }
 
   if (clusters.size() > static_cast<size_t>(circle_max_clusters)) {
-    LOG_INFO("- Rejecting circle: number of clusters (" + std::to_string(clusters.size()) + 
-             ") exceeds maximum allowed (" + std::to_string(circle_max_clusters) + ")");
+    //LOG_INFO("- Rejecting circle: number of clusters (" + std::to_string(clusters.size()) + 
+    //         ") exceeds maximum allowed (" + std::to_string(circle_max_clusters) + ")");
     return filtered_inliers;
   }
 
@@ -233,9 +233,9 @@ pcl::PointIndices::Ptr filterCircleInliers(
 
     // Check if the height difference between clusters exceeds the tolerance
     if (std::abs(max_height_1 - max_height_2) > circle_height_tolerance) {
-      LOG_INFO("- Rejecting circle: height difference between clusters (" + 
-               std::to_string(std::abs(max_height_1 - max_height_2)) + 
-               ") exceeds tolerance (" + std::to_string(circle_height_tolerance) + ")");
+      //LOG_INFO("- Rejecting circle: height difference between clusters (" + 
+      //         std::to_string(std::abs(max_height_1 - max_height_2)) + 
+      //         ") exceeds tolerance (" + std::to_string(circle_height_tolerance) + ")");
       return filtered_inliers; // Return empty PointIndices if height difference is too large
     }
   }
@@ -272,8 +272,8 @@ pcl::PointIndices::Ptr filterCircleInliers(
   }
 
   // Log the number of inliers remaining after filtering
-  LOG_INFO("- Circle inlier cloud size after filtering: " + 
-           std::to_string(filtered_inliers->indices.size()));
+  //LOG_INFO("- Circle inlier cloud size after filtering: " + 
+  //         std::to_string(filtered_inliers->indices.size()));
 
   return filtered_inliers;
 }
@@ -302,7 +302,7 @@ pcl::PointIndices::Ptr filterLineInliers(
   inlier_cloud->height = 1;
   inlier_cloud->is_dense = true;
 
-  LOG_INFO("- Line inlier cloud size before filtering: " + std::to_string(inlier_cloud->points.size()));
+  //LOG_INFO("- Line inlier cloud size before filtering: " + std::to_string(inlier_cloud->points.size()));
 
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
   tree->setInputCloud(inlier_cloud);
@@ -316,12 +316,12 @@ pcl::PointIndices::Ptr filterLineInliers(
   ec.setInputCloud(inlier_cloud);
   ec.extract(clusters);
 
-  LOG_INFO("- Line inliers clusters found: " + std::to_string(clusters.size()));
+  //LOG_INFO("- Line inliers clusters found: " + std::to_string(clusters.size()));
 
   // Reject if number of clusters exceeds the maximum allowed
   if (clusters.size() > static_cast<size_t>(line_max_clusters)) {
-    LOG_INFO("- Rejecting line: number of clusters (" + std::to_string(clusters.size()) +
-             ") exceeds maximum allowed (" + std::to_string(line_max_clusters) + ")");
+    //LOG_INFO("- Rejecting line: number of clusters (" + std::to_string(clusters.size()) +
+    //         ") exceeds maximum allowed (" + std::to_string(line_max_clusters) + ")");
     return filtered_inliers;
   }
 
@@ -343,7 +343,7 @@ pcl::PointIndices::Ptr filterLineInliers(
   }
 
   // Log the number of inliers remaining after filtering
-  LOG_INFO("- Line inlier cloud size after filtering: " + std::to_string(filtered_inliers->indices.size()));
+  //LOG_INFO("- Line inlier cloud size after filtering: " + std::to_string(filtered_inliers->indices.size()));
 
   return filtered_inliers;
 }
@@ -597,21 +597,21 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     double hough_radius_step = hough_max_radius / hough_radius_bins;
 
     // Log the initialization of Hough spaces
-    log_stream.str("");
-    log_stream << "Parameter Spaces Initialization for Circles\n"
-      << "  Line Model Storage:\n"
-      << "    - Storing individual line models with rho, theta, votes, and inlier count\n"
-      << "    - Line models will be clustered later based on similarity\n"
-      << "  Circle Hough Space (3D):\n"
-      << "    - Dimensions: " << hough_center_bins << " x " << hough_center_bins << " x " << hough_radius_bins << "\n"
-      << "    - Center X: " << hough_center_bins << " bins (range: " << min_pt.x << " to " << max_pt.x << " m, step: " << hough_center_x_step << " m)\n"
-      << "    - Center Y: " << hough_center_bins << " bins (range: " << min_pt.y << " to " << max_pt.y << " m, step: " << hough_center_y_step << " m)\n"
-      << "    - Radius: " << hough_radius_bins << " bins (range: 0 to " << hough_max_radius << " m, step: " << hough_radius_step << " m)\n"
-      << "  Projected 2D Space Dimensions:\n"
-      << "    - X-range: " << projected_x_range << " m\n"
-      << "    - Y-range: " << projected_y_range << " m\n"
-      << "    - Diagonal: " << hough_max_distance << " m\n";
-    LOG_INFO(log_stream.str());
+    //log_stream.str("");
+    //log_stream << "Parameter Spaces Initialization\n"
+    //  << "  Line Model Storage:\n"
+    //  << "    - Storing individual line models with rho, theta, votes, and inlier count\n"
+    //  << "    - Line models will be clustered later based on similarity\n"
+    //  << "  Circle Hough Space (3D):\n"
+    //  << "    - Dimensions: " << hough_center_bins << " x " << hough_center_bins << " x " << hough_radius_bins << "\n"
+    //  << "    - Center X: " << hough_center_bins << " bins (range: " << min_pt.x << " to " << max_pt.x << " m, step: " << hough_center_x_step << " m)\n"
+    //  << "    - Center Y: " << hough_center_bins << " bins (range: " << min_pt.y << " to " << max_pt.y << " m, step: " << hough_center_y_step << " m)\n"
+    //  << "    - Radius: " << hough_radius_bins << " bins (range: 0 to " << hough_max_radius << " m, step: " << hough_radius_step << " m)\n"
+    //  << "  Projected 2D Space Dimensions:\n"
+    //  << "    - X-range: " << projected_x_range << " m\n"
+    //  << "    - Y-range: " << projected_y_range << " m\n"
+    //  << "    - Diagonal: " << hough_max_distance << " m\n";
+    //LOG_INFO(log_stream.str());
 
     /****************************************************
      *                                                  *
@@ -648,7 +648,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
          *                Filter Inliers                    *
          *                                                  *
          ***************************************************/ 
-        logModelResults("Circle", circle_coefficients, circle_inliers);
+        //logModelResults("Circle", circle_coefficients, circle_inliers);
 
         // Circle Filtering
         pcl::PointIndices::Ptr filtered_circle_inliers = filterCircleInliers(
@@ -664,7 +664,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
           circle_normal_angle_threshold,
           circle_cluster_tolerance);
 
-        logModelResults("Line", line_coefficients, line_inliers);
+        //logModelResults("Line", line_coefficients, line_inliers);
 
         // Line Filtering
         pcl::PointIndices::Ptr filtered_line_inliers = filterLineInliers(
@@ -684,9 +684,9 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
          *                                                  *
          ***************************************************/ 
         // For the circle and line models, check how many inlier points remain.
-        // - If the number of remaining inliers for the model exceeds the inlier_threshold (i.e. 100 points):
+        // - If the number of remaining inliers for the model exceeds the inlier_threshold:
         //   - The model is considered valid.
-        //   - Add the model (circle or line depending on the inlier group) to the valid models list. It will be added to the Hough parameter space in the next step.
+        //   - Add the model (circle or line depending on the inlier group) to the valid models list. It will be added to the parameter space in the next step.
         // - If the number of remaining inliers is below the threshold:
         //   - The model (circle or line as applicable) is rejected.
         std::vector<ValidModel> valid_models;
@@ -702,17 +702,17 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
           };
           circle_model.inlier_indices = filtered_circle_inliers->indices;
           valid_models.push_back(circle_model);
-          LOG_INFO("");
-          LOG_INFO("=== Circle Model Validated ===");
-          LOG_INFO("  Inliers: " + std::to_string(circle_model.inlier_indices.size()));
-          LOG_INFO("  Center: (" + std::to_string(circle_model.parameters[0]) + ", " + 
-                   std::to_string(circle_model.parameters[1]) + ")");
-          LOG_INFO("  Radius: " + std::to_string(circle_model.parameters[2]));
+          //LOG_INFO("");
+          //LOG_INFO("=== Circle Model Validated ===");
+          //LOG_INFO("  Inliers: " + std::to_string(circle_model.inlier_indices.size()));
+          //LOG_INFO("  Center: (" + std::to_string(circle_model.parameters[0]) + ", " + 
+          //         std::to_string(circle_model.parameters[1]) + ")");
+          //LOG_INFO("  Radius: " + std::to_string(circle_model.parameters[2]));
         } else {
-          LOG_INFO("");
-          LOG_INFO("=== Circle Model Rejected ===");
-          LOG_INFO("  Inliers: " + std::to_string(filtered_circle_inliers->indices.size()) + 
-             " (Threshold: " + std::to_string(inlier_threshold) + ")");
+          //LOG_INFO("");
+          //LOG_INFO("=== Circle Model Rejected ===");
+          //LOG_INFO("  Inliers: " + std::to_string(filtered_circle_inliers->indices.size()) + 
+          //   " (Threshold: " + std::to_string(inlier_threshold) + ")");
         }
 
         // Validate Line Model
@@ -729,62 +729,63 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
           line_model.parameters = {rho, theta};
           line_model.inlier_indices = filtered_line_inliers->indices;
           valid_models.push_back(line_model);
-          LOG_INFO("");
-          LOG_INFO("=== Line Model Validated ===");
-          LOG_INFO("  Inliers: " + std::to_string(line_model.inlier_indices.size()));
-          LOG_INFO("  Rho: " + std::to_string(rho));
-          LOG_INFO("  Theta: " + std::to_string(theta) + " radians");
+          //LOG_INFO("");
+          //LOG_INFO("=== Line Model Validated ===");
+          //LOG_INFO("  Inliers: " + std::to_string(line_model.inlier_indices.size()));
+          //LOG_INFO("  Rho: " + std::to_string(rho));
+          //LOG_INFO("  Theta: " + std::to_string(theta) + " radians");
         } else {
-          LOG_INFO("");
-          LOG_INFO("=== Line Model Rejected ===");
-          LOG_INFO("  Inliers: " + std::to_string(filtered_line_inliers->indices.size()) + 
-                   " (Threshold: " + std::to_string(inlier_threshold) + ")");
+          //LOG_INFO("");
+          //LOG_INFO("=== Line Model Rejected ===");
+          //LOG_INFO("  Inliers: " + std::to_string(filtered_line_inliers->indices.size()) + 
+          //         " (Threshold: " + std::to_string(inlier_threshold) + ")");
         }
         
         // Additional validation step: Compare inlier counts between circle and line models
         if (!valid_models.empty()) {
-            size_t circle_inliers = 0;
-            size_t line_inliers = 0;
+          size_t circle_inliers = 0;
+          size_t line_inliers = 0;
 
-            for (const auto& model : valid_models) {
-                if (model.type == "circle") {
-                    circle_inliers = std::max(circle_inliers, model.inlier_indices.size());
-                } else if (model.type == "line") {
-                    line_inliers = std::max(line_inliers, model.inlier_indices.size());
-                }
+          for (const auto& model : valid_models) {
+            if (model.type == "circle") {
+              circle_inliers = std::max(circle_inliers, model.inlier_indices.size());
+            } else if (model.type == "line") {
+              line_inliers = std::max(line_inliers, model.inlier_indices.size());
             }
+          }
 
-            // Remove models with fewer inliers
-            valid_models.erase(
-                std::remove_if(valid_models.begin(), valid_models.end(),
-                    [circle_inliers, line_inliers](const ValidModel& model) {
-                        return (model.type == "circle" && model.inlier_indices.size() < line_inliers) ||
-                               (model.type == "line" && model.inlier_indices.size() < circle_inliers);
-                    }),
+          // Remove circle model if it has fewer inliers than the line model and vice versa
+          valid_models.erase(
+            std::remove_if(valid_models.begin(), valid_models.end(),
+              [circle_inliers, line_inliers](const ValidModel& model) {
+                return (model.type == "circle" && model.inlier_indices.size() < line_inliers) ||
+                       (model.type == "line" && model.inlier_indices.size() < circle_inliers);
+                }),
                 valid_models.end()
-            );
+          );
 
-            LOG_INFO("=== Additional Model Validation ===");
-            LOG_INFO("  Max circle inliers: " + std::to_string(circle_inliers));
-            LOG_INFO("  Max line inliers: " + std::to_string(line_inliers));
-            LOG_INFO("  Remaining valid models: " + std::to_string(valid_models.size()));
+          //LOG_INFO("\n=== Additional Model Validation ===");
+          //LOG_INFO("  Max circle inliers: " + std::to_string(circle_inliers));
+          //LOG_INFO("  Max line inliers: " + std::to_string(line_inliers));
+          //LOG_INFO("  Remaining valid models: " + std::to_string(valid_models.size()));
         }
         
-        LOG_INFO("");
-        LOG_INFO("=== Model Validation Summary ===");
-        LOG_INFO("  Total valid models: " + std::to_string(valid_models.size()));
-        LOG_INFO("  Circle models: " + std::to_string(std::count_if(valid_models.begin(), valid_models.end(), 
-                                      [](const ValidModel& m) { return m.type == "circle"; })));
-        LOG_INFO("  Line models: " + std::to_string(std::count_if(valid_models.begin(), valid_models.end(), 
-                                [](const ValidModel& m) { return m.type == "line"; })));
-        LOG_INFO("==============================");
+        //LOG_INFO("");
+        //LOG_INFO("=== Model Validation Summary ===");
+        //LOG_INFO("  Total valid models: " + std::to_string(valid_models.size()));
+        //LOG_INFO("  Circle models: " + std::to_string(std::count_if(valid_models.begin(), valid_models.end(), 
+        //                             [](const ValidModel& m) { return m.type == "circle"; })));
+        //LOG_INFO("  Line models: " + std::to_string(std::count_if(valid_models.begin(), valid_models.end(), 
+        //                        [](const ValidModel& m) { return m.type == "line"; })));
+        //LOG_INFO("==============================");
 
         // If no valid models were found, break out of this while loop
         if (valid_models.empty()) {
           break;
         }
 
-        // Create a data structure called inliers_to_remove that contains the indices of the inliers for the valid models you just found.
+        // Create a data structure called inliers_to_remove that contains the indices of 
+        // the inliers for the valid models you just found.
         std::set<int> inliers_to_remove;
         for (const auto& model : valid_models) {
           inliers_to_remove.insert(model.inlier_indices.begin(), model.inlier_indices.end());
@@ -792,10 +793,10 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
 
         /****************************************************
          *                                                  *
-         *      Add Valid Models to the Parameter Space     *
+         *      Add Valid Models to the Parameter Spaces    *
          *                                                  *
          ***************************************************/         
-        // Add valid models to the the Parameter Space you created in an earlier step
+        // Add valid models to the the Parameter Spaces you created in an earlier step
         // If a circle model is valid:
         // - Add a vote for it in the circle Hough parameter space 
         // If a line model is valid:
@@ -840,23 +841,23 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
         // Update the projected_cloud (i.e. projected_cloud = cloud_without_inliers) for the next iteration of the while loop
         projected_cloud = cloud_without_inliers;
 
-        LOG_INFO("Removed " + std::to_string(inliers_to_remove.size()) + " inliers. New projected cloud size: " + std::to_string(projected_cloud->points.size()));
-        LOG_INFO("");  
+        //LOG_INFO("Removed " + std::to_string(inliers_to_remove.size()) + " inliers. New projected cloud size: " + std::to_string(projected_cloud->points.size()));
+        //LOG_INFO("");  
       }
       // Log the reason for exiting the while loop
       if (static_cast<int>(projected_cloud->points.size()) <= inlier_threshold) {
-        LOG_INFO("Exiting RANSAC loop: Insufficient points remain. Points left: " + 
-                 std::to_string(projected_cloud->points.size()) + 
-                 ", Threshold: " + std::to_string(inlier_threshold));
+        //LOG_INFO("Exiting RANSAC loop: Insufficient points remain. Points left: " + 
+        //         std::to_string(projected_cloud->points.size()) + 
+        //         ", Threshold: " + std::to_string(inlier_threshold));
       } else {
-        LOG_INFO("Exiting RANSAC loop: No more valid models found.");
+        //LOG_INFO("Exiting RANSAC loop: No more valid models found.");
       }
       
       // Restore the full point cloud for the next iteration
       pcl::copyPointCloud(*original_projected_cloud_copy, *projected_cloud);
-      LOG_INFO("Restored full point cloud for next iteration. Cloud size: " + std::to_string(projected_cloud->points.size()));
-      LOG_INFO("Finished iteration " + std::to_string(i+1) + " of " + std::to_string(num_iterations));
-      LOG_INFO("\n\n\n");    
+      //LOG_INFO("Restored full point cloud for next iteration. Cloud size: " + std::to_string(projected_cloud->points.size()));
+      //LOG_INFO("Finished iteration " + std::to_string(i+1) + " of " + std::to_string(num_iterations));
+      //LOG_INFO("\n\n\n");    
     }
 
     /****************************************************
