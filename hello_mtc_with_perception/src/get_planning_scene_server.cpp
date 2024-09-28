@@ -217,7 +217,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("curvature_threshold", 0.2f, "Curvature threshold for the region growing algorithm");
     
     // Declare new parameters for object segmentation
-    declare_parameter("num_iterations", 25, "Number of iterations for the inner loop");
+    declare_parameter("num_iterations", 5, "Number of iterations for the inner loop");
     declare_parameter("inlier_threshold", 85, "Threshold for the number of inliers to consider a model valid");
     declare_parameter("hough_radius_bins", 50, "Number of radius bins for the circle Hough space");
     declare_parameter("hough_center_bins", 50, "Number of center bins (in each dimension) for the circle Hough space");
