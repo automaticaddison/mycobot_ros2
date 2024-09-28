@@ -50,12 +50,12 @@ get_planning_scene_server:
     curvature_threshold: 0.2
     
     # Object segmentation parameters
-    num_iterations: 25
+    num_iterations: 5
     inlier_threshold: 85  
     hough_radius_bins: 50
     hough_center_bins: 50
     ransac_distance_threshold: 0.001
-    ransac_max_iterations: 1000
+    ransac_max_iterations: 5000
     # Circle inlier filtering parameters
     circle_min_cluster_size: 20
     circle_max_clusters: 2
