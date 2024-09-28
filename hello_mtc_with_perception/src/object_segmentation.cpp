@@ -911,14 +911,53 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
       LOG_INFO(log_stream.str());
     }
 
-    // TODO: Select Model with the Most Votes
+    /****************************************************
+     *                                                  *
+     *      Select Model with the Most Votes            *
+     *                                                  *
+     ***************************************************/  
     // Identify the top vote-getting model among all models (circle and lines)
     // If the model that received the highest vote count is a circle model:
     //   - We will use this circle model to fit a cylinder to the original 3D point cloud cluster in the next step (Estimate 3D Shape)
     //   - Take note of the parameters of this highest-vote-count circle model because we will need it in the Estimate 3D Shape step. 
     // If the model that received the highest vote count is a line model:
     //   - We will use this line model to fit a box to the original 3D point cloud cluster in the Estimate 3D Shape step. 
-    //   - Store the parameters (rho and theta?)tore these line models because we will use them to fit a box to the original 3D point cloud cluster in the next step (Estimate 3D Shape). These 4 lines together will be the edges of our box in the next step.
+    //   - Store the parameters (rho and theta) for these line models.
+
+    // Initialize variables to keep track of the top model
+    std::string top_model_type;
+    std::vector<double> top_model_parameters;
+    int top_model_votes = 0;
+
+    // Check the top line cluster
+    if (!clusteredLineModels.empty() && clusteredLineModels[0].votes > top_model_votes) {
+      top_model_type = "line";
+      top_model_parameters = clusteredLineModels[0].parameters;
+      top_model_votes = clusteredLineModels[0].votes;
+    }
+
+    // Check the top circle cluster
+    if (!clusteredCircleModels.empty() && clusteredCircleModels[0].votes > top_model_votes) {
+      top_model_type = "circle";
+      top_model_parameters = clusteredCircleModels[0].parameters;
+      top_model_votes = clusteredCircleModels[0].votes;
+    }
+
+    // Log the selected top model
+    LOG_INFO("Selected top model:");
+    if (top_model_type == "line") {
+      LOG_INFO("  Type: Line");
+      LOG_INFO("  Votes: " + std::to_string(top_model_votes));
+      LOG_INFO("  Rho: " + std::to_string(top_model_parameters[0]));
+      LOG_INFO("  Theta: " + std::to_string(top_model_parameters[1]));
+    } else if (top_model_type == "circle") {
+      LOG_INFO("  Type: Circle");
+      LOG_INFO("  Votes: " + std::to_string(top_model_votes));
+      LOG_INFO("  Center: (" + std::to_string(top_model_parameters[0]) + ", " + std::to_string(top_model_parameters[1]) + ")");
+      LOG_INFO("  Radius: " + std::to_string(top_model_parameters[2]));
+    } else {
+      LOG_INFO("  No valid model found");
+    }
 
     // TODO: Estimate 3D Shape
     // If we need to fit a cylinder to the 3D point cloud cluster:
