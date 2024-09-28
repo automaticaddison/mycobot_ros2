@@ -127,7 +127,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
   int line_min_cluster_size;
   int line_max_clusters;
   double line_curvature_threshold;
-  double line_normal_angle_threshold;
   double line_cluster_tolerance;
   double line_rho_threshold;
   double line_theta_threshold;
@@ -235,7 +234,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("line_min_cluster_size", 20, "Minimum number of points for a valid cluster");
     declare_parameter("line_max_clusters", 1, "Maximum number of allowed clusters for lines");
     declare_parameter("line_curvature_threshold", 0.0011, "Threshold for point curvature in line fitting");
-    declare_parameter("line_normal_angle_threshold", 0.2, "Threshold for angle between point normal and line normal (in radians)");
     declare_parameter("line_cluster_tolerance", 0.025, "The maximum distance between two points to be considered in the same cluster for lines");
     declare_parameter("line_rho_threshold", 0.01, "Tolerance for rho");
     declare_parameter("line_theta_threshold", 0.1, "Tolerance for theta");  
@@ -318,7 +316,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
     line_min_cluster_size = this->get_parameter("line_min_cluster_size").as_int();
     line_max_clusters = this->get_parameter("line_max_clusters").as_int();
     line_curvature_threshold = this->get_parameter("line_curvature_threshold").as_double();
-    line_normal_angle_threshold = this->get_parameter("line_normal_angle_threshold").as_double();
     line_cluster_tolerance = this->get_parameter("line_cluster_tolerance").as_double();
     line_rho_threshold = this->get_parameter("line_rho_threshold").as_double();
     line_theta_threshold = this->get_parameter("line_theta_threshold").as_double();
@@ -1049,7 +1046,6 @@ class GetPlanningSceneServer : public rclcpp::Node {
       line_min_cluster_size,
       line_max_clusters,
       line_curvature_threshold,
-      line_normal_angle_threshold,
       line_cluster_tolerance,
       line_rho_threshold,
       line_theta_threshold

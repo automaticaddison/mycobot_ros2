@@ -153,24 +153,20 @@ pcl::PointIndices::Ptr filterCircleInliers(
  * 
  * @param line_inliers Initial set of inliers from RANSAC line fitting.
  * @param original_cloud Original 3D point cloud.
- * @param line_coefficients Coefficients of the fitted line.
  * @param projection_map Mapping between 2D projected points and original 3D points.
  * @param line_min_cluster_size Minimum number of points for a valid cluster.
  * @param line_max_clusters Maximum number of allowed clusters.
  * @param line_curvature_threshold Threshold for point curvature.
- * @param line_normal_angle_threshold Threshold for angle between point normal and line normal.
  * @param line_cluster_tolerance The maximum distance between two points to be considered in the same cluster.
  * @return pcl::PointIndices::Ptr Filtered set of inlier indices.
  */
 pcl::PointIndices::Ptr filterLineInliers(
     const pcl::PointIndices::Ptr& line_inliers,
     const pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr& original_cloud,
-    const pcl::ModelCoefficients::Ptr& line_coefficients,
     const std::unordered_map<size_t, size_t>& projection_map,
     int line_min_cluster_size,
     int line_max_clusters,
     double line_curvature_threshold,
-    double line_normal_angle_threshold,
     double line_cluster_tolerance);
     
 /**
@@ -258,7 +254,6 @@ std::vector<HoughBin> clusterCircleHoughSpace(
  * @param line_min_cluster_size Minimum number of points for a valid line cluster.
  * @param line_max_clusters Maximum number of allowed clusters for lines.
  * @param line_curvature_threshold Threshold for point curvature in line fitting.
- * @param line_normal_angle_threshold Threshold for angle between point normal and line normal.
  * @param line_cluster_tolerance The maximum distance between two points to be considered in the same cluster for lines.
  * @param line_rho_threshold Threshold for considering two rho values similar when clustering lines.
  * @param line_theta_threshold Threshold for considering two theta values similar when clustering lines.
@@ -283,7 +278,6 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     int line_min_cluster_size,
     int line_max_clusters,
     double line_curvature_threshold,
-    double line_normal_angle_threshold,
     double line_cluster_tolerance,
     double line_rho_threshold,
     double line_theta_threshold);

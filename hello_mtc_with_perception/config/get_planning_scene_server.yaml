@@ -68,7 +68,6 @@ get_planning_scene_server:
     line_min_cluster_size: 20
     line_max_clusters: 1
     line_curvature_threshold: 0.0011
-    line_normal_angle_threshold: 0.2 # Not used in this implementation
     line_cluster_tolerance: 0.025
     line_rho_threshold: 0.01
     line_theta_threshold: 0.1

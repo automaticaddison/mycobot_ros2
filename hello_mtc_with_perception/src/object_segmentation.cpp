@@ -281,12 +281,10 @@ pcl::PointIndices::Ptr filterCircleInliers(
 pcl::PointIndices::Ptr filterLineInliers(
   const pcl::PointIndices::Ptr& line_inliers,
   const pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr& original_cloud,
-  [[maybe_unused]] const pcl::ModelCoefficients::Ptr& line_coefficients,
   const std::unordered_map<size_t, size_t>& projection_map,
   int line_min_cluster_size,
   int line_max_clusters,
   double line_curvature_threshold,
-  [[maybe_unused]] double line_normal_angle_threshold,
   double line_cluster_tolerance) {
   
   pcl::PointIndices::Ptr filtered_inliers(new pcl::PointIndices);
@@ -502,7 +500,6 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     int line_min_cluster_size,
     int line_max_clusters,
     double line_curvature_threshold,
-    double line_normal_angle_threshold,
     double line_cluster_tolerance,
     double line_rho_threshold,
     double line_theta_threshold) {
@@ -681,12 +678,10 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
         pcl::PointIndices::Ptr filtered_line_inliers = filterLineInliers(
           line_inliers,
           cluster,
-          line_coefficients,
           projection_map,
           line_min_cluster_size,
           line_max_clusters,
           line_curvature_threshold,
-          line_normal_angle_threshold,
           line_cluster_tolerance);
 
         /****************************************************
@@ -916,16 +911,14 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
       LOG_INFO(log_stream.str());
     }
 
-    // TODO: Select Models with the Most Votes
-    // Identify the top 4 vote-getting models in the Hough parameter spaces (doesn't matter whether they are line or circle models...we just want to see which models got the most votes)
+    // TODO: Select Model with the Most Votes
+    // Identify the top vote-getting model among all models (circle and lines)
     // If the model that received the highest vote count is a circle model:
-    //   - Reject all other circle and all line models in the hough parameter space. 
     //   - We will use this circle model to fit a cylinder to the original 3D point cloud cluster in the next step (Estimate 3D Shape)
     //   - Take note of the parameters of this highest-vote-count circle model because we will need it in the Estimate 3D Shape step. 
     // If the model that received the highest vote count is a line model:
-    //   - Discard all circle models in the hough parameter space. 
     //   - We will use this line model to fit a box to the original 3D point cloud cluster in the Estimate 3D Shape step. 
-    //   - Keep the next (up to 3 additional) vote-getting line models. Store these line models because we will use them to fit a box to the original 3D point cloud cluster in the next step (Estimate 3D Shape). These 4 lines together will be the edges of our box in the next step.
+    //   - Store the parameters (rho and theta?)tore these line models because we will use them to fit a box to the original 3D point cloud cluster in the next step (Estimate 3D Shape). These 4 lines together will be the edges of our box in the next step.
 
     // TODO: Estimate 3D Shape
     // If we need to fit a cylinder to the 3D point cloud cluster:
