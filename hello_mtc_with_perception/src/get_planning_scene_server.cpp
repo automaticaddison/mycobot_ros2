@@ -235,8 +235,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("line_max_clusters", 1, "Maximum number of allowed clusters for lines");
     declare_parameter("line_curvature_threshold", 0.0011, "Threshold for point curvature in line fitting");
     declare_parameter("line_cluster_tolerance", 0.025, "The maximum distance between two points to be considered in the same cluster for lines");
-    declare_parameter("line_rho_threshold", 0.01, "Tolerance for rho");
-    declare_parameter("line_theta_threshold", 0.1, "Tolerance for theta");  
+    declare_parameter("line_rho_threshold", 0.01, "Tolerance for rho. Used for clustering similar candidate line models before voting.");
+    declare_parameter("line_theta_threshold", 0.1, "Tolerance for theta. Used for clustering similar candidate line models before voting.");  
     // Legacy...remove these later
     declare_parameter("shape_fitting_max_iterations", 1000, "Maximum iterations for shape fitting RANSAC");
     declare_parameter("shape_fitting_distance_threshold", 0.01, "Distance threshold for shape fitting (in meters)");
