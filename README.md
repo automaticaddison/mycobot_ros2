@@ -7,6 +7,8 @@ This repository contains ROS 2 packages for simulating and controlling the myCob
 
 ![Gazebo Pick and Place Task Simulation](https://automaticaddison.com/wp-content/uploads/2024/09/mtc_gazebo-moveit-pick-place.gif)
 
+![Pick and Place with Perception](https://automaticaddison.com/wp-content/uploads/2024/09/pick-and-place-with-perception-moveit2-800px.gif)
+
 ## Features
 - Gazebo simulation of the myCobot robotic arm
 - RViz visualization for robot state and motion planning
@@ -22,10 +24,6 @@ This repository contains ROS 2 packages for simulating and controlling the myCob
   - Hough transform for building shape detection 
 - CPU-compatible implementation, no GPU required. 
 - Real-time perception and planning capabilities for responsive robot operation
-
-![RViz Pick and Place Simulation](https://automaticaddison.com/wp-content/uploads/2024/09/pick-place-moveit-task-constructor-moveit2-no-objects-rviz.gif)
-
-![Pick and Place with Perception](https://automaticaddison.com/wp-content/uploads/2024/09/pick-and-place-with-perception-moveit2-800px.gif)
 
 ![Setup Planning Scene](https://automaticaddison.com/wp-content/uploads/2024/09/setup-planning-scene-800px.gif)
 
