@@ -530,6 +530,12 @@ fitCylinderToCluster(
   return std::make_tuple(primitive, pose);
 }
 
+// Keep angle between [0, 2π)
+double normalizeAngle(double angle) {
+    while (angle > 2 * M_PI) angle -= 2 * M_PI;
+    while (angle < 0) angle += 2 * M_PI;
+    return angle;
+}
 
 std::tuple<shape_msgs::msg::SolidPrimitive, geometry_msgs::msg::Pose>
 fitBoxToCluster(
@@ -538,10 +544,7 @@ fitBoxToCluster(
     double theta) {
   
   // Step 1: Compute Box Orientation
-  double phi = theta + M_PI_2;  // Explicitly add π/2
-  // Adjust φ to be within [0, 2π)
-  phi = std::fmod(phi, 2 * M_PI);
-  if (phi < 0) phi += 2 * M_PI;
+  double phi = normalizeAngle(theta + M_PI_2);  // Explicitly add π/2 and normalize
   
   // Direction vectors
   double along_x = std::cos(phi);  // Direction along the line
@@ -1173,8 +1176,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
       tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
       
       // Normalize yaw to [0, 2π)
-      yaw = std::fmod(yaw, 2 * M_PI);
-      if (yaw < 0) yaw += 2 * M_PI;
+      yaw = normalizeAngle(yaw);
 
       std::ostringstream log_stream;
       log_stream << "Added box collision object: id=" << collision_object.id
