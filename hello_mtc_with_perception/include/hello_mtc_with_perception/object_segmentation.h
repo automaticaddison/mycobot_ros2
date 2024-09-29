@@ -251,6 +251,21 @@ fitCylinderToCluster(
     double center_x,
     double center_y,
     double radius);
+    
+/**
+ * @brief Fits a box to a 3D point cloud cluster based on a line model.
+ * 
+ * @param cluster The 3D point cloud cluster.
+ * @param rho The rho parameter of the line model (perpendicular distance from origin to line).
+ * @param theta The theta parameter of the line model (angle between x-axis and normal vector to line).
+ * @return std::tuple<shape_msgs::msg::SolidPrimitive, geometry_msgs::msg::Pose> 
+ *         A tuple containing the box primitive and its pose.
+ */
+std::tuple<shape_msgs::msg::SolidPrimitive, geometry_msgs::msg::Pose>
+fitBoxToCluster(
+    const pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr& cluster,
+    double rho,
+    double theta);
 
 /**
  * @brief Segments objects from point cloud clusters and creates collision objects.
