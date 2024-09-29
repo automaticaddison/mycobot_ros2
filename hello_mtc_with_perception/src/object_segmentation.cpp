@@ -498,8 +498,10 @@ fitCylinderToCluster(
   }
 
   // Calculate cylinder height and center z
-  double height = z_max - z_min;
-  double center_z = (z_min + z_max) / 2.0;
+  //double height = z_max - z_min;
+  //double center_z = (z_min + z_max) / 2.0;
+  double height = z_max - 0.0;
+  double center_z = (0.0 + z_max) / 2.0;
 
   // Create SolidPrimitive for cylinder
   shape_msgs::msg::SolidPrimitive primitive;
@@ -589,7 +591,8 @@ fitBoxToCluster(
   double height = max_z - min_z;
   
   // Step 4: Determine z-Position of the Box
-  double z_position = (min_z + max_z) / 2.0;
+  //double z_position = (min_z + max_z) / 2.0;
+  double z_position = (0.0 + max_z) / 2.0;
   
   // Step 5: Compile Box Parameters
   shape_msgs::msg::SolidPrimitive primitive;
