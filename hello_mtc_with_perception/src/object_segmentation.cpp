@@ -533,7 +533,7 @@ fitCylinderToCluster(
 std::tuple<shape_msgs::msg::SolidPrimitive, geometry_msgs::msg::Pose>
 fitBoxToCluster(
     const pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr& cluster,
-    [[maybe_unused]] double rho,
+    double rho,
     double theta) {
   
   // Step 1: Compute Box Orientation
@@ -542,59 +542,49 @@ fitBoxToCluster(
   phi = std::fmod(phi, 2 * M_PI);
   if (phi < 0) phi += 2 * M_PI;
   
-  // Step 2: Determine Box Position in x-y Plane
-  double centroid_x = 0.0, centroid_y = 0.0, centroid_z = 0.0;
-  double min_z = std::numeric_limits<double>::max();
-  double max_z = -std::numeric_limits<double>::max();
+  // Direction vectors
+  double along_x = std::cos(phi);  // Direction along the line
+  double along_y = std::sin(phi);
+  double perp_x = std::cos(theta);  // Direction perpendicular to the line (normal vector)
+  double perp_y = std::sin(theta);
   
-  for (const auto& point : cluster->points) {
-    centroid_x += point.x;
-    centroid_y += point.y;
-    centroid_z += point.z;
-    min_z = std::min(min_z, static_cast<double>(point.z));
-    max_z = std::max(max_z, static_cast<double>(point.z));
-  }
-  
-  size_t point_count = cluster->points.size();
-  centroid_x /= point_count;
-  centroid_y /= point_count;
-  
-  // Step 3: Calculate Box Dimensions
+  // Step 2: Calculate Box Dimensions and Find Midpoint
   double min_along = std::numeric_limits<double>::max();
   double max_along = -std::numeric_limits<double>::max();
   double min_perp = std::numeric_limits<double>::max();
   double max_perp = -std::numeric_limits<double>::max();
-  
-  // Direction vectors
-  double along_x = std::cos(phi);  // Use φ for direction along the line
-  double along_y = std::sin(phi);
-  double perp_x = -along_y;  // Perpendicular direction
-  double perp_y = along_x;
+  double min_z = std::numeric_limits<double>::max();
+  double max_z = -std::numeric_limits<double>::max();
   
   for (const auto& point : cluster->points) {
-    double dx = point.x - centroid_x;
-    double dy = point.y - centroid_y;
-    
     // Project onto line direction
-    double along = dx * along_x + dy * along_y;
+    double along = point.x * along_x + point.y * along_y;
     // Project onto perpendicular direction
-    double perp = dx * perp_x + dy * perp_y;
+    double perp = point.x * perp_x + point.y * perp_y;
     
     min_along = std::min(min_along, along);
     max_along = std::max(max_along, along);
     min_perp = std::min(min_perp, perp);
     max_perp = std::max(max_perp, perp);
+    min_z = std::min(min_z, static_cast<double>(point.z));
+    max_z = std::max(max_z, static_cast<double>(point.z));
   }
   
   double length = max_along - min_along;
   double width = max_perp - min_perp;
   double height = max_z - min_z;
   
-  // Step 4: Determine z-Position of the Box
-  //double z_position = (min_z + max_z) / 2.0;
+  // Step 3: Calculate the midpoint of inlier points on the dominant line
+  double mid_along = (min_along + max_along) / 2.0;
+  
+  // Step 4: Calculate the center point
+  double center_x = mid_along * along_x + (rho + width / 2) * perp_x;
+  double center_y = mid_along * along_y + (rho + width / 2) * perp_y;
+  
+  // Step 5: Determine z-Position of the Box
   double z_position = (0.0 + max_z) / 2.0;
   
-  // Step 5: Compile Box Parameters
+  // Step 6: Compile Box Parameters
   shape_msgs::msg::SolidPrimitive primitive;
   primitive.type = primitive.BOX;
   primitive.dimensions.resize(3);
@@ -603,8 +593,8 @@ fitBoxToCluster(
   primitive.dimensions[2] = height;
   
   geometry_msgs::msg::Pose pose;
-  pose.position.x = centroid_x;
-  pose.position.y = centroid_y;
+  pose.position.x = center_x;
+  pose.position.y = center_y;
   pose.position.z = z_position;
   
   // Convert φ to quaternion
@@ -617,7 +607,6 @@ fitBoxToCluster(
   
   return std::make_tuple(primitive, pose);
 }
-
 
 std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     const std::vector<pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr>& cloud_clusters,
@@ -1114,27 +1103,14 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     // 1. Compute Box Orientation:
     //    - Calculate φ = θ + π/2, where θ is the angle of the line model.
     //    - Adjust φ to be within [0, 2π) if necessary.
-    //    - φ is in radians. Quaternion conversion will be done in a later step.
-    
-    // 2. Determine Box Position in x-y Plane:
-    //    - Use the centroid of the projected points: (centroid_x, centroid_y).
-    
-    // 3. Calculate Box Dimensions:
-    //    - Length: Project all points onto the line model. 
-    //              Find the two points with maximum separation along this projection.
-    //              The distance between these points is the length of the box.
-    //    - Width: Project all points onto the line perpendicular to the model.
-    //             Find the two points with maximum separation along this projection.
-    //             The distance between these points is the width of the box.
-    //    - Height: Calculate the difference between the maximum and minimum z-values of the 3D point cloud cluster.
-    
-    // 4. Determine z-Position of the Box:
-    //    - Use the average of z_max and z_min: z_position.
-    
+    //    - φ is in radians. Quaternion conversion will be done in a later step  
+    // 2. Determine Box Position in x-y Plane
+    // 3. Calculate Box Dimensions
+    // 4. Determine z-Position of the Box 
     // 5. Compile Box Parameters:
-    //    - Position: (centroid_x, centroid_y, z_position)
+    //    - Position: (x, y, z)
     //    - Dimensions: length, width, height
-    //    - Orientation: φ (rotation around z-axis in radians)
+    //    - Orientation: φ (rotation around z-axis from the +x-axis in radians)
     if (top_model_type == "circle") {
       double center_x = top_model_parameters[0];
       double center_y = top_model_parameters[1];
