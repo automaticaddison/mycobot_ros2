@@ -1170,6 +1170,10 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
         box_pose.orientation.w);
       double roll, pitch, yaw;
       tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+      
+      // Normalize yaw to [0, 2π)
+      yaw = std::fmod(yaw, 2 * M_PI);
+      if (yaw < 0) yaw += 2 * M_PI;
 
       std::ostringstream log_stream;
       log_stream << "Added box collision object: id=" << collision_object.id
