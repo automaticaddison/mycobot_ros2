@@ -1023,7 +1023,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
 
     /***********************************************************************************
      *                                                                                 *
-     * 9. Get collision objects    TODO                                                *
+     * 9. Get collision objects                                                        *
      *    - Segment the point cloud clusters into distinct collision objects.          *
      *                                                                                 *
      **********************************************************************************/        
@@ -1054,13 +1054,13 @@ class GetPlanningSceneServer : public rclcpp::Node {
     RCLCPP_INFO(this->get_logger(), "Segmented %zu objects from the point cloud clusters", segmented_objects.size());
     
     // Add segmented objects to the planning scene
-    //for (const auto& object : segmented_objects) {
-    //  response->scene_world.collision_objects.push_back(object);
-    //}
+    for (const auto& object : segmented_objects) {
+      response->scene_world.collision_objects.push_back(object);
+    }
     
     /***********************************************************************************
      *                                                                                 *
-     * 10. Identify target object          TODO                                        *
+     * 10. Identify target object                                                      *
      *     - Check if a target object was successfully identified                      *
      *     - If no target found, log a warning                                         *
      *                                                                                 *
@@ -1076,7 +1076,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
 
     /***********************************************************************************
      *                                                                                 *
-     * 11. Assemble PlanningSceneWorld        TODO                                     *
+     * 11. Assemble PlanningSceneWorld                                                 *
      *     - Check if assembly was successful                                          *
      *     - If assembly fails, log an error and return early                          *
      *                                                                                 *
