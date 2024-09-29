@@ -3,7 +3,7 @@
 ![ROS_2](https://img.shields.io/ros/v/iron/rclcpp)
 
 ## Overview
-This repository contains ROS 2 packages for simulating and controlling the myCobot robotic arm using ROS 2 Control and MoveIt 2. It provides support for Gazebo simulation and visualization in RViz. Gazebo simulation also includes simulated 3D point cloud data from the depth camera (RGBD) sensor plugin.
+This repository contains ROS 2 packages for simulating and controlling the myCobot robotic arm using ROS 2 Control and MoveIt 2. It provides support for Gazebo simulation and visualization in RViz. Gazebo simulation also includes simulated 3D point cloud data from the depth camera (RGBD) sensor plugin for vision.
 
 ![Gazebo Pick and Place Task Simulation](https://automaticaddison.com/wp-content/uploads/2024/09/mtc_gazebo-moveit-pick-place.gif)
 
@@ -21,7 +21,7 @@ This repository contains ROS 2 packages for simulating and controlling the myCob
 - Custom service for retrieving planning scene information
 - Advanced object detection algorithms:
   - RANSAC (Random Sample Consensus) for robust model fitting
-  - Hough transform for building shape detection 
+  - Hough transform for shape recognition
 - CPU-compatible implementation, no GPU required. 
 - Real-time perception and planning capabilities for responsive robot operation
 
