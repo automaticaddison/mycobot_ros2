@@ -480,6 +480,54 @@ std::vector<HoughBin> clusterCircleHoughSpace(
   return clusters;
 }
 
+std::tuple<shape_msgs::msg::SolidPrimitive, geometry_msgs::msg::Pose>
+fitCylinderToCluster(
+    const pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr& cluster,
+    double center_x,
+    double center_y,
+    double radius) {
+  
+  // Initialize z_min and z_max
+  double z_min = std::numeric_limits<double>::max();
+  double z_max = -std::numeric_limits<double>::max();
+
+  // Iterate through the original 3D points to find z_min and z_max
+  for (const auto& point : cluster->points) {
+    z_min = std::min(z_min, static_cast<double>(point.z));
+    z_max = std::max(z_max, static_cast<double>(point.z));
+  }
+
+  // Calculate cylinder height and center z
+  double height = z_max - z_min;
+  double center_z = (z_min + z_max) / 2.0;
+
+  // Create SolidPrimitive for cylinder
+  shape_msgs::msg::SolidPrimitive primitive;
+  primitive.type = primitive.CYLINDER;
+  primitive.dimensions.resize(2);
+  primitive.dimensions[0] = height;  // height
+  primitive.dimensions[1] = radius;  // radius
+
+  // Create Pose for cylinder
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = center_x;
+  pose.position.y = center_y;
+  pose.position.z = center_z;
+  
+  // Orientation (yaw angle) - for upright cylinder, it's always 0
+  double yaw = 0.0;
+  tf2::Quaternion q;
+  q.setRPY(0, 0, yaw);
+
+  // Directly assign quaternion components
+  pose.orientation.x = q.x();
+  pose.orientation.y = q.y();
+  pose.orientation.z = q.z();
+  pose.orientation.w = q.w();
+
+  return std::make_tuple(primitive, pose);
+}
+
 
 std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     const std::vector<pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr>& cloud_clusters,
@@ -516,8 +564,6 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
    *                                                  *
    ***************************************************/    
   for (const auto& cluster : cloud_clusters) {
-    // Silence unused variable warnings
-    [[maybe_unused]] int inlier_threshold_copy = inlier_threshold;
     
     /****************************************************
      *                                                  *
@@ -959,8 +1005,13 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     } else {
       LOG_INFO("  No valid model found");
     }
-
-    // TODO: Estimate 3D Shape
+    LOG_INFO("");
+    
+    /******************************************************************
+     *                                                                *
+     * Estimate 3D Shape and Add Shape as Collision Object for MoveIt *
+     *                                                                *
+     *****************************************************************/  
     // If the top model was a circle, fit a cylinder to the 3D point cloud cluster using the following method:
     // - Radius: The radius of the cylinder is directly taken from the radius of the detected circle in the 2D plane.
     // - Position (x, y,z):
@@ -969,6 +1020,44 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     // -   The z coordinate of the cylinder's center is the average of minimum z and maximum z.
     // - Height: The height of the cylinder is the difference between the maximum and minimum z-values of the 3D point cloud cluster.
     // - Orientation: Assume the cylinder standing upright. The top of the cylinder (the flat part) is facing the sky (i.e. +z direction).
+    if (top_model_type == "circle") {
+      double center_x = top_model_parameters[0];
+      double center_y = top_model_parameters[1];
+      double radius = top_model_parameters[2];
+  
+      auto [primitive, cylinder_pose] = fitCylinderToCluster(cluster, center_x, center_y, radius);
+
+      moveit_msgs::msg::CollisionObject collision_object;
+      collision_object.header.frame_id = frame_id;
+      collision_object.id = "cylinder_" + std::to_string(cylinder_count++);
+
+      collision_object.primitives.push_back(primitive);
+      collision_object.primitive_poses.push_back(cylinder_pose);
+      collision_object.operation = moveit_msgs::msg::CollisionObject::ADD;
+
+      //collision_objects.push_back(collision_object);
+
+      // Extract yaw from quaternion for logging
+      tf2::Quaternion q(
+        cylinder_pose.orientation.x,
+        cylinder_pose.orientation.y,
+        cylinder_pose.orientation.z,
+        cylinder_pose.orientation.w);
+      double roll, pitch, yaw;
+      tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+
+      std::ostringstream log_stream;
+      log_stream << "Added cylinder collision object: id=" << collision_object.id
+             << ", height=" << primitive.dimensions[0]
+             << ", radius=" << primitive.dimensions[1]
+             << ", position=(" << cylinder_pose.position.x
+             << ", " << cylinder_pose.position.y
+             << ", " << cylinder_pose.position.z << ")"
+             << ", yaw=" << yaw;
+      LOG_INFO(log_stream.str());
+    }    
+    LOG_INFO("");
+  
     // If the top model was a line, fit a box to the 3D point cloud cluster
     // 1. Compute Box Orientation:
     //    - Calculate φ = θ + π/2, where θ is the angle of the line model.
@@ -1001,7 +1090,7 @@ std::vector<moveit_msgs::msg::CollisionObject> segmentObjects(
     // TODO: Add Shape as Collision Object
     // Create a moveit_msgs/CollisionObject for the 3D shape you created in the previous step. And add it to the std::vector<moveit_msgs::msg::CollisionObject> collision_objects
     // 1. Create a moveit_msgs::msg::CollisionObject for the 3D shape estimated in the previous step
-    //      - Set the collision object's header frame to match frame_id
+    //    - Set the collision object's header frame to match frame_id
     //    - Set a unique id for the object (e.g., "box_0, box_1, etc." or "cylinder_0, cylinder_1, etc.")
     //    - Set the pose of the object using what you calculated in the previous step.
     //

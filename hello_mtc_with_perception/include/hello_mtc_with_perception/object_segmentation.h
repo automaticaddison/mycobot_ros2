@@ -22,6 +22,11 @@
 #include <pcl/segmentation/extract_clusters.h>    // For pcl::EuclideanClusterExtraction
 
 #include <moveit_msgs/msg/collision_object.hpp>   // For moveit_msgs::msg::CollisionObject
+#include <geometry_msgs/msg/pose.hpp>            // For geometry_msgs::msg::Pose
+#include <shape_msgs/msg/solid_primitive.hpp>    // For shape_msgs::msg::SolidPrimitive
+
+#include <tf2/LinearMath/Quaternion.h>  // For quaternion operations
+#include <tf2/LinearMath/Matrix3x3.h>   // For conversion between quaternions and Euler angles
 
 #include "hello_mtc_with_perception/normals_curvature_and_rsd_estimation.h" // For LOG_INFO implementation
 
@@ -229,6 +234,23 @@ std::vector<HoughBin> clusterCircleHoughSpace(
     double houghRadiusStep,
     double minPt_x,
     double minPt_y);
+    
+/**
+ * @brief Fits a cylinder to a 3D point cloud cluster.
+ * 
+ * @param cluster The 3D point cloud cluster.
+ * @param center_x The x-coordinate of the circle center in 2D.
+ * @param center_y The y-coordinate of the circle center in 2D.
+ * @param radius The radius of the circle in 2D.
+ * @return std::tuple<shape_msgs::msg::SolidPrimitive, geometry_msgs::msg::Pose> 
+ *         A tuple containing the cylinder primitive and its pose.
+ */
+std::tuple<shape_msgs::msg::SolidPrimitive, geometry_msgs::msg::Pose>
+fitCylinderToCluster(
+    const pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr& cluster,
+    double center_x,
+    double center_y,
+    double radius);
 
 /**
  * @brief Segments objects from point cloud clusters and creates collision objects.
