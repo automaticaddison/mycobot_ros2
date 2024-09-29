@@ -530,6 +530,7 @@ fitCylinderToCluster(
   return std::make_tuple(primitive, pose);
 }
 
+
 std::tuple<shape_msgs::msg::SolidPrimitive, geometry_msgs::msg::Pose>
 fitBoxToCluster(
     const pcl::PointCloud<PointXYZRGBNormalRSD>::Ptr& cluster,
