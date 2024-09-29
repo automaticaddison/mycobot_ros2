@@ -35,6 +35,7 @@
  
 // Include necessary ROS 2 and MoveIt headers
 #include <rclcpp/rclcpp.hpp>
+#include <moveit_msgs/msg/collision_object.hpp>
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <moveit/task_constructor/task.h>
@@ -43,6 +44,7 @@
 
 // Other utilities
 #include <type_traits>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -54,6 +56,8 @@
 // Conditional includes for tf2 geometry messages and Eigen
 #include <Eigen/Geometry>
 #include <geometry_msgs/msg/pose.hpp>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
 #if __has_include(<tf2_geometry_msgs/tf2_geometry_msgs.hpp>)
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #else
@@ -105,6 +109,8 @@ public:
 private:
   mtc::Task task_;
   mtc::Task createTask();
+  
+  void updateObjectParameters(const moveit_msgs::msg::CollisionObject& collision_object);
 
   // Variables for calling the GetPlanningScene service
   std::shared_ptr<GetPlanningSceneClient> planning_scene_client;
@@ -204,6 +210,73 @@ MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
 }
 
 /**
+ * @brief Update the target object parameters after the service call to get planning scene
+ */
+void MTCTaskNode::updateObjectParameters(const moveit_msgs::msg::CollisionObject& collision_object) {
+  // Update object_name
+  this->set_parameter(rclcpp::Parameter("object_name", collision_object.id));
+  RCLCPP_INFO(this->get_logger(), "Updated object_name: '%s'", collision_object.id.c_str());
+
+  // Update object_reference_frame
+  this->set_parameter(rclcpp::Parameter("object_reference_frame", collision_object.header.frame_id));
+  RCLCPP_INFO(this->get_logger(), "Updated object_reference_frame: '%s'", collision_object.header.frame_id.c_str());
+
+  // Update object_type and object_dimensions
+  if (!collision_object.primitives.empty()) {
+    std::vector<double> dimensions;
+    std::string object_type;
+    if (collision_object.primitives[0].type == shape_msgs::msg::SolidPrimitive::CYLINDER) {
+      object_type = "cylinder";
+      dimensions = {
+        collision_object.primitives[0].dimensions[shape_msgs::msg::SolidPrimitive::CYLINDER_HEIGHT],
+        collision_object.primitives[0].dimensions[shape_msgs::msg::SolidPrimitive::CYLINDER_RADIUS]
+      };
+    } else if (collision_object.primitives[0].type == shape_msgs::msg::SolidPrimitive::BOX) {
+      object_type = "box";
+      dimensions = {
+        collision_object.primitives[0].dimensions[shape_msgs::msg::SolidPrimitive::BOX_X],
+        collision_object.primitives[0].dimensions[shape_msgs::msg::SolidPrimitive::BOX_Y],
+        collision_object.primitives[0].dimensions[shape_msgs::msg::SolidPrimitive::BOX_Z]
+      };
+    } else {
+      RCLCPP_WARN(this->get_logger(), "Unsupported object type. Only cylinders and boxes are supported.");
+      return;
+    }
+    this->set_parameter(rclcpp::Parameter("object_type", object_type));
+    this->set_parameter(rclcpp::Parameter("object_dimensions", dimensions));
+    RCLCPP_INFO(this->get_logger(), "Updated object_type: '%s'", object_type.c_str());
+    RCLCPP_INFO(this->get_logger(), "Updated object_dimensions: [%s]", 
+                std::accumulate(std::next(dimensions.begin()), dimensions.end(), 
+                                std::to_string(dimensions[0]),
+                                [](std::string a, double b) { 
+                                  return std::move(a) + ", " + std::to_string(b); 
+                                }).c_str());
+  }
+
+  // Update object_pose
+  const auto& pose = collision_object.pose;
+  // Convert quaternion to Euler angles (roll, pitch, yaw)
+  tf2::Quaternion q(
+    pose.orientation.x,
+    pose.orientation.y,
+    pose.orientation.z,
+    pose.orientation.w);
+  tf2::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+
+  std::vector<double> pose_vec = {
+    pose.position.x,
+    pose.position.y,
+    pose.position.z,
+    roll, pitch, yaw
+  };
+  this->set_parameter(rclcpp::Parameter("object_pose", pose_vec));
+  RCLCPP_INFO(this->get_logger(), "Updated object_pose: [%.3f, %.3f, %.3f, %.3f, %.3f, %.3f]", 
+              pose_vec[0], pose_vec[1], pose_vec[2], pose_vec[3], pose_vec[4], pose_vec[5]);
+}
+
+/**
  * @brief Set up the planning scene with collision objects.
  */
 void MTCTaskNode::setupPlanningScene()
@@ -219,10 +292,15 @@ void MTCTaskNode::setupPlanningScene()
   auto object_pose_param = this->get_parameter("object_pose").as_double_array();
   auto object_reference_frame = this->get_parameter("object_reference_frame").as_string();
   
-  RCLCPP_INFO(this->get_logger(), "Target object parameters:");
+  RCLCPP_INFO(this->get_logger(), "Initial target object parameters:");
   RCLCPP_INFO(this->get_logger(), "  Name: %s", object_name.c_str());
   RCLCPP_INFO(this->get_logger(), "  Type: %s", object_type.c_str());
-  RCLCPP_INFO(this->get_logger(), "  Dimensions: [%.3f, %.3f]", object_dimensions[0], object_dimensions[1]);
+  RCLCPP_INFO(this->get_logger(), "  Dimensions: [%s]", 
+              std::accumulate(std::next(object_dimensions.begin()), object_dimensions.end(), 
+                              std::to_string(object_dimensions[0]),
+                              [](std::string a, double b) { 
+                                return std::move(a) + ", " + std::to_string(b); 
+                              }).c_str());
   RCLCPP_INFO(this->get_logger(), "  Reference frame: %s", object_reference_frame.c_str());
 
   RCLCPP_INFO(this->get_logger(), "Sending GetPlanningScene service request...");  
@@ -249,26 +327,15 @@ void MTCTaskNode::setupPlanningScene()
       scene_world_.collision_objects.size());
   }
   
-  // Create a cylinder collision object
-  RCLCPP_INFO(this->get_logger(), "Creating cylinder collision object...");
-  geometry_msgs::msg::Pose cylinder_pose = vectorToPose(object_pose_param);
-  cylinder_pose.position.z += 0.50 * object_dimensions[0]; 
-  moveit_msgs::msg::CollisionObject cylinder_object;
-  cylinder_object.id = object_name;
-  cylinder_object.header.frame_id = object_reference_frame;
-  cylinder_object.primitives.resize(1);
-  cylinder_object.primitives[0].type = shape_msgs::msg::SolidPrimitive::CYLINDER;
-  cylinder_object.primitives[0].dimensions = { object_dimensions.at(0), object_dimensions.at(1) };
-  cylinder_object.primitive_poses.push_back(cylinder_pose);
-
-  // Add the cylinder to the planning scene
-  if (!psi.applyCollisionObject(cylinder_object)) {
-    RCLCPP_ERROR(this->get_logger(), "Failed to spawn object: %s", cylinder_object.id.c_str());
-    throw std::runtime_error("Failed to spawn object: " + cylinder_object.id);
-  }
-    
-  RCLCPP_INFO(this->get_logger(), "Added cylinder object to planning scene");
-
+  // Find the target object in the collision objects and update parameters
+  RCLCPP_INFO(this->get_logger(), "Received target_object_id from service: '%s'", target_object_id_.c_str());
+  for (const auto& collision_object : scene_world_.collision_objects) {
+    if (collision_object.id == target_object_id_) {
+      updateObjectParameters(collision_object);
+      break;
+    }
+  }  
+  
   RCLCPP_INFO(this->get_logger(), "Planning scene setup completed");
 }
 
@@ -365,9 +432,20 @@ mtc::Task MTCTaskNode::createTask()
 
   // Object parameters
   auto object_name = this->get_parameter("object_name").as_string();
+  auto object_type = this->get_parameter("object_type").as_string();
   auto object_reference_frame = this->get_parameter("object_reference_frame").as_string();
   auto object_dimensions = this->get_parameter("object_dimensions").as_double_array();
   auto object_pose = this->get_parameter("object_pose").as_double_array();
+
+  RCLCPP_INFO(this->get_logger(), "Creating task for object:");
+  RCLCPP_INFO(this->get_logger(), "  Name: %s", object_name.c_str());
+  RCLCPP_INFO(this->get_logger(), "  Type: %s", object_type.c_str());
+  RCLCPP_INFO(this->get_logger(), "  Dimensions: [%s]", 
+              std::accumulate(std::next(object_dimensions.begin()), object_dimensions.end(), 
+                              std::to_string(object_dimensions[0]),
+                              [](std::string a, double b) { 
+                                return std::move(a) + ", " + std::to_string(b); 
+                              }).c_str());
 
   // Grasp and place parameters
   auto grasp_frame_transform = this->get_parameter("grasp_frame_transform").as_double_array();
