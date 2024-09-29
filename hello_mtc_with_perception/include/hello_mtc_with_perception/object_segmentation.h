@@ -1,6 +1,26 @@
 #ifndef OBJECT_SEGMENTATION_H
 #define OBJECT_SEGMENTATION_H
 
+/**
+ * @file object_segmentation.h
+ * @brief Header file for object segmentation algorithms and utilities.
+ *
+ * This file contains declarations for functions and structures used in segmenting
+ * 3D point cloud data into geometric primitives (cylinders and boxes). It includes
+ * methods for RANSAC-based model fitting, Hough transform techniques, and various
+ * filtering operations.
+ *
+ * Key Features:
+ *     - RANSAC-based line and circle fitting
+ *     - Point cloud projection and filtering
+ *     - Hough transform for model voting and clustering
+ *     - Cylinder and box fitting to 3D point clouds
+ *     - Creation of collision objects for MoveIt
+ *
+ * @author Addison Sears-Collins
+ * @date September 29, 2024
+ */
+
 #include <cmath>                                  // For mathematical operations
 #include <tuple>                                  // For std::tuple in function returns
 #include <unordered_map>                          // For projection_map

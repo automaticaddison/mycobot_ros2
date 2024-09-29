@@ -1,3 +1,23 @@
+/**
+ * @file object_segmentation.cpp
+ * @brief Implements object segmentation for 3D point clouds.
+ *
+ * This file contains functions for segmenting 3D point cloud data into
+ * geometric primitives (cylinders and boxes) using RANSAC and Hough transform techniques.
+ * It projects 3D points onto a 2D plane, fits models, and creates collision objects for MoveIt.
+ *
+ * Key Features:
+ *     - 3D to 2D point cloud projection
+ *     - RANSAC-based line and circle fitting
+ *     - Hough transform for model voting
+ *     - Cylinder and box fitting to 3D point clouds
+ *     - Creation of collision objects for MoveIt
+ *
+ * @author Addison Sears-Collins
+ * @date September 29, 2024
+ */
+
+
 #include "hello_mtc_with_perception/object_segmentation.h"
 
 // Line fitting helpers
