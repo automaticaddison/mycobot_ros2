@@ -1108,25 +1108,25 @@ class GetPlanningSceneServer : public rclcpp::Node {
     response->target_object_id = target_object_id;
 
     // Helpful logging
-    RCLCPP_INFO(this->get_logger(), "");
+    RCLCPP_INFO(this->get_logger(), " ");
     RCLCPP_INFO(this->get_logger(), "Success: %s", response->success ? "true" : "false");
     RCLCPP_INFO(this->get_logger(), "Target object ID: %s", response->target_object_id.c_str());
     RCLCPP_INFO(this->get_logger(), "Support surface ID: %s", response->support_surface_id.c_str());
   
     // Point cloud information
-    RCLCPP_INFO(this->get_logger(), "");
+    RCLCPP_INFO(this->get_logger(), " ");
     RCLCPP_INFO(this->get_logger(), "Full cloud frame ID: %s", response->full_cloud.header.frame_id.c_str());
     RCLCPP_INFO(this->get_logger(), "Full cloud size: %d x %d", 
       response->full_cloud.width, response->full_cloud.height);
   
     // RGB image information
-    RCLCPP_INFO(this->get_logger(), "");
+    RCLCPP_INFO(this->get_logger(), " ");
     RCLCPP_INFO(this->get_logger(), "RGB image frame ID: %s", response->rgb_image.header.frame_id.c_str());
     RCLCPP_INFO(this->get_logger(), "RGB image size: %d x %d", 
       response->rgb_image.width, response->rgb_image.height);
     
     // Collision objects information
-    RCLCPP_INFO(this->get_logger(), "");
+    RCLCPP_INFO(this->get_logger(), " ");
     RCLCPP_INFO(this->get_logger(), "Number of collision objects: %zu", 
       response->scene_world.collision_objects.size());
     for (const auto& obj : response->scene_world.collision_objects) {
@@ -1152,7 +1152,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
             continue;  // Skip other primitive types
         }
 
-        RCLCPP_INFO(this->get_logger(), "");
+        RCLCPP_INFO(this->get_logger(), " ");
         RCLCPP_INFO(this->get_logger(), "Collision Object: ID=%s, Frame=%s, Type=%s", 
           obj.id.c_str(), obj.header.frame_id.c_str(), type_str.c_str());
         RCLCPP_INFO(this->get_logger(), "  Position: x=%.4f, y=%.4f, z=%.4f (meters)",
@@ -1161,14 +1161,14 @@ class GetPlanningSceneServer : public rclcpp::Node {
           pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
         RCLCPP_INFO(this->get_logger(), "  Dimensions: %s", dimensions_str.c_str());
       } else {
-        RCLCPP_INFO(this->get_logger(), "");
+        RCLCPP_INFO(this->get_logger(), " ");
         RCLCPP_WARN(this->get_logger(), "Collision Object: ID=%s has no primitives", 
           obj.id.c_str());
       }
     } 
     
     // Additional processing information
-    RCLCPP_INFO(this->get_logger(), "");
+    RCLCPP_INFO(this->get_logger(), " ");
     RCLCPP_INFO(this->get_logger(), "Original point cloud frame: %s", latest_point_cloud->header.frame_id.c_str());
     RCLCPP_INFO(this->get_logger(), "Target frame used for processing: %s", target_frame.c_str());
     
@@ -1199,7 +1199,7 @@ class GetPlanningSceneServer : public rclcpp::Node {
         RCLCPP_WARN(this->get_logger(), "  The support surface ID is empty");
       }
     }  
-    RCLCPP_INFO(this->get_logger(), "");
+    RCLCPP_INFO(this->get_logger(), " ");
     RCLCPP_INFO(this->get_logger(), "Service response logging completed!");
   }
 };
