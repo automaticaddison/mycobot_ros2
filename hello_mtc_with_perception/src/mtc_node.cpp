@@ -217,10 +217,6 @@ void MTCTaskNode::updateObjectParameters(const moveit_msgs::msg::CollisionObject
   this->set_parameter(rclcpp::Parameter("object_name", collision_object.id));
   RCLCPP_INFO(this->get_logger(), "Updated object_name: '%s'", collision_object.id.c_str());
 
-  // Update object_reference_frame
-  this->set_parameter(rclcpp::Parameter("object_reference_frame", collision_object.header.frame_id));
-  RCLCPP_INFO(this->get_logger(), "Updated object_reference_frame: '%s'", collision_object.header.frame_id.c_str());
-
   // Update object_type and object_dimensions
   if (!collision_object.primitives.empty()) {
     std::vector<double> dimensions;
@@ -252,28 +248,6 @@ void MTCTaskNode::updateObjectParameters(const moveit_msgs::msg::CollisionObject
                                   return std::move(a) + ", " + std::to_string(b); 
                                 }).c_str());
   }
-
-  // Update object_pose
-  const auto& pose = collision_object.pose;
-  // Convert quaternion to Euler angles (roll, pitch, yaw)
-  tf2::Quaternion q(
-    pose.orientation.x,
-    pose.orientation.y,
-    pose.orientation.z,
-    pose.orientation.w);
-  tf2::Matrix3x3 m(q);
-  double roll, pitch, yaw;
-  m.getRPY(roll, pitch, yaw);
-
-  std::vector<double> pose_vec = {
-    pose.position.x,
-    pose.position.y,
-    pose.position.z,
-    roll, pitch, yaw
-  };
-  this->set_parameter(rclcpp::Parameter("object_pose", pose_vec));
-  RCLCPP_INFO(this->get_logger(), "Updated object_pose: [%.3f, %.3f, %.3f, %.3f, %.3f, %.3f]", 
-              pose_vec[0], pose_vec[1], pose_vec[2], pose_vec[3], pose_vec[4], pose_vec[5]);
 }
 
 /**
