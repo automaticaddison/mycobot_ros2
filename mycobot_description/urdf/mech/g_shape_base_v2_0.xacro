@@ -1,0 +1,37 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro">
+    <xacro:macro name="g_shape_base" params="prefix *origin">
+        <link name="${prefix}base_link">
+            <inertial>
+                <origin xyz="0 0 0.0" rpy="0 0 0"/>
+                <mass value="0.33"/>
+                <inertia
+                    ixx="0.000784" ixy="0.0" ixz="0.0"
+                    iyy="0.000867" iyz="0.0"
+                    izz="0.001598"/>
+            </inertial>
+            <visual>
+                <geometry>
+                    <mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/visual/base_link.dae"/>
+                </geometry>
+                <origin xyz="0.0 0 -0.03" rpy="0 0 ${pi/2}"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <box size="0.105 0.14 0.02"/>
+                </geometry>
+                <origin xyz="0.0 0.0 -0.015" rpy="0 0 0"/>
+            </collision>
+        </link>
+
+        <gazebo reference="${prefix}base_link">
+            <visual>
+                <material>
+                    <ambient>0.5 0.5 0.5 1</ambient>
+                    <diffuse>0.5 0.5 0.5 1</diffuse>
+                    <specular>0.5 0.5 0.5 1</specular>
+                </material>
+            </visual>
+        </gazebo>
+    </xacro:macro>
+</robot>

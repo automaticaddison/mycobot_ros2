@@ -198,7 +198,7 @@
       <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
     </joint>
 
-    <joint name="${prefix}gripper_right3_to_gripper_right1" type="revolute">
+    <joint name="${prefix}gripper_right3_to_${prefix}gripper_right1" type="revolute">
       <axis xyz="0 0 1"/>
       <limit effort="${joint_effort}" lower="-0.5" upper="0.5" velocity="${joint_velocity}"/>
       <parent link="${prefix}gripper_right3"/>
