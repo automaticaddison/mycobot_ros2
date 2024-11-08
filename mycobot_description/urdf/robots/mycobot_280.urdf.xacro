@@ -5,7 +5,7 @@
     <xacro:arg name="base_type" default="g_shape"/>
     <xacro:arg name="flange_link" default="link6_flange"/>
     <xacro:arg name="gripper_type" default="adaptive_gripper"/>
-    <xacro:arg name="prefix" default="left_"/>
+    <xacro:arg name="prefix" default=""/>
     <xacro:arg name="use_gripper" default="true"/>
 
     <xacro:if value="$(arg add_world)">
