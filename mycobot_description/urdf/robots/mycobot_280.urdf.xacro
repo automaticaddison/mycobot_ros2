@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="mycobot_280">
+
+  <xacro:include filename="$(find mycobot_description)/urdf/mech/adaptive_gripper.xacro"/>
+
+    <xacro:arg name="add_world" default="true"/>
+
+    <xacro:if value="$(arg add_world)">
+        <link name="world"/>
+
+        <link name="link6_flange">
+            <inertial>
+                <origin xyz="0 0 0.0" rpy="0 0 0"/>
+                <mass value="0.035"/>
+                <inertia
+                    ixx="0.0000149" ixy="0.0" ixz="0.0"
+                    iyy="0.0000149" iyz="0.0"
+                    izz="0.0000196"/>
+            </inertial>
+            <visual>
+                <geometry>
+                    <mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/visual/link7.dae"/>
+                </geometry>
+                <origin xyz="0.0 0 -0.012" rpy="0 0 0"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder radius="0.02" length="0.02"/>
+                </geometry>
+                <origin xyz="0 0.00 0.0" rpy="0 0 0"/>
+            </collision>
+        </link>
+
+        <joint name="virtual_joint" type="fixed">
+            <parent link="world"/>
+            <child link="link6_flange"/>
+            <origin xyz="0 0 0.5" rpy="0 0 0"/>
+        </joint>
+    </xacro:if>
+
+    <xacro:adaptive_gripper
+        parent="link6_flange"
+        prefix="">
+        <origin xyz="0 0 0.034" rpy="1.579 0 0"/>
+    </xacro:adaptive_gripper>
+
+</robot>
