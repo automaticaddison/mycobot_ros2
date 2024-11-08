@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <robot xmlns:xacro="http://wiki.ros.org/xacro">
-    <xacro:macro name="g_shape_base" params="prefix *origin">
-        <link name="${prefix}base_link">
+    <xacro:macro name="g_shape_base" params="base_link prefix">
+        <link name="${prefix}${base_link}">
             <inertial>
                 <origin xyz="0 0 0.0" rpy="0 0 0"/>
                 <mass value="0.33"/>
@@ -24,7 +24,7 @@
             </collision>
         </link>
 
-        <gazebo reference="${prefix}base_link">
+        <gazebo reference="${prefix}${base_link}">
             <visual>
                 <material>
                     <ambient>0.5 0.5 0.5 1</ambient>

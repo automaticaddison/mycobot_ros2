@@ -1,81 +1,40 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="mycobot_280">
+    <xacro:arg name="add_world" default="true"/>
+    <xacro:arg name="arm_parent" default="base_link"/>
+    <xacro:arg name="base_link" default="base_link"/>
+    <xacro:arg name="base_type" default="g_shape"/>
+    <xacro:arg name="gripper_parent" default="base_link"/>
+    <xacro:arg name="gripper_type" default="adaptive_gripper"/>
+    <xacro:arg name="prefix" default=""/>
+    <xacro:arg name="use_gripper" default="true"/>
 
-  <xacro:arg name="add_world" default="true"/>
-  <xacro:arg name="base_link" default="base_link"/>
-  <xacro:arg name="gripper_type" default="adaptive_gripper"/>
-  <xacro:arg name="prefix" default=""/>
-  <xacro:arg name="use_gripper" default="true"/>
-
-  <xacro:if value="$(arg add_world)">
-    <link name="world"/>
-
-    <link name="$(arg prefix)$(arg base_link)">
-      <inertial>
-        <origin xyz="0 0 0.0" rpy="0 0 0"/>
-        <mass value="0.035"/>
-        <inertia
-          ixx="0.0000149" ixy="0.0" ixz="0.0"
-          iyy="0.0000149" iyz="0.0"
-          izz="0.0000196"/>
-      </inertial>
-      <visual>
-        <geometry>
-          <mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/visual/link7.dae"/>
-        </geometry>
-        <origin xyz="0.0 0 -0.012" rpy="0 0 0"/>
-      </visual>
-      <collision>
-        <geometry>
-          <cylinder radius="0.02" length="0.02"/>
-        </geometry>
-        <origin xyz="0 0.00 0.0" rpy="0 0 0"/>
-      </collision>
-    </link>
-
-    <joint name="$(arg prefix)virtual_joint" type="fixed">
-      <parent link="world"/>
-      <child link="$(arg prefix)$(arg base_link)"/>
-      <origin xyz="0 0 0.5" rpy="0 0 0"/>
-    </joint>
-  </xacro:if>
-
-  <xacro:unless value="$(arg add_world)">
-    <link name="$(arg prefix)$(arg base_link)">
-        <inertial>
-            <origin xyz="0 0 0.0" rpy="0 0 0"/>
-            <mass value="0.035"/>
-            <inertia
-                ixx="0.0000149" ixy="0.0" ixz="0.0"
-                iyy="0.0000149" iyz="0.0"
-                izz="0.0000196"/>
-        </inertial>
-        <visual>
-            <geometry>
-                <mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/visual/link7.dae"/>
-            </geometry>
-            <origin xyz="0.0 0 -0.012" rpy="0 0 0"/>
-        </visual>
-        <collision>
-            <geometry>
-                <cylinder radius="0.02" length="0.02"/>
-            </geometry>
-            <origin xyz="0 0.00 0.0" rpy="0 0 0"/>
-        </collision>
-    </link>
-  </xacro:unless>
-
-  <xacro:if value="$(arg use_gripper)">
-    <xacro:property name="current_gripper" value="$(arg gripper_type)"/>
-
-    <xacro:if value="${current_gripper == 'adaptive_gripper'}">
-        <xacro:include filename="$(find mycobot_description)/urdf/mech/adaptive_gripper.xacro"/>
-        <xacro:adaptive_gripper
-            parent="$(arg base_link)"
-            prefix="$(arg prefix)">
-            <origin xyz="0 0 0.034" rpy="1.579 0 0"/>
-        </xacro:adaptive_gripper>
+    <xacro:if value="$(arg add_world)">
+      <link name="world"/>
+      <joint name="$(arg prefix)virtual_joint" type="fixed">
+          <parent link="world"/>
+          <child link="$(arg prefix)$(arg base_link)"/>
+          <origin xyz="0 0 0.0" rpy="0 0 0"/>
+      </joint>
     </xacro:if>
-  </xacro:if>
 
+    <xacro:property name="current_base" value="$(arg base_type)"/>
+    <xacro:if value="${current_base == 'g_shape'}">
+        <xacro:include filename="$(find mycobot_description)/urdf/mech/g_shape_base_v2_0.xacro"/>
+        <xacro:g_shape_base
+            base_link="$(arg base_link)"
+            prefix="$(arg prefix)"/>
+    </xacro:if>
+
+    <xacro:if value="$(arg use_gripper)">
+        <xacro:property name="current_gripper" value="$(arg gripper_type)"/>
+        <xacro:if value="${current_gripper == 'adaptive_gripper'}">
+            <xacro:include filename="$(find mycobot_description)/urdf/mech/adaptive_gripper.xacro"/>
+            <xacro:adaptive_gripper
+                parent="$(arg gripper_parent)"
+                prefix="$(arg prefix)">
+                <origin xyz="0 0 0.034" rpy="1.579 0 0"/>
+            </xacro:adaptive_gripper>
+        </xacro:if>
+    </xacro:if>
 </robot>
