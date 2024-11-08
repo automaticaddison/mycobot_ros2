@@ -1,12 +1,11 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="mycobot_280">
     <xacro:arg name="add_world" default="true"/>
-    <xacro:arg name="arm_parent" default="base_link"/>
     <xacro:arg name="base_link" default="base_link"/>
     <xacro:arg name="base_type" default="g_shape"/>
-    <xacro:arg name="gripper_parent" default="base_link"/>
+    <xacro:arg name="flange_link" default="link6_flange"/>
     <xacro:arg name="gripper_type" default="adaptive_gripper"/>
-    <xacro:arg name="prefix" default=""/>
+    <xacro:arg name="prefix" default="left_"/>
     <xacro:arg name="use_gripper" default="true"/>
 
     <xacro:if value="$(arg add_world)">
@@ -14,24 +13,32 @@
       <joint name="$(arg prefix)virtual_joint" type="fixed">
           <parent link="world"/>
           <child link="$(arg prefix)$(arg base_link)"/>
-          <origin xyz="0 0 0.0" rpy="0 0 0"/>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
       </joint>
     </xacro:if>
 
     <xacro:property name="current_base" value="$(arg base_type)"/>
     <xacro:if value="${current_base == 'g_shape'}">
-        <xacro:include filename="$(find mycobot_description)/urdf/mech/g_shape_base_v2_0.xacro"/>
+        <xacro:include filename="$(find mycobot_description)/urdf/mech/g_shape_base_v2_0.urdf.xacro"/>
         <xacro:g_shape_base
             base_link="$(arg base_link)"
             prefix="$(arg prefix)"/>
     </xacro:if>
 
+    <xacro:include filename="$(find mycobot_description)/urdf/mech/mycobot_280_arm.urdf.xacro"/>
+    <xacro:mycobot_280_arm
+      base_link="$(arg base_link)"
+      flange_link="$(arg flange_link)"
+      prefix="$(arg prefix)">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:mycobot_280_arm>
+
     <xacro:if value="$(arg use_gripper)">
         <xacro:property name="current_gripper" value="$(arg gripper_type)"/>
         <xacro:if value="${current_gripper == 'adaptive_gripper'}">
-            <xacro:include filename="$(find mycobot_description)/urdf/mech/adaptive_gripper.xacro"/>
+            <xacro:include filename="$(find mycobot_description)/urdf/mech/adaptive_gripper.urdf.xacro"/>
             <xacro:adaptive_gripper
-                parent="$(arg gripper_parent)"
+                parent="$(arg flange_link)"
                 prefix="$(arg prefix)">
                 <origin xyz="0 0 0.034" rpy="1.579 0 0"/>
             </xacro:adaptive_gripper>

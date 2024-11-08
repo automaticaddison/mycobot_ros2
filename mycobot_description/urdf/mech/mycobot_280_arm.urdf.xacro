@@ -1,0 +1,223 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:property name="joint_effort" value="56.0"/>
+  <xacro:property name="joint_velocity" value="2.792527"/>
+  <xacro:property name="joint_damping" value="0.0"/>
+  <xacro:property name="joint_friction" value="0.0"/>
+
+  <xacro:property name="link1_mass" value="0.12"/>
+  <xacro:property name="link2_mass" value="0.19"/>
+  <xacro:property name="link3_mass" value="0.16"/>
+  <xacro:property name="link4_mass" value="0.124"/>
+  <xacro:property name="link5_mass" value="0.11"/>
+  <xacro:property name="link6_mass" value="0.0739"/>
+  <xacro:property name="flange_mass" value="0.035"/>
+
+  <xacro:macro name="link_inertial" params="mass ixx iyy izz">
+    <inertial>
+      <origin xyz="0 0 0.0" rpy="0 0 0"/>
+      <mass value="${mass}"/>
+      <inertia
+        ixx="${ixx}" ixy="0.0" ixz="0.0"
+        iyy="${iyy}" iyz="0.0"
+        izz="${izz}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="material_visual" params="ref_link ambient diffuse specular">
+    <gazebo reference="${ref_link}">
+      <visual>
+        <material>
+          <ambient>${ambient}</ambient>
+          <diffuse>${diffuse}</diffuse>
+          <specular>${specular}</specular>
+        </material>
+      </visual>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:macro name="mycobot_280_arm" params="base_link flange_link prefix *origin">
+
+    <link name="${prefix}link1">
+      <xacro:link_inertial mass="${link1_mass}" ixx="0.000148" iyy="0.000148" izz="0.000096"/>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/visual/link1.dae"/>
+        </geometry>
+        <origin xyz="0.0 0 0" rpy="0 0 ${-pi/2}"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.08 0.12 0.075"/>
+        </geometry>
+        <origin xyz="0.0 -0.01 0.034" rpy="0 0 0"/>
+      </collision>
+    </link>
+
+    <link name="${prefix}link2">
+      <xacro:link_inertial mass="${link2_mass}" ixx="0.000148" iyy="0.000148" izz="0.000096"/>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/visual/link2.dae"/>
+        </geometry>
+        <origin xyz="0.0 0 -0.06096" rpy="0 0 ${-pi/2}"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder radius="0.025" length="0.085"/>
+        </geometry>
+        <origin xyz="0.0 0 -0.02" rpy="0 0 ${-pi/2}"/>
+      </collision>
+    </link>
+
+    <link name="${prefix}link3">
+      <xacro:link_inertial mass="${link3_mass}" ixx="0.000148" iyy="0.000148" izz="0.000096"/>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/visual/link3.dae"/>
+        </geometry>
+        <origin xyz="0.0 0 0.03256" rpy="0 ${-pi/2} 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder radius="0.025" length="0.15"/>
+        </geometry>
+        <origin xyz="-0.058 0 0.059" rpy="0 ${-pi/2} 0"/>
+      </collision>
+    </link>
+
+    <link name="${prefix}link4">
+      <xacro:link_inertial mass="${link4_mass}" ixx="0.000103" iyy="0.000103" izz="0.000096"/>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/visual/link4.dae"/>
+        </geometry>
+        <origin xyz="0.0 0 0.03056" rpy="0 ${-pi/2} 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder radius="0.025" length="0.125"/>
+        </geometry>
+        <origin xyz="-0.05 0 0.0" rpy="0 ${-pi/2} 0"/>
+      </collision>
+    </link>
+
+    <link name="${prefix}link5">
+      <xacro:link_inertial mass="${link5_mass}" ixx="0.000103" iyy="0.000103" izz="0.000096"/>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/visual/link5.dae"/>
+        </geometry>
+        <origin xyz="0.0 0 -0.03356" rpy="${-pi/2} 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.03 0.035 0.05"/>
+        </geometry>
+        <origin xyz="0.0 0 -0.005" rpy="0 0.0 0"/>
+      </collision>
+    </link>
+
+    <link name="${prefix}link6">
+      <xacro:link_inertial mass="${link6_mass}" ixx="0.00006649" iyy="0.00006649" izz="0.000096"/>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/visual/link6.dae"/>
+        </geometry>
+        <origin xyz="0 0.00 -0.038" rpy="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder radius="0.025" length="0.06"/>
+        </geometry>
+        <origin xyz="0 0.00 0.0" rpy="${-pi/2} 0 0"/>
+      </collision>
+    </link>
+
+    <link name="${prefix}${flange_link}">
+      <xacro:link_inertial mass="${flange_mass}" ixx="0.0000149" iyy="0.0000149" izz="0.0000196"/>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mycobot_description)/meshes/mycobot_280/visual/link7.dae"/>
+        </geometry>
+        <origin xyz="0.0 0 -0.012" rpy="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder radius="0.02" length="0.02"/>
+        </geometry>
+        <origin xyz="0 0.00 0.0" rpy="0 0 0"/>
+      </collision>
+    </link>
+
+    <joint name="${prefix}${base_link}_to_${prefix}link1" type="fixed">
+      <parent link="${prefix}${base_link}"/>
+      <child link="${prefix}link1"/>
+      <xacro:insert_block name="origin"/>
+    </joint>
+
+    <joint name="${prefix}link1_to_${prefix}link2" type="revolute">
+      <axis xyz="0 0 1"/>
+      <limit effort="${joint_effort}" lower="-2.879793" upper="2.879793" velocity="${joint_velocity}"/>
+      <parent link="${prefix}link1"/>
+      <child link="${prefix}link2"/>
+      <origin xyz="0 0 0.13156" rpy="0 0 ${pi/2}"/>
+      <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
+    </joint>
+
+    <joint name="${prefix}link2_to_${prefix}link3" type="revolute">
+      <axis xyz="0 0 1"/>
+      <limit effort="${joint_effort}" lower="-2.879793" upper="2.879793" velocity="${joint_velocity}"/>
+      <parent link="${prefix}link2"/>
+      <child link="${prefix}link3"/>
+      <origin xyz="0 0 -0.001" rpy="0 ${pi/2} ${-pi/2}"/>
+      <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
+    </joint>
+
+    <joint name="${prefix}link3_to_${prefix}link4" type="revolute">
+      <axis xyz="0 0 1"/>
+      <limit effort="${joint_effort}" lower="-2.879793" upper="2.879793" velocity="${joint_velocity}"/>
+      <parent link="${prefix}link3"/>
+      <child link="${prefix}link4"/>
+      <origin xyz="-0.1104 0 0" rpy="0 0 0"/>
+      <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
+    </joint>
+
+    <joint name="${prefix}link4_to_${prefix}link5" type="revolute">
+      <axis xyz="0 0 1"/>
+      <limit effort="${joint_effort}" lower="-2.879793" upper="2.879793" velocity="${joint_velocity}"/>
+      <parent link="${prefix}link4"/>
+      <child link="${prefix}link5"/>
+      <origin xyz="-0.096 0 0.06062" rpy="0 0 ${-pi/2}"/>
+      <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
+    </joint>
+
+    <joint name="${prefix}link5_to_${prefix}link6" type="revolute">
+      <axis xyz="0 0 1"/>
+      <limit effort="${joint_effort}" lower="-2.879793" upper="2.879793" velocity="${joint_velocity}"/>
+      <parent link="${prefix}link5"/>
+      <child link="${prefix}link6"/>
+      <origin xyz="0 -0.07318 0" rpy="${pi/2} ${-pi/2} 0"/>
+      <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
+    </joint>
+
+    <joint name="${prefix}link6_to_${prefix}${flange_link}" type="revolute">
+      <axis xyz="0 0 1"/>
+      <limit effort="${joint_effort}" lower="-3.05" upper="3.05" velocity="${joint_velocity}"/>
+      <parent link="${prefix}link6"/>
+      <child link="${prefix}${flange_link}"/>
+      <origin xyz="0 0.0456 0" rpy="${-pi/2} 0 0"/>
+      <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
+    </joint>
+
+    <xacro:material_visual ref_link="${prefix}link1" ambient="0.5 0.5 0.5 1" diffuse="0.5 0.5 0.5 1" specular="0.5 0.5 0.5 1"/>
+    <xacro:material_visual ref_link="${prefix}link2" ambient="1 1 1 1" diffuse="1 1 1 1" specular="1 1 1 1"/>
+    <xacro:material_visual ref_link="${prefix}link3" ambient="1 1 1 1" diffuse="1 1 1 1" specular="1 1 1 1"/>
+    <xacro:material_visual ref_link="${prefix}link4" ambient="1 1 1 1" diffuse="1 1 1 1" specular="1 1 1 1"/>
+    <xacro:material_visual ref_link="${prefix}link5" ambient="1 1 1 1" diffuse="1 1 1 1" specular="1 1 1 1"/>
+    <xacro:material_visual ref_link="${prefix}link6" ambient="1 1 1 1" diffuse="1 1 1 1" specular="1 1 1 1"/>
+    <xacro:material_visual ref_link="${prefix}${flange_link}" ambient="0.5 0.5 0.5 1" diffuse="0.5 0.5 0.5 1" specular="0.5 0.5 0.5 1"/>
+
+  </xacro:macro>
+</robot>
