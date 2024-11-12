@@ -1,18 +1,13 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>mycobot_ros2</name>
+  <name>mycobot_bringup</name>
   <version>0.0.0</version>
-  <description>myCobot series robots by Elephant Robotics (metapackage).</description>
-  <maintainer email="automaticaddison@todo.todo">ubuntu</maintainer>
+  <description>Launch files and basic nodes for starting myCobot robot drivers and capabilities</description>
+  <maintainer email="automaticaddison@todo.com">ubuntu</maintainer>
   <license>BSD-3-Clause</license>
+
   <buildtool_depend>ament_cmake</buildtool_depend>
-  
-  <exec_depend>mycobot_description</exec_depend>
-  <exec_depend>mycobot_bringup</exec_depend>
-  <exec_depend>mycobot_gazebo</exec_depend>
-  <exec_depend>mycobot_moveit_config</exec_depend>
-  <exec_depend>mycobot_system_tests</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
