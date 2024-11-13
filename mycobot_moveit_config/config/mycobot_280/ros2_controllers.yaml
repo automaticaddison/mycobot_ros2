@@ -1,0 +1,63 @@
+# controller_manager provides the necessary infrastructure to manage multiple controllers
+# efficiently and robustly using ROS 2 Control.
+controller_manager:
+  ros__parameters:
+    update_rate: 100 # update_rate specifies how often (in Hz) the controllers should be updated.
+
+    # The JointTrajectoryController allows you to send joint trajectory commands to a group
+    # of joints on a robot. These commands specify the desired positions for each joint.
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    # Controls the gripper
+    gripper_action_controller:
+      type: position_controllers/GripperActionController
+
+    # Responsible for publishing the current state of the robot's
+    # joints to the /joint_states ROS 2 topic
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+# Define the parameters for each controller
+arm_controller:
+  ros__parameters:
+    joints:
+      - ${prefix}link1_to_${prefix}link2
+      - ${prefix}link2_to_${prefix}link3
+      - ${prefix}link3_to_${prefix}link4
+      - ${prefix}link4_to_${prefix}link5
+      - ${prefix}link5_to_${prefix}link6
+      - ${prefix}link6_to_${prefix}${flange_link}
+
+    # The controller will expect position commands as input for each of these joints.
+    command_interfaces:
+      - position
+
+    # Tells the controller that it should expect to receive position data as the state
+    # feedback from the hardware interface.
+    state_interfaces:
+      - position
+
+    # If true, When set to true, the controller will not use any feedback from the system
+    # (e.g., joint positions, velocities, efforts) to compute the control commands.
+    open_loop_control: false
+
+    # When set to true, it allows the controller to integrate the trajectory goals it receives.
+    # This means that if the goal trajectory only specifies positions, the controller will
+    # numerically integrate the positions to compute the velocities and accelerations required
+    # to follow the trajectory.
+    allow_integration_in_goal_trajectories: true
+
+    # Allow non-zero velocity at the end of the trajectory
+    allow_nonzero_velocity_at_trajectory_end: true
+
+gripper_action_controller:
+  ros__parameters:
+    joint: ${prefix}gripper_controller
+    action_monitor_rate: 20.0
+    goal_tolerance: 0.01
+    max_effort: 100.0
+    allow_stalling: false
+    stall_velocity_threshold: 0.001
+    stall_timeout: 1.0
+
