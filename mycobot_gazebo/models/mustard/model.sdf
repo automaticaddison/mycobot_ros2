@@ -1,0 +1,24 @@
+<?xml version='1.0'?>
+<sdf version='1.5'>
+  <model name='mustard'>
+    <static>true</static>
+    <link name="link">
+      <visual name="visual">
+            <geometry>
+                <mesh>
+                    <scale>0.05 0.05 0.05</scale>
+                    <uri>model://mustard/meshes/mustard.dae</uri>
+                </mesh>
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <geometry>
+                <mesh>
+                    <scale>0.05 0.05 0.05</scale>
+                    <uri>model://mustard/meshes/mustard.dae</uri>
+                </mesh>
+            </geometry>
+        </collision>
+    </link>
+  </model>
+</sdf>

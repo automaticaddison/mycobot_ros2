@@ -1,0 +1,13 @@
+material @HERE@
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture optimized_tsdf_texture_mapped_mesh.png
+      }
+    }
+  }
+}
