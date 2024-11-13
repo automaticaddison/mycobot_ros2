@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
-  <model name="green_cylinder">
+  <model name="red_cylinder">
     <static>false</static>
     <link name="link">
       <inertial>
