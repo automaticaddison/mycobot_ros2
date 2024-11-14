@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="mycobot_280">
+    <xacro:arg name="robot_name" default="mycobot_280"/>
     <xacro:arg name="add_world" default="true"/>
     <xacro:arg name="base_link" default="base_link"/>
     <xacro:arg name="base_type" default="g_shape"/>

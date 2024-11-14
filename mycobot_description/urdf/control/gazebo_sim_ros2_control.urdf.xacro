@@ -1,0 +1,12 @@
+<robot xmlns:xacro="http://wiki.ros.org/xacro">
+    <xacro:macro name="load_gazebo_sim_ros2_control_plugin" params="robot_name">
+        <gazebo>
+            <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+                <parameters>$(find mycobot_moveit_config)/config/${robot_name}/ros2_controllers.yaml</parameters>
+                <ros>
+                    <remapping>/controller_manager/robot_description:=/robot_description</remapping>
+                </ros>
+            </plugin>
+        </gazebo>
+    </xacro:macro>
+</robot>

@@ -17,6 +17,8 @@ from launch_ros.substitutions import FindPackageShare
 
 # Define the arguments for the XACRO file
 ARGUMENTS = [
+    DeclareLaunchArgument('robot_name', default_value='mycobot_280',
+                          description='Name of the robot'),
     DeclareLaunchArgument('prefix', default_value='',
                           description='Prefix for robot joints and links'),
     DeclareLaunchArgument('add_world', default_value='true',
@@ -88,6 +90,7 @@ def generate_launch_description():
 
     robot_description_content = ParameterValue(Command([
         'xacro', ' ', urdf_model, ' ',
+        'robot_name:=', LaunchConfiguration('robot_name'), ' ',
         'prefix:=', LaunchConfiguration('prefix'), ' ',
         'add_world:=', LaunchConfiguration('add_world'), ' ',
         'base_link:=', LaunchConfiguration('base_link'), ' ',
