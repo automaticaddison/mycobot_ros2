@@ -25,7 +25,7 @@ sleep 3
 
 echo "Launching Gazebo simulation..."
 ros2 launch mycobot_gazebo mycobot.gazebo.launch.py \
-   world_file:=empty.world # &
+   world_file:=pick_and_place_demo.world # &
 
 #sleep 5
 
