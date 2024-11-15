@@ -22,12 +22,12 @@ controller_manager:
 arm_controller:
   ros__parameters:
     joints:
-      - link1_to_link2
-      - link2_to_link3
-      - link3_to_link4
-      - link4_to_link5
-      - link5_to_link6
-      - link6_to_link6_flange
+      - ${prefix}link1_to_${prefix}link2
+      - ${prefix}link2_to_${prefix}link3
+      - ${prefix}link3_to_${prefix}link4
+      - ${prefix}link4_to_${prefix}link5
+      - ${prefix}link5_to_${prefix}link6
+      - ${prefix}link6_to_${prefix}${flange_link}
 
     # The controller will expect position commands as input for each of these joints.
     command_interfaces:
@@ -53,7 +53,7 @@ arm_controller:
 
 gripper_action_controller:
   ros__parameters:
-    joint: gripper_controller
+    joint: ${prefix}gripper_controller
     action_monitor_rate: 20.0
     goal_tolerance: 0.01
     max_effort: 100.0
