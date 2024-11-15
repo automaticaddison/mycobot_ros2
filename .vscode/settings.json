@@ -6,5 +6,6 @@
   "python.analysis.extraPaths": [
     "/home/ubuntu/ros2_ws/install/ros2_fundamentals_examples/lib/python3.12/site-packages",
     "/opt/ros/jazzy/lib/python3.12/site-packages"
-  ]
+  ],
+  "cmake.sourceDirectory": "/home/ubuntu/ros2_ws/src/mycobot_ros2/mycobot_bringup"
 }
