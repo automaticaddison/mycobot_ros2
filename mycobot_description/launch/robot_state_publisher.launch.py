@@ -21,7 +21,17 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def process_ros2_controllers_config(context):
-    """Process the ROS 2 controller configuration yaml file before loading the URDF
+    """Process the ROS 2 controller configuration yaml file before loading the URDF.
+
+    This function reads a template configuration file, replaces placeholder values
+    with actual configuration, and writes the processed file to both source and
+    install directories.
+
+    Args:
+        context: Launch context containing configuration values
+
+    Returns:
+        list: Empty list as required by OpaqueFunction
     """
 
     # Get the configuration values
@@ -89,8 +99,16 @@ ARGUMENTS = [
 
 
 def generate_launch_description():
-    """Generate the launch description
+    """Generate the launch description for the mycobot robot visualization.
 
+    This function sets up all necessary nodes and parameters for visualizing
+    the mycobot robot in RViz, including:
+    - Robot state publisher for broadcasting transforms
+    - Joint state publisher for simulating joint movements
+    - RViz for visualization
+
+    Returns:
+        LaunchDescription: Complete launch description for the visualization setup
     """
     # Define filenames
     urdf_package = 'mycobot_description'

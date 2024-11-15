@@ -18,7 +18,7 @@ from launch.actions import (
     IncludeLaunchDescription
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
@@ -42,18 +42,25 @@ def generate_launch_description():
 
     default_robot_name = 'mycobot_280'
     gazebo_models_path = 'models'
-    world_file_path = 'worlds/empty.world'
+
+    default_world_file = 'pick_and_place_demo.world'
+    gazebo_worlds_path = 'worlds'
 
     # Set the path to different files and folders
     pkg_ros_gz_sim = FindPackageShare(package='ros_gz_sim').find('ros_gz_sim')
     pkg_share_gazebo = FindPackageShare(package=package_name_gazebo).find(package_name_gazebo)
 
     gazebo_models_path = os.path.join(pkg_share_gazebo, gazebo_models_path)
-    world_path = os.path.join(pkg_share_gazebo, world_file_path)
 
     # Launch configuration variables
     robot_name = LaunchConfiguration('robot_name')
-    world = LaunchConfiguration('world')
+    world_file = LaunchConfiguration('world_file')
+
+    world_path = PathJoinSubstitution([
+        pkg_share_gazebo,
+        gazebo_worlds_path,
+        world_file
+    ])
 
     # Set the pose configuration variables
     x = LaunchConfiguration('x')
@@ -70,9 +77,9 @@ def generate_launch_description():
         description='The name for the robot')
 
     declare_world_cmd = DeclareLaunchArgument(
-        name='world',
-        default_value=world_path,
-        description='Full path to the world model file to load')
+        name='world_file',
+        default_value=default_world_file,
+        description='World file name (e.g., empty.world, house.world, pick_and_place_demo.world)')
 
     # Pose arguments
     declare_x_cmd = DeclareLaunchArgument(
@@ -114,7 +121,7 @@ def generate_launch_description():
     start_gazebo_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')),
-        launch_arguments=[('gz_args', [' -r -v 4 ', world])])
+        launch_arguments=[('gz_args', [' -r -v 4 ', world_path])])
 
     # Spawn the robot
     spawn_robot_cmd = Node(

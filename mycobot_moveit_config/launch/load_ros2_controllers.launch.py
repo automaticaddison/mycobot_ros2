@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """
 Launch ROS 2 controllers for the robot.
+
 This script creates a launch description that starts the necessary controllers
 for operating the robotic arm and gripper in a specific sequence.
 
-The script loads three controllers:
-1. Joint State Broadcaster - Publishes joint states
-2. Arm Controller - Controls the robot arm movements
-3. Gripper Action Controller - Controls the gripper actions
+Launched Controllers:
+    1. Joint State Broadcaster: Publishes joint states to /joint_states
+    2. Arm Controller: Controls the robot arm movements via /follow_joint_trajectory
+    3. Gripper Action Controller: Controls gripper actions via /gripper_action
 
-The controllers are loaded in sequence to ensure proper initialization.
+Launch Sequence:
+    1. Joint State Broadcaster
+    2. Arm Controller (starts after Joint State Broadcaster)
+    3. Gripper Action Controller (starts after Arm Controller)
 
 :author: Addison Sears-Collins
 :date: November 15, 2024
@@ -21,8 +25,10 @@ from launch.event_handlers import OnProcessExit
 
 
 def generate_launch_description():
-    """
-    Generate a launch description.
+    """Generate a launch description for sequentially starting robot controllers.
+
+    Returns:
+        LaunchDescription: Launch description containing sequenced controller starts
     """
     # Start arm controller
     start_arm_controller_cmd = ExecuteProcess(
