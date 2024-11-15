@@ -2,8 +2,11 @@
 <sdf version="1.6">
     <world name='default'>
         <plugin
-            filename="gz-sim-physics-system"
-            name="gz::sim::systems::Physics">
+          filename="gz-sim-physics-system"
+          name="gz::sim::systems::Physics">
+          <engine>
+            <filename>libgz-physics-bullet-featherstone-plugin.so</filename>
+          </engine>
         </plugin>
         <plugin
             filename="gz-sim-user-commands-system"
