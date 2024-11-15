@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-#
-# Author: Addison Sears-Collins
-# Date: November 14, 2024
-# Description: Display the robotic arm with RViz
-#
-# This file launches the robot state publisher, joint state publisher,
-# and RViz2 for visualizing the mycobot robot.
+"""
+Launch RViz visualization for the mycobot robot.
 
+This launch file sets up the complete visualization environment for the mycobot robot,
+including robot state publisher, joint state publisher, and RViz2. It handles loading
+and processing of URDF/XACRO files and controller configurations.
+
+:author: Addison Sears-Collins
+:date: November 15, 2024
+"""
 import os
 from pathlib import Path
 from launch import LaunchDescription
