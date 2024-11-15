@@ -16,12 +16,16 @@ cleanup() {
 trap 'cleanup' SIGINT
 
 echo "Launching robot state publisher..."
-ros2 launch mycobot_description robot_state_publisher.launch.py jsp_gui:=false use_rviz:=true use_gazebo:=true &
+ros2 launch mycobot_description robot_state_publisher.launch.py \
+    jsp_gui:=false \
+    use_rviz:=true \
+    use_gazebo:=true &
 
 sleep 3
 
 echo "Launching Gazebo simulation..."
-ros2 launch mycobot_gazebo mycobot.gazebo.launch.py #&
+ros2 launch mycobot_gazebo mycobot.gazebo.launch.py \
+   world_file:=empty.world &
 
 #sleep 5
 
