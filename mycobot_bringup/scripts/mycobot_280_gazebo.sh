@@ -15,22 +15,8 @@ cleanup() {
 # Set up cleanup trap
 trap 'cleanup' SIGINT
 
-echo "Launching robot state publisher..."
-ros2 launch mycobot_description robot_state_publisher.launch.py \
-    jsp_gui:=false \
-    use_rviz:=true \
-    use_gazebo:=true &
-
-sleep 3
-
-echo "Loading ROS 2 controllers..."
-ros2 launch mycobot_moveit_config load_ros2_controllers.launch.py &
-
-sleep 5
-
 echo "Launching Gazebo simulation..."
-ros2 launch mycobot_gazebo mycobot.gazebo.launch.py \
-   world_file:=pick_and_place_demo.world
+ros2 launch mycobot_gazebo mycobot.gazebo.launch.py
 
 
 

@@ -2,6 +2,10 @@
 """
 Launch Gazebo simulation with a robot.
 
+This script launches a Gazebo simulation with a robot.
+robot. It handles setting up the simulation environment, spawning the robot with specified
+poses, and configuring necessary ROS 2 parameters.
+
 :author: Addison Sears-Collins
 :date: November 15, 2024
 """
@@ -35,30 +39,22 @@ def generate_launch_description():
     """
     # Constants for paths to different files and folders
     package_name_gazebo = 'mycobot_gazebo'
-    package_name_description = 'mycobot_description'
-    package_name_moveit = 'mycobot_moveit_config'
 
     default_robot_name = 'mycobot_280'
     gazebo_models_path = 'models'
+
     default_world_file = 'pick_and_place_demo.world'
     gazebo_worlds_path = 'worlds'
 
     # Set the path to different files and folders
     pkg_ros_gz_sim = FindPackageShare(package='ros_gz_sim').find('ros_gz_sim')
     pkg_share_gazebo = FindPackageShare(package=package_name_gazebo).find(package_name_gazebo)
-    pkg_share_description = FindPackageShare(
-        package=package_name_description).find(package_name_description)
-    pkg_share_moveit = FindPackageShare(package=package_name_moveit).find(package_name_moveit)
 
     gazebo_models_path = os.path.join(pkg_share_gazebo, gazebo_models_path)
 
     # Launch configuration variables
     robot_name = LaunchConfiguration('robot_name')
     world_file = LaunchConfiguration('world_file')
-    jsp_gui = LaunchConfiguration('jsp_gui')
-    use_rviz = LaunchConfiguration('use_rviz')
-    use_gazebo = LaunchConfiguration('use_gazebo')
-    use_sim_time = LaunchConfiguration('use_sim_time')
 
     world_path = PathJoinSubstitution([
         pkg_share_gazebo,
@@ -84,27 +80,6 @@ def generate_launch_description():
         name='world_file',
         default_value=default_world_file,
         description='World file name (e.g., empty.world, house.world, pick_and_place_demo.world)')
-
-    # GUI and visualization arguments
-    declare_jsp_gui_cmd = DeclareLaunchArgument(
-        name='jsp_gui',
-        default_value='false',
-        description='Flag to enable joint_state_publisher_gui')
-
-    declare_use_rviz_cmd = DeclareLaunchArgument(
-        name='use_rviz',
-        default_value='true',
-        description='Flag to enable RViz')
-
-    declare_use_gazebo_cmd = DeclareLaunchArgument(
-        name='use_gazebo',
-        default_value='true',
-        description='Flag to enable Gazebo')
-
-    declare_use_sim_time_cmd = DeclareLaunchArgument(
-        name='use_sim_time',
-        default_value='true',
-        description='Use simulation (Gazebo) clock if true')
 
     # Pose arguments
     declare_x_cmd = DeclareLaunchArgument(
@@ -136,29 +111,6 @@ def generate_launch_description():
         name='yaw',
         default_value='0.0',
         description='yaw angle of initial orientation, radians')
-
-    # Include Robot State Publisher launch file
-    robot_state_publisher_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            os.path.join(pkg_share_description, 'launch', 'robot_state_publisher.launch.py')
-        ]),
-        launch_arguments={
-            'jsp_gui': jsp_gui,
-            'use_rviz': use_rviz,
-            'use_gazebo': use_gazebo,
-            'use_sim_time': use_sim_time
-        }.items()
-    )
-
-    # Include ROS 2 Controllers launch file
-    load_controllers_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            os.path.join(pkg_share_moveit, 'launch', 'load_ros2_controllers.launch.py')
-        ]),
-        launch_arguments={
-            'use_sim_time': use_sim_time
-        }.items()
-    )
 
     # Set Gazebo model path
     set_env_vars_resources = AppendEnvironmentVariable(
@@ -194,10 +146,6 @@ def generate_launch_description():
     # Declare the launch options
     ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_world_cmd)
-    ld.add_action(declare_jsp_gui_cmd)
-    ld.add_action(declare_use_rviz_cmd)
-    ld.add_action(declare_use_gazebo_cmd)
-    ld.add_action(declare_use_sim_time_cmd)
 
     # Add pose arguments
     ld.add_action(declare_x_cmd)
@@ -209,8 +157,6 @@ def generate_launch_description():
 
     # Add the actions to the launch description
     ld.add_action(set_env_vars_resources)
-    ld.add_action(robot_state_publisher_cmd)
-    ld.add_action(load_controllers_cmd)
     ld.add_action(start_gazebo_cmd)
     ld.add_action(spawn_robot_cmd)
 
