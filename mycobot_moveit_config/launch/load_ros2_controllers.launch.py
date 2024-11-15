@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""
+Launch ROS 2 controllers for the robot.
+This script creates a launch description that starts the necessary controllers
+for operating the robotic arm and gripper in a specific sequence.
+
+The script loads three controllers:
+1. Joint State Broadcaster - Publishes joint states
+2. Arm Controller - Controls the robot arm movements
+3. Gripper Action Controller - Controls the gripper actions
+
+The controllers are loaded in sequence to ensure proper initialization.
+
+:author: Addison Sears-Collins
+:date: November 15, 2024
+"""
+
+from launch import LaunchDescription
+from launch.actions import ExecuteProcess, RegisterEventHandler
+from launch.event_handlers import OnProcessExit
+
+
+def generate_launch_description():
+    """
+    Generate a launch description.
+    """
+    # Start arm controller
+    start_arm_controller_cmd = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'arm_controller'],
+        output='screen')
+
+    # Start gripper action controller
+    start_gripper_action_controller_cmd = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'gripper_action_controller'],
+        output='screen')
+
+    # Launch joint state broadcaster
+    start_joint_state_broadcaster_cmd = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'joint_state_broadcaster'],
+        output='screen')
+
+    # Register event handlers for sequencing
+    # Launch the joint state broadcaster after spawning the robot
+    load_joint_state_broadcaster_cmd = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=start_joint_state_broadcaster_cmd,
+            on_exit=[start_arm_controller_cmd]))
+
+    # Launch the arm controller after launching the joint state broadcaster
+    load_arm_controller_cmd = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=start_arm_controller_cmd,
+            on_exit=[start_gripper_action_controller_cmd]))
+
+    # Create the launch description and populate
+    ld = LaunchDescription()
+
+    # Add the actions to the launch description in sequence
+    ld.add_action(start_joint_state_broadcaster_cmd)
+    ld.add_action(load_joint_state_broadcaster_cmd)
+    ld.add_action(load_arm_controller_cmd)
+
+    return ld
