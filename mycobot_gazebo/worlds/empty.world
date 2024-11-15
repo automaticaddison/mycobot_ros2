@@ -7,6 +7,9 @@
     <plugin
       filename="gz-sim-physics-system"
       name="gz::sim::systems::Physics">
+      <engine>
+        <filename>libgz-physics-bullet-featherstone-plugin.so</filename>
+      </engine>
     </plugin>
 
     <!-- Plugin for handling user commands -->
