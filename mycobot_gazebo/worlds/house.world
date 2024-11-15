@@ -40,6 +40,41 @@
             <origin_visual>false</origin_visual>
         </scene>
 
+<!-- Local ground plane with modified friction -->
+<model name="ground_plane">
+    <static>true</static>
+    <link name="link">
+        <collision name="collision">
+            <geometry>
+                <plane>
+                    <normal>0 0 1</normal>
+                    <size>100 100</size>
+                </plane>
+            </geometry>
+            <surface>
+                <friction>
+                    <torsional>
+                        <coefficient>0.0</coefficient>
+                    </torsional>
+                </friction>
+            </surface>
+        </collision>
+        <visual name="visual">
+            <geometry>
+                <plane>
+                    <normal>0 0 1</normal>
+                    <size>100 100</size>
+                </plane>
+            </geometry>
+            <material>
+                <!-- Light oak/maple wood color -->
+                <ambient>0.92 0.85 0.7 1</ambient>
+                <diffuse>0.92 0.85 0.7 1</diffuse>
+                <specular>0.1 0.1 0.1 1</specular>
+            </material>
+        </visual>
+    </link>
+</model>
         <model name='HouseWallB_01_001'>
             <static>true</static>
             <include>
