@@ -1,5 +1,5 @@
 /**
- * @file arm_gripper_controller.cpp
+ * @file arm_gripper_loop_controller.cpp
  * @brief Control robot arm and gripper to perform repetitive movements between positions.
  *
  * This program creates a ROS 2 node that moves a robot arm between target and home positions,
