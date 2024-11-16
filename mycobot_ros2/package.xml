@@ -7,9 +7,9 @@
   <maintainer email="automaticaddison@todo.todo">ubuntu</maintainer>
   <license>BSD-3-Clause</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
-  
-  <exec_depend>mycobot_description</exec_depend>
+
   <exec_depend>mycobot_bringup</exec_depend>
+  <exec_depend>mycobot_description</exec_depend>
   <exec_depend>mycobot_gazebo</exec_depend>
   <exec_depend>mycobot_moveit_config</exec_depend>
   <exec_depend>mycobot_system_tests</exec_depend>
