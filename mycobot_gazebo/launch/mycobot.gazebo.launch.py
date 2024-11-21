@@ -190,7 +190,7 @@ def generate_launch_description():
         launch_arguments=[('gz_args', [' -r -v 4 ', world_path])])
 
     # Spawn the robot
-    spawn_robot_cmd = Node(
+    start_gazebo_ros_spawner_cmd = Node(
         package='ros_gz_sim',
         executable='create',
         output='screen',
@@ -232,6 +232,6 @@ def generate_launch_description():
     ld.add_action(robot_state_publisher_cmd)
     ld.add_action(load_controllers_cmd)
     ld.add_action(start_gazebo_cmd)
-    ld.add_action(spawn_robot_cmd)
+    ld.add_action(start_gazebo_ros_spawner_cmd)
 
     return ld
