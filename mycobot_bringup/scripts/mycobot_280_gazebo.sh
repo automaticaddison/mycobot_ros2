@@ -3,17 +3,12 @@
 
 cleanup() {
     echo "Cleaning up..."
-    echo "Restarting ROS 2 daemon..."
-    ros2 daemon stop
-    sleep 1
-    ros2 daemon start
-    echo "Terminating all ROS 2-related processes..."
-    kill 0
-    exit
+    sleep 5.0
+    pkill -9 -f "ros2|gazebo|gz|nav2|amcl|bt_navigator|nav_to_pose|rviz2|assisted_teleop|cmd_vel_relay|robot_state_publisher|joint_state_publisher|move_to_free|mqtt|autodock|cliff_detection|moveit|move_group|basic_navigator"
 }
 
 # Set up cleanup trap
-trap 'cleanup' SIGINT
+trap 'cleanup' SIGINT SIGTERM
 
 echo "Launching Gazebo simulation..."
 ros2 launch mycobot_gazebo mycobot.gazebo.launch.py \
