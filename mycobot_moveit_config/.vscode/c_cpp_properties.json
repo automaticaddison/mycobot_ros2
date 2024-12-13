@@ -1,0 +1,39 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/ubuntu/ros2_ws/install/yahboom_rosmaster_msgs/include/**",
+        "/home/ubuntu/ros2_ws/install/ros2_fundamentals_examples/include/**",
+        "/home/ubuntu/ros2_ws/install/mecanum_drive_controller/include/**",
+        "/opt/ros/jazzy/include/**",
+        "/home/ubuntu/ros2_ws/src/mycobot_ros2/mycobot_description/include/**",
+        "/home/ubuntu/ros2_ws/src/mycobot_ros2/mycobot_moveit_config/include/**",
+        "/home/ubuntu/ros2_ws/src/mycobot_ros2/mycobot_ros2/include/**",
+        "/home/ubuntu/ros2_ws/src/mycobot_ros2/mycobot_system_tests/include/**",
+        "/home/ubuntu/ros2_ws/src/ros2_fundamentals_examples/include/**",
+        "/home/ubuntu/ros2_ws/src/yahboom_rosmaster/mecanum_drive_controller/include/**",
+        "/home/ubuntu/ros2_ws/src/yahboom_rosmaster/yahboom_rosmaster/include/**",
+        "/home/ubuntu/ros2_ws/src/yahboom_rosmaster/yahboom_rosmaster_bringup/include/**",
+        "/home/ubuntu/ros2_ws/src/yahboom_rosmaster/yahboom_rosmaster_description/include/**",
+        "/home/ubuntu/ros2_ws/src/yahboom_rosmaster/yahboom_rosmaster_docking/include/**",
+        "/home/ubuntu/ros2_ws/src/yahboom_rosmaster/yahboom_rosmaster_gazebo/include/**",
+        "/home/ubuntu/ros2_ws/src/yahboom_rosmaster/yahboom_rosmaster_localization/include/**",
+        "/home/ubuntu/ros2_ws/src/yahboom_rosmaster/yahboom_rosmaster_msgs/include/**",
+        "/home/ubuntu/ros2_ws/src/yahboom_rosmaster/yahboom_rosmaster_navigation/include/**",
+        "/home/ubuntu/ros2_ws/src/yahboom_rosmaster/yahboom_rosmaster_system_tests/include/**",
+        "include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}
