@@ -1,0 +1,8 @@
+# Defines the Cartesian movement limits for a robotic arm using the Pilz Planner.
+# The values are typically determined based on a combination of the robot manufacturer's
+# specifications, practical testing, and considerations for the specific tasks the robot will perform.
+cartesian_limits:
+  max_trans_vel: 1.0  # Maximum translational velocity in meters per second. Specifies how fast the end effector can move in space.
+  max_trans_acc: 2.25 # Maximum translational acceleration in meters per second squared. Determines how quickly the end effector can increase its speed.
+  max_trans_dec: -5.0 # Maximum translational deceleration in meters per second squared. Specifies how quickly the end effector can decrease its speed.
+  max_rot_vel: 1.57   # Maximum rotational velocity in radians per second. Controls the speed at which the end effector can rotate.
