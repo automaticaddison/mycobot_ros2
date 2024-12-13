@@ -1,0 +1,24 @@
+# Configures how a robot calculates possible positions and movements of its joints
+# to reach a desired point. It specifies which mathematical methods (solvers) to use,
+# how long to try, and how precise these calculations should be.
+arm: # Name of the joint group from the SRDF file
+  kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin # Plugin used for solving kinematics
+  kinematics_solver_search_resolution: 0.005 #  Granularity (in radians for revolute joints) used by the solver when searching for a solution.
+  kinematics_solver_timeout: 0.05 # Maximum time the solver will spend trying to find a solution for each planning attempt
+  position_only_ik: false # If true, the solver will only consider the position of the end effector, not its orientation
+  kinematics_solver_attempts: 5 # How many times the solver will try to find a solution
+
+# Typically we don't need a complex kinematics solver for the gripper. This is for demonstration purposes only.
+gripper:
+  kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+  kinematics_solver_search_resolution: 0.005
+  kinematics_solver_timeout: 0.05
+  position_only_ik: false
+  kinematics_solver_attempts: 3
+
+arm_with_gripper:
+  kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+  kinematics_solver_search_resolution: 0.005
+  kinematics_solver_timeout: 0.05
+  position_only_ik: false
+  kinematics_solver_attempts: 5

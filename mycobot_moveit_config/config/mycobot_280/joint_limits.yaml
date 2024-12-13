@@ -1,0 +1,67 @@
+default_velocity_scaling_factor: 1.0
+default_acceleration_scaling_factor: 1.0
+
+joint_limits:
+  link1_to_link2:
+    has_velocity_limits: true
+    max_velocity: 2.792527
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+    has_deceleration_limits: true
+    max_deceleration: -5.0
+    has_jerk_limits: false
+    max_jerk: 6.0
+  link2_to_link3:
+    has_velocity_limits: true
+    max_velocity: 2.792527
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+    has_deceleration_limits: true
+    max_deceleration: -5.0
+    has_jerk_limits: false
+    max_jerk: 6.0
+  link3_to_link4:
+    has_velocity_limits: true
+    max_velocity: 2.792527
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+    has_deceleration_limits: true
+    max_deceleration: -5.0
+    has_jerk_limits: false
+    max_jerk: 6.0
+  link4_to_link5:
+    has_velocity_limits: true
+    max_velocity: 2.792527
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+    has_deceleration_limits: true
+    max_deceleration: -5.0
+    has_jerk_limits: false
+    max_jerk: 6.0
+  link5_to_link6:
+    has_velocity_limits: true
+    max_velocity: 2.792527
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+    has_deceleration_limits: true
+    max_deceleration: -5.0
+    has_jerk_limits: false
+    max_jerk: 6.0
+  link6_to_link6flange:
+    has_velocity_limits: true
+    max_velocity: 2.792527
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+    has_deceleration_limits: true
+    max_deceleration: -5.0
+    has_jerk_limits: false
+    max_jerk: 6.0
+  gripper_controller:
+    has_velocity_limits: true
+    max_velocity: 2.792527
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+    has_deceleration_limits: true
+    max_deceleration: -5.0
+    has_jerk_limits: false
+    max_jerk: 300.0
