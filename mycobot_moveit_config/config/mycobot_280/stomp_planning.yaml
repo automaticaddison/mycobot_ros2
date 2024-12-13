@@ -1,0 +1,22 @@
+planning_plugins:
+  - stomp_moveit/StompPlanner
+# The order of the elements in the adapter corresponds to the order they are processed by the motion planning pipeline.
+request_adapters:
+  - default_planning_request_adapters/ResolveConstraintFrames
+  - default_planning_request_adapters/ValidateWorkspaceBounds
+  - default_planning_request_adapters/CheckStartStateBounds
+  - default_planning_request_adapters/CheckStartStateCollision
+response_adapters:
+  - default_planning_response_adapters/AddTimeOptimalParameterization
+  - default_planning_response_adapters/ValidateSolution
+  - default_planning_response_adapters/DisplayMotionPath
+
+stomp_moveit:
+  num_timesteps: 60
+  num_iterations: 40
+  num_iterations_after_valid: 0
+  num_rollouts: 30
+  max_rollouts: 30
+  exponentiated_cost_sensitivity: 0.5
+  control_cost_weight: 0.1
+  delta_t: 0.1
