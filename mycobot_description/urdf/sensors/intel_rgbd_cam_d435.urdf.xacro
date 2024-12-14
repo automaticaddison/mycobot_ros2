@@ -160,7 +160,6 @@
             <near>0.05</near>
             <far>1.5</far>
           </clip>
-          <optical_frame_id>camera_head_depth_optical_frame</optical_frame_id>
         </camera>
         <always_on>1</always_on>
         <gz_frame_id>camera_head_link</gz_frame_id>
