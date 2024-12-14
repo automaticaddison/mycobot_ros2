@@ -50,7 +50,7 @@
     </group_state>
 
     <group_state name="closed" group="gripper">
-        <joint name="gripper_controller" value="-0.55"/>
+        <joint name="gripper_controller" value="-0.50"/>
     </group_state>
 
     <group_state name="home" group="arm_with_gripper">
