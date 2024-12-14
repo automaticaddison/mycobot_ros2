@@ -20,7 +20,7 @@ Launch Sequence:
 """
 
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, RegisterEventHandler
+from launch.actions import ExecuteProcess, RegisterEventHandler, TimerAction
 from launch.event_handlers import OnProcessExit
 
 
@@ -48,6 +48,12 @@ def generate_launch_description():
              'joint_state_broadcaster'],
         output='screen')
 
+    # Add delay to joint state broadcaster (if necessary)
+    delayed_start = TimerAction(
+        period=10.0,
+        actions=[start_joint_state_broadcaster_cmd]
+    )
+
     # Register event handlers for sequencing
     # Launch the joint state broadcaster after spawning the robot
     load_joint_state_broadcaster_cmd = RegisterEventHandler(
@@ -65,7 +71,7 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     # Add the actions to the launch description in sequence
-    ld.add_action(start_joint_state_broadcaster_cmd)
+    ld.add_action(delayed_start)
     ld.add_action(load_joint_state_broadcaster_cmd)
     ld.add_action(load_arm_controller_cmd)
 
