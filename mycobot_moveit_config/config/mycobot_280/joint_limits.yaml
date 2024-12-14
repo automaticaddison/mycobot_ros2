@@ -57,7 +57,7 @@ joint_limits:
     max_jerk: 6.0
     has_effort_limits: true
     max_effort: 56.0
-  link6_to_link6flange:
+  link6_to_link6_flange:
     has_velocity_limits: true
     max_velocity: 2.792527
     has_acceleration_limits: true

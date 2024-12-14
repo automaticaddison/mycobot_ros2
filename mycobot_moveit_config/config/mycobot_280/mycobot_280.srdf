@@ -8,8 +8,8 @@
         <joint name="link3_to_link4"/>
         <joint name="link4_to_link5"/>
         <joint name="link5_to_link6"/>
-        <joint name="link6_to_link6flange"/>
-        <joint name="link6flange_to_gripper_base"/>
+        <joint name="link6_to_link6_flange"/>
+        <joint name="link6_flange_to_gripper_base"/>
     </group>
 
     <group name="gripper">
@@ -29,7 +29,7 @@
         <joint name="link3_to_link4" value="0"/>
         <joint name="link4_to_link5" value="0"/>
         <joint name="link5_to_link6" value="0"/>
-        <joint name="link6_to_link6flange" value="0"/>
+        <joint name="link6_to_link6_flange" value="0"/>
     </group_state>
 
     <group_state name="ready" group="arm">
@@ -38,7 +38,7 @@
         <joint name="link3_to_link4" value="1.5708"/>
         <joint name="link4_to_link5" value="1.5708"/>
         <joint name="link5_to_link6" value="0"/>
-        <joint name="link6_to_link6flange" value="0"/>
+        <joint name="link6_to_link6_flange" value="0"/>
     </group_state>
 
     <group_state name="open" group="gripper">
@@ -59,7 +59,7 @@
         <joint name="link3_to_link4" value="0"/>
         <joint name="link4_to_link5" value="0"/>
         <joint name="link5_to_link6" value="0"/>
-        <joint name="link6_to_link6flange" value="0"/>
+        <joint name="link6_to_link6_flange" value="0"/>
         <joint name="gripper_controller" value="0"/>
     </group_state>
 
@@ -69,7 +69,7 @@
         <joint name="link3_to_link4" value="1.5708"/>
         <joint name="link4_to_link5" value="1.5708"/>
         <joint name="link5_to_link6" value="0"/>
-        <joint name="link6_to_link6flange" value="0"/>
+        <joint name="link6_to_link6_flange" value="0"/>
         <joint name="gripper_controller" value="0"/>
     </group_state>
 

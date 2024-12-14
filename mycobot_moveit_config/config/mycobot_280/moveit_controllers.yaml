@@ -19,7 +19,7 @@ moveit_simple_controller_manager:
       - link3_to_link4
       - link4_to_link5
       - link5_to_link6
-      - link6_to_link6flange
+      - link6_to_link6_flange
 
   # Configuration for the gripper_action_controller.
   gripper_action_controller:
