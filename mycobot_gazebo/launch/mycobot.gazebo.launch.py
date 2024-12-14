@@ -47,6 +47,8 @@ def generate_launch_description():
     default_world_file = 'pick_and_place_demo.world'
     gazebo_worlds_path = 'worlds'
 
+    ros_gz_bridge_config_file_path = 'config/ros_gz_bridge.yaml'
+
     # Set the path to different files and folders
     pkg_ros_gz_sim = FindPackageShare(package='ros_gz_sim').find('ros_gz_sim')
     pkg_share_gazebo = FindPackageShare(package=package_name_gazebo).find(package_name_gazebo)
@@ -55,12 +57,15 @@ def generate_launch_description():
     pkg_share_moveit = FindPackageShare(package=package_name_moveit).find(package_name_moveit)
 
     gazebo_models_path = os.path.join(pkg_share_gazebo, gazebo_models_path)
+    default_ros_gz_bridge_config_file_path = os.path.join(
+        pkg_share_gazebo, ros_gz_bridge_config_file_path)
 
     # Launch configuration variables
     jsp_gui = LaunchConfiguration('jsp_gui')
     load_controllers = LaunchConfiguration('load_controllers')
     robot_name = LaunchConfiguration('robot_name')
     use_rviz = LaunchConfiguration('use_rviz')
+    use_camera = LaunchConfiguration('use_camera')
     use_gazebo = LaunchConfiguration('use_gazebo')
     use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
     use_sim_time = LaunchConfiguration('use_sim_time')
@@ -102,15 +107,20 @@ def generate_launch_description():
         default_value='false',
         description='Flag to enable joint_state_publisher_gui')
 
-    declare_use_rviz_cmd = DeclareLaunchArgument(
-        name='use_rviz',
-        default_value='true',
-        description='Flag to enable RViz')
+    declare_use_camera_cmd = DeclareLaunchArgument(
+        name='use_camera',
+        default_value='false',
+        description='Flag to enable the RGBD camera for Gazebo point cloud simulation')
 
     declare_use_gazebo_cmd = DeclareLaunchArgument(
         name='use_gazebo',
         default_value='true',
         description='Flag to enable Gazebo')
+
+    declare_use_rviz_cmd = DeclareLaunchArgument(
+        name='use_rviz',
+        default_value='true',
+        description='Flag to enable RViz')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         name='use_sim_time',
@@ -160,8 +170,9 @@ def generate_launch_description():
         ]),
         launch_arguments={
             'jsp_gui': jsp_gui,
-            'use_rviz': use_rviz,
+            'use_camera': use_camera,
             'use_gazebo': use_gazebo,
+            'use_rviz': use_rviz,
             'use_sim_time': use_sim_time
         }.items(),
         condition=IfCondition(use_robot_state_pub)
@@ -189,6 +200,30 @@ def generate_launch_description():
             os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')),
         launch_arguments=[('gz_args', [' -r -v 4 ', world_path])])
 
+    # Bridge ROS topics and Gazebo messages for establishing communication
+    start_gazebo_ros_bridge_cmd = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        parameters=[{
+            'config_file': default_ros_gz_bridge_config_file_path,
+        }],
+        output='screen'
+    )
+
+    # Includes optimizations to minimize latency and bandwidth when streaming image data
+    start_gazebo_ros_image_bridge_cmd = Node(
+        package='ros_gz_image',
+        executable='image_bridge',
+        arguments=[
+            '/camera_head/depth_image',
+            '/camera_head/image',
+        ],
+        remappings=[
+            ('/camera_head/depth_image', '/camera_head/depth/image_rect_raw'),
+            ('/camera_head/image', '/camera_head/color/image_raw'),
+        ],
+    )
+
     # Spawn the robot
     start_gazebo_ros_spawner_cmd = Node(
         package='ros_gz_sim',
@@ -213,8 +248,9 @@ def generate_launch_description():
     ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_jsp_gui_cmd)
     ld.add_action(declare_load_controllers_cmd)
-    ld.add_action(declare_use_rviz_cmd)
+    ld.add_action(declare_use_camera_cmd)
     ld.add_action(declare_use_gazebo_cmd)
+    ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_use_robot_state_pub_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_world_cmd)
@@ -232,6 +268,8 @@ def generate_launch_description():
     ld.add_action(robot_state_publisher_cmd)
     ld.add_action(load_controllers_cmd)
     ld.add_action(start_gazebo_cmd)
+    ld.add_action(start_gazebo_ros_bridge_cmd)
+    ld.add_action(start_gazebo_ros_image_bridge_cmd)
     ld.add_action(start_gazebo_ros_spawner_cmd)
 
     return ld

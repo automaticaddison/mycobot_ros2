@@ -14,6 +14,7 @@ echo "Launching Gazebo simulation..."
 ros2 launch mycobot_gazebo mycobot.gazebo.launch.py \
     load_controllers:=true \
     world_file:=pick_and_place_demo.world \
+    use_camera:=true \
     use_rviz:=false \
     use_robot_state_pub:=true \
     use_sim_time:=true \
@@ -24,5 +25,5 @@ ros2 launch mycobot_gazebo mycobot.gazebo.launch.py \
     pitch:=0.0 \
     yaw:=0.0 &
 
-sleep 10
+sleep 15
 ros2 launch mycobot_moveit_config move_group.launch.py

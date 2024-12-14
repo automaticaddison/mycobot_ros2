@@ -1,0 +1,15 @@
+# gz topic published by Sensors plugin
+- ros_topic_name: "camera_head/depth/camera_info"
+  gz_topic_name: "camera_head/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+  direction: GZ_TO_ROS
+  lazy: true # Determines whether connections are created immediately at startup (when false) or only when data is actually requested by a subscriber (when true), helping to conserve system resources at the cost of potential initial delays in data flow.
+
+# gz topic published by Sensors plugin
+- ros_topic_name: "camera_head/depth/color/points"
+  gz_topic_name: "camera_head/points"
+  ros_type_name: "sensor_msgs/msg/PointCloud2"
+  gz_type_name: "gz.msgs.PointCloudPacked"
+  direction: GZ_TO_ROS
+  lazy: true

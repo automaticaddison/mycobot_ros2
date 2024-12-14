@@ -7,6 +7,7 @@
     <xacro:arg name="flange_link" default="link6_flange"/>
     <xacro:arg name="gripper_type" default="adaptive_gripper"/>
     <xacro:arg name="prefix" default=""/>
+    <xacro:arg name="use_camera" default="false"/>
     <xacro:arg name="use_gazebo" default="false"/>
     <xacro:arg name="use_gripper" default="true"/>
 
@@ -57,5 +58,7 @@
       prefix="$(arg prefix)"
       flange_link="$(arg flange_link)"
       use_gazebo="$(arg use_gazebo)"/>
+
+    <xacro:include filename="$(find mycobot_description)/urdf/sensors/intel_rgbd_cam_d435.urdf.xacro"/>
 
 </robot>
