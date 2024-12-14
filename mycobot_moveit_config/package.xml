@@ -15,7 +15,7 @@
   <depend>moveit_planners_ompl</depend>
   <depend>moveit_ros_visualization</depend>
   <depend>rviz2</depend>
-  <depend>rviz_visual_tools</depend> 
+  <depend>rviz_visual_tools</depend>
 
   <exec_depend>moveit_simple_controller_manager</exec_depend>
   <exec_depend>moveit_configs_utils</exec_depend>
