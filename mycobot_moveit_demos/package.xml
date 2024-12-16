@@ -10,6 +10,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>moveit_ros_planning_interface</depend>
+  <depend>moveit_visual_tools</depend>
   <depend>rclcpp</depend>
 
   <test_depend>ament_lint_auto</test_depend>
