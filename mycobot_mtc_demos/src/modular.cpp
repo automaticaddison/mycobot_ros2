@@ -12,10 +12,11 @@
  *     before moving on to the next one.
  *
  * @author Addison Sears-Collins
- * @date August 20, 2024
+ * @date December 19, 2024
  */
 
 // Include necessary headers
+#include <rclcpp/rclcpp.hpp>
 #include <moveit/task_constructor/task.h>
 #include <moveit/task_constructor/stages/current_state.h>
 #include <moveit/task_constructor/solvers/cartesian_path.h>
@@ -24,7 +25,6 @@
 #include <moveit/task_constructor/stages/move_relative.h>
 #include <moveit/task_constructor/stages/connect.h>
 #include <moveit/task_constructor/container.h>
-#include <rclcpp/rclcpp.hpp>
 #include <moveit/planning_scene/planning_scene.h>
 
 // Use the moveit::task_constructor namespace for convenience
@@ -32,7 +32,7 @@ using namespace moveit::task_constructor;
 
 /**
  * @brief Creates a reusable module for robot movement.
- * 
+ *
  * @param group The name of the robot group to move.
  * @return std::unique_ptr<SerialContainer> A container with a series of movement stages.
  */
@@ -98,7 +98,7 @@ std::unique_ptr<SerialContainer> createModule(const std::string& group) {
 
 /**
  * @brief Creates the main task for robot movement.
- * 
+ *
  * @param node The ROS2 node to use for loading the robot model.
  * @return Task The complete task for robot movement.
  */
@@ -133,7 +133,7 @@ Task createTask(const rclcpp::Node::SharedPtr& node) {
     t.add(createModule(group));
     RCLCPP_INFO(node->get_logger(), "Added module instance %d", i);
   }
-  
+
   // Add a stage to move to the "home" position
   {
     auto stage = std::make_unique<stages::MoveTo>("move to home", std::make_shared<solvers::JointInterpolationPlanner>());
@@ -149,7 +149,7 @@ Task createTask(const rclcpp::Node::SharedPtr& node) {
 
 /**
  * @brief Main function to set up and execute the robot task.
- * 
+ *
  * @param argc Number of command-line arguments.
  * @param argv Array of command-line arguments.
  * @return int Exit status of the program.
@@ -169,32 +169,32 @@ int main(int argc, char** argv) {
   auto task = createTask(node);
   try {
     RCLCPP_INFO(logger, "Starting task planning");
-    
+
     // Plan the task
     moveit::core::MoveItErrorCode error_code = task.plan();
-    
+
     // Log the planning result
     if (error_code == moveit::core::MoveItErrorCode::SUCCESS) {
       RCLCPP_INFO(logger, "Task planning completed successfully");
       RCLCPP_INFO(logger, "Found %zu solutions", task.numSolutions());
-      
+
       // Use printState to log the task state
       std::ostringstream state_stream;
       task.printState(state_stream);
       RCLCPP_INFO(logger, "Task state:\n%s", state_stream.str().c_str());
-      
+
       // If planning succeeds, publish the solution
       task.introspection().publishSolution(*task.solutions().front());
       RCLCPP_INFO(logger, "Published solution");
     } else {
       RCLCPP_ERROR(logger, "Task planning failed with error code: %d", error_code.val);
-      
+
       // Use explainFailure to log the reason for failure
       std::ostringstream failure_stream;
       task.explainFailure(failure_stream);
       RCLCPP_ERROR(logger, "Failure explanation:\n%s", failure_stream.str().c_str());
     }
-    
+
     // Log a simple summary of each stage
     RCLCPP_INFO(logger, "Stage summary:");
     for (size_t i = 0; i < task.stages()->numChildren(); ++i) {
