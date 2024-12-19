@@ -49,7 +49,7 @@ gz service -s /gui/move_to/pose \
     --req "pose: {position: {x: 1.36, y: -0.58, z: 0.95} orientation: {x: -0.26, y: 0.1, z: 0.89, w: 0.35}}" &
 
 sleep 10
-ros2 launch mycobot_moveit_config mtc_demos.launch.py \
+ros2 launch mycobot_mtc_demos mtc_demos.launch.py \
     use_sim_time:=true \
     exe:=$exe_option
 
