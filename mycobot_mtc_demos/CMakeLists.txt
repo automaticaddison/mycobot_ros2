@@ -12,6 +12,13 @@ find_package(moveit_core REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(rclcpp REQUIRED)
 
+# Copy necessary files to designated locations in the project
+install (
+  DIRECTORY rviz
+  DESTINATION share/${PROJECT_NAME}
+)
+
+
 add_executable(alternative_path_costs src/alternative_path_costs.cpp)
 target_include_directories(alternative_path_costs PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
