@@ -12,7 +12,7 @@
  *   - OMPL path
  *
  * @author Addison Sears-Collins
- * @date August 17, 2024
+ * @date December 19, 2024
  */
 
 #include <rclcpp/rclcpp.hpp>
@@ -43,7 +43,7 @@ using namespace moveit::task_constructor;
 int main(int argc, char** argv) {
   // Initialize ROS 2
   rclcpp::init(argc, argv);
-  
+
  // Declare the node parameters
   rclcpp::NodeOptions node_options;
   node_options.automatically_declare_parameters_from_overrides(true);
@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 
   // Create the node with the declared parameters
   auto node = rclcpp::Node::make_shared("fallbacks_move_to_demo", node_options);
-  
+
   // Create a logger
   auto logger = node->get_logger();
   RCLCPP_INFO(logger, "Initializing fallbacks_move_to_demo node");
@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
   } else {
     RCLCPP_ERROR(logger, "Failed to get Pilz planning plugin parameter");
   }
-  
+
   // Create a separate thread for spinning the node
   std::thread spinning_thread([node] { rclcpp::spin(node); });
 
@@ -86,20 +86,20 @@ int main(int argc, char** argv) {
   RCLCPP_INFO(logger, "Robot model loaded: %s", robot->getName().c_str());
 
   // Set up different path planning methods
-  
+
   // Cartesian path planner (lowest computational requirements, best for straight-line paths with no obstacles)
   auto cartesian = std::make_shared<solvers::CartesianPath>();
   cartesian->setJumpThreshold(2.0);
   RCLCPP_INFO(logger, "Cartesian path planner set up with jump threshold: 2.0");
-  
+
   // Create PipelinePlanner for Pilz (moderate computational requirements, inherently considers obstacles)
   // Found via -> ros2 service call /query_planner_interface moveit_msgs/srv/QueryPlannerInterfaces "{}"
   std::unordered_map<std::string, std::string> pilz_map = {
     {"pilz_industrial_motion_planner", "PTP"}
-  };  
+  };
   auto pilz_planner = std::make_shared<solvers::PipelinePlanner>(node, pilz_map);
   RCLCPP_INFO(logger, "Pilz planner created");
-  
+
   // Create PipelinePlanner for OMPL (high computational requirements, best for complex paths with many obstacles)
   std::unordered_map<std::string, std::string> ompl_map = {
     {"ompl", "arm[RRTConnectkConfigDefault]"}
@@ -148,7 +148,7 @@ int main(int argc, char** argv) {
     auto fixed{ std::make_unique<stages::FixedState>("getting to target requires collision avoidance") };
     auto scene{ initial_scene->diff() };
     scene->getCurrentStateNonConst().setVariablePositions({ { "link1_to_link2", -TAU / 8 } });
-    
+
     // Add a collision object (box) to the scene
     scene->processCollisionObjectMsg([]() {
       moveit_msgs::msg::CollisionObject co;
@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
   add_to_fallbacks(cartesian, "Cartesian path");
   add_to_fallbacks(pilz_planner, "Pilz path");
   add_to_fallbacks(ompl_planner, "OMPL path");
-  
+
   // Add the fallback strategies to the task
   RCLCPP_INFO(logger, "Adding fallback strategies to the task");
   t.add(std::move(fallbacks));
