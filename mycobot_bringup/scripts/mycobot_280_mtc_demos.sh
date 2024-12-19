@@ -1,5 +1,16 @@
 #!/bin/bash
-# Single script to launch the mycobot with Gazebo, RViz, and MoveIt 2
+# Single script to launch the mycobot with Gazebo, RViz, MoveIt 2, and the MoveIt Task Constructor demos
+
+# Define valid exe options
+valid_exe_options=("alternative_path_costs" "cartesian" "fallbacks_move_to" "ik_clearance_cost" "modular")
+exe_option=${1:-"alternative_path_costs"}  # Default to alternative_path_costs if no argument provided
+
+# Check if the provided/default argument is valid
+if [[ ! " ${valid_exe_options[@]} " =~ " $exe_option " ]]; then
+    echo "Invalid exe option. Available options are:"
+    printf '%s\n' "${valid_exe_options[@]}"
+    exit 1
+fi
 
 cleanup() {
     echo "Cleaning up..."
@@ -35,7 +46,12 @@ gz service -s /gui/move_to/pose \
     --reqtype gz.msgs.GUICamera \
     --reptype gz.msgs.Boolean \
     --timeout 2000 \
-    --req "pose: {position: {x: 1.36, y: -0.58, z: 0.95} orientation: {x: -0.26, y: 0.1, z: 0.89, w: 0.35}}"
+    --req "pose: {position: {x: 1.36, y: -0.58, z: 0.95} orientation: {x: -0.26, y: 0.1, z: 0.89, w: 0.35}}" &
+
+sleep 10
+ros2 launch mycobot_moveit_config mtc_demos.launch.py \
+    use_sim_time:=true \
+    exe:=$exe_option
 
 # Keep the script running until Ctrl+C
 wait
