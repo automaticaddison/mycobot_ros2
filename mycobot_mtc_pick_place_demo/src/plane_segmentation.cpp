@@ -30,7 +30,7 @@
  * identifies potential support surfaces, performs clustering, and extracts the support plane and objects.
  *
  * @author Addison Sears-Collins
- * @date September 17, 2024
+ * @date December 20, 2024
  */
 
 #include "mycobot_mtc_pick_place_demo/plane_segmentation.h"
@@ -61,6 +61,11 @@ segmentPlaneAndObjects(
     double w_orientation) {
 
   LOG_INFO("Starting plane segmentation. Input cloud size: " << input_cloud->size() << " points");
+
+  // Initialize return values
+  auto support_plane_cloud = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+  auto objects_cloud = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+  auto best_plane_model = std::make_shared<pcl::ModelCoefficients>();
 
   // Remove NaN and Inf points
   auto cloud_filtered = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
@@ -117,6 +122,10 @@ segmentPlaneAndObjects(
   }
   LOG_INFO("Found " << horizontal_indices->indices.size() << " points likely belonging to horizontal surfaces");
 
+  if (horizontal_indices->indices.empty()) {
+    LOG_ERROR("No horizontal surfaces found.");
+    return std::make_tuple(support_plane_cloud, objects_cloud, best_plane_model);
+  }
   // Extract the points with horizontal normals
   pcl::ExtractIndices<pcl::PointXYZRGB> extract;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr horizontal_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -140,10 +149,15 @@ segmentPlaneAndObjects(
   ec.extract(cluster_indices);
   LOG_INFO("Finished clustering. Found " << cluster_indices.size() << " clusters");
 
+  if (cluster_indices.empty()) {
+    LOG_ERROR("No clusters found.");
+    return std::make_tuple(support_plane_cloud, objects_cloud, best_plane_model);
+  }
+
   // 4. Process each support surface candidate cluster
   LOG_INFO("Processing support surface candidate clusters");
-  pcl::ModelCoefficients::Ptr best_plane_model(new pcl::ModelCoefficients);
   double best_score = -std::numeric_limits<double>::max();
+  bool found_valid_plane = false;
 
   for (size_t i = 0; i < cluster_indices.size(); ++i) {
     LOG_INFO("Processing cluster " << i+1 << " of " << cluster_indices.size());
@@ -194,7 +208,10 @@ segmentPlaneAndObjects(
     LOG_INFO("  Plane model validity: " << (is_valid ? "Valid" : "Invalid"));
 
     if (!is_valid) {
-      LOG_INFO("  Plane model invalid. Skipping.");
+      LOG_INFO("  Plane model invalid. Details:");
+      LOG_INFO("    Z-center: " << plane_center[2] << " (tolerance: " << z_tolerance << ")");
+      LOG_INFO("    Normal-up dot product: " << dot_product << " (tolerance: " << angle_tolerance << ")");
+      LOG_INFO("  Skipping.");
       continue;
     }
 
@@ -215,17 +232,33 @@ segmentPlaneAndObjects(
     if (total_score > best_score) {
       best_score = total_score;
       *best_plane_model = *coefficients;
+      found_valid_plane = true;
       LOG_INFO("  New best plane model found. Score: " << best_score);
     }
   }
 
   LOG_INFO("Finished processing clusters. Best plane model score: " << best_score);
 
+  if (!found_valid_plane) {
+    LOG_ERROR("No valid plane model found.");
+    LOG_ERROR("No valid plane model found.");
+    // Add more detailed diagnostics
+    LOG_ERROR("Please check z_tolerance (" << z_tolerance << ") and angle_tolerance ("
+              << angle_tolerance << ") parameters");
+    // Initialize a valid but empty response
+    support_plane_cloud->width = 0;
+    support_plane_cloud->height = 1;
+    support_plane_cloud->is_dense = true;
+    objects_cloud->width = 0;
+    objects_cloud->height = 1;
+    objects_cloud->is_dense = true;
+    // Ensure the model has valid but empty coefficients
+    best_plane_model->values.resize(4, 0.0);
+    return std::make_tuple(support_plane_cloud, objects_cloud, best_plane_model);
+  }
+
   // 5. Extract the support plane and objects above it
   LOG_INFO("Extracting support plane and objects");
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr support_plane_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr objects_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-
   int support_plane_points = 0;
   int object_points = 0;
 
