@@ -1,0 +1,13 @@
+# Request
+string target_shape          # e.g., "box", "cylinder"
+float64[] target_dimensions  # Approximate dimensions for identification
+
+---
+
+# Response
+moveit_msgs/PlanningSceneWorld scene_world  # Contains CollisionObjects for all detected objects
+sensor_msgs/PointCloud2 full_cloud          # Full scene point cloud
+sensor_msgs/Image rgb_image                 # RGB image of the scene
+string target_object_id                     # ID of the target object in the PlanningSceneWorld
+string support_surface_id                   # ID of the support surface in the PlanningSceneWorld
+bool success                                # Indicates if the operation was successful
