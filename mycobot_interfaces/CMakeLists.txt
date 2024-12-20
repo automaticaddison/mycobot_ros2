@@ -12,10 +12,10 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
-#rosidl_generate_interfaces(${PROJECT_NAME}
-#  "srv/GetPlanningScene.srv"
-#  DEPENDENCIES moveit_msgs sensor_msgs
-#)
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "srv/GetPlanningScene.srv"
+  DEPENDENCIES moveit_msgs sensor_msgs
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
