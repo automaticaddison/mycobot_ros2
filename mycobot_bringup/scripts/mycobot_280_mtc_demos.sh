@@ -37,6 +37,7 @@ ros2 launch mycobot_gazebo mycobot.gazebo.launch.py \
     yaw:=0.0 &
 
 sleep 15
+echo "Launching the move group interface..."
 ros2 launch mycobot_moveit_config move_group.launch.py \
     rviz_config_file:=mtc_demos.rviz \
     rviz_config_package:=mycobot_mtc_demos &
@@ -49,6 +50,7 @@ gz service -s /gui/move_to/pose \
     --req "pose: {position: {x: 1.36, y: -0.58, z: 0.95} orientation: {x: -0.26, y: 0.1, z: 0.89, w: 0.35}}" &
 
 sleep 10
+echo "Launching the MoveIt Task Constructor demo..."
 ros2 launch mycobot_mtc_demos mtc_demos.launch.py \
     use_sim_time:=true \
     exe:=$exe_option
