@@ -36,9 +36,6 @@ gz service -s /gui/move_to/pose \
 
 sleep 10
 
-#ros2 launch mycobot_mtc_pick_place_demo point_cloud_viewer.launch.py file_name:=/home/ubuntu/Downloads/4_convertToPCL_debug_cloud.pcd
+ros2 launch mycobot_mtc_pick_place_demo point_cloud_viewer.launch.py file_name:=/home/ubuntu/Downloads/4_convertToPCL_debug_cloud.pcd
 #ros2 launch mycobot_mtc_pick_place_demo point_cloud_viewer.launch.py file_name:=/home/ubuntu/Downloads/5_support_plane_debug_cloud.pcd
-ros2 launch mycobot_mtc_pick_place_demo point_cloud_viewer.launch.py file_name:=/home/ubuntu/Downloads/5_objects_cloud_debug_cloud.pcd
-
-# Keep the script running until Ctrl+C
-wait
+#ros2 launch mycobot_mtc_pick_place_demo point_cloud_viewer.launch.py file_name:=/home/ubuntu/Downloads/5_objects_cloud_debug_cloud.pcd
