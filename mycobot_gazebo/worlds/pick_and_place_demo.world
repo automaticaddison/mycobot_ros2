@@ -7,9 +7,6 @@
     <plugin
       filename="gz-sim-physics-system"
       name="gz::sim::systems::Physics">
-      <engine>
-        <filename>libgz-physics-bullet-featherstone-plugin.so</filename>
-      </engine>
     </plugin>
 
     <!-- Plugin for handling user commands -->
@@ -31,11 +28,6 @@
       <render_engine>ogre2</render_engine>
     </plugin>
 
-    <!-- Plugin for IMU -->
-    <plugin filename="gz-sim-imu-system"
-      name="gz::sim::systems::Imu">
-    </plugin>
-
     <!-- To add realistic gravity, do: 0.0 0.0 -9.8, otherwise do 0.0 0.0 0.0 -->
     <gravity>0.0 0.0 -9.8</gravity>
 
@@ -46,39 +38,12 @@
       </uri>
     </include>
 
-    <!-- Local Ground Plane with modified friction -->
-    <model name="ground_plane">
-      <static>true</static>
-      <link name="link">
-        <collision name="collision">
-          <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-            </plane>
-          </geometry>
-          <surface>
-            <friction>
-              <torsional>
-                <coefficient>0.0</coefficient>
-              </torsional>
-            </friction>
-          </surface>
-        </collision>
-        <visual name="visual">
-          <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>100 100</size>
-            </plane>
-          </geometry>
-          <material>
-            <ambient>0.8 0.8 0.8 1</ambient>
-            <diffuse>0.8 0.8 0.8 1</diffuse>
-            <specular>0.8 0.8 0.8 1</specular>
-          </material>
-        </visual>
-      </link>
-    </model>
+    <!-- Include a model of the Ground Plane from an external URI -->
+    <include>
+      <uri>
+        https://fuel.gazebosim.org/1.0/OpenRobotics/models/Ground Plane
+      </uri>
+    </include>
 
     <!-- Include the cylinder model -->
     <include>
@@ -96,17 +61,17 @@
 
     <include>
       <uri>model://cheezit_big_original</uri>
-      <pose>0.64 0.23 0.13 1.571 0 0</pose>
+      <pose>0.64 0.23 0.17 1.571 0 0</pose>
     </include>
 
     <include>
       <uri>model://cardboard_box</uri>
-      <pose>0.65 0.60 0.15 0 0 0.5</pose>
+      <pose>0.65 0.60 0.3 0 0 0.5</pose>
     </include>
 
     <include>
       <uri>model://coke_can</uri>
-      <pose>0.5 0.15 0.0 0 0 2.3</pose>
+      <pose>0.5 0.15 0.15 0 0 2.3</pose>
     </include>
 
     <!-- Define scene properties -->
