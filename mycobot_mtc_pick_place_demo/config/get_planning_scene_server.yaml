@@ -1,0 +1,84 @@
+get_planning_scene_server:
+  ros__parameters:
+
+    # Topic and frame settings
+    point_cloud_topic: "/camera_head/depth/color/points"
+    rgb_image_topic: "/camera_head/color/image_raw"
+    target_frame: "base_link"
+
+    # Cropping settings
+    enable_cropping: true
+    crop_min_x: 0.10
+    crop_max_x: 1.1
+    crop_min_y: 0.00
+    crop_max_y: 0.90
+    crop_min_z: -inf
+    crop_max_z: inf
+
+    # Plane and object segmentation parameters
+    max_iterations: 100
+    distance_threshold: 0.01
+    z_tolerance: 0.03
+    angle_tolerance: 0.9990482216 # cos(2.5 * M_PI / 180.0)
+    plane_segmentation_threshold: 0.001
+    min_cluster_size: 100
+    max_cluster_size: 1000000
+    cluster_tolerance: 0.02
+    normal_estimation_k: 30
+    w_inliers: 1.0
+    w_size: 1.0
+    w_distance: 1.0
+    w_orientation: 1.0
+    max_plane_segmentation_iterations: 1000
+    plane_segmentation_distance_threshold: 0.01
+
+    # Support surface parameters
+    support_surface_name: "support_surface"
+    min_surface_thickness: 0.0001
+
+    # Normal, curvature, and RSD estimation parameters
+    k_neighbors: 30
+    max_plane_error: 0.01
+    max_iterations_normals: 100
+    min_boundary_neighbors: 10
+    rsd_radius: 0.02
+
+    # Cluster extraction parameters
+    nearest_neighbors: 30
+    smoothness_threshold: 20.0 # in degrees
+    curvature_threshold: 0.2
+
+    # Object segmentation parameters
+    num_iterations: 5
+    inlier_threshold: 85
+    hough_radius_bins: 50
+    hough_center_bins: 50
+    ransac_distance_threshold: 0.001
+    ransac_max_iterations: 1000
+    # Circle inlier filtering parameters
+    circle_min_cluster_size: 20
+    circle_max_clusters: 2
+    circle_height_tolerance: 0.025
+    circle_curvature_threshold: 0.0015
+    circle_radius_tolerance: 0.020
+    circle_normal_angle_threshold: 0.2
+    circle_cluster_tolerance: 0.025
+    # Line inlier filtering parameters
+    line_min_cluster_size: 20
+    line_max_clusters: 1
+    line_curvature_threshold: 0.0011
+    line_cluster_tolerance: 0.025
+    line_rho_threshold: 0.01
+    line_theta_threshold: 0.1
+
+    # Shape fitting parameters
+    shape_fitting_max_iterations: 1000
+    shape_fitting_distance_threshold: 0.01
+    shape_fitting_min_radius: 0.01
+    shape_fitting_max_radius: 0.1
+    shape_fitting_normal_distance_weight: 0.1
+    shape_fitting_normal_search_radius: 0.05
+
+    # Debug output settings
+    output_directory: "/home/ubuntu/Downloads/"
+    debug_pcd_filename: "debug_cloud.pcd"
