@@ -17,7 +17,7 @@
     <xacro:property name="d435_cam_depth_to_infra2_offset" value="-0.050"/>
     <xacro:property name="d435_cam_depth_to_color_offset" value="0.015"/>
 
-    <xacro:property name="camera_tilt_angle_deg" value="45"/>
+    <xacro:property name="camera_tilt_angle_deg" value="25"/>
 
     <link name="torso_link">
       <inertial>
