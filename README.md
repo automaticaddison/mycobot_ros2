@@ -29,7 +29,7 @@ This repository contains ROS 2 packages for simulating and controlling the myCob
 
 ## Getting Started
 For a complete step-by-step walkthrough on how to build this repository from scratch, start with this tutorial:
-[How to Model a Robotic Arm with a URDF File (ROS 2)](https://automaticaddison.com/create-and-visualize-a-robotic-arm-with-urdf-ros-2-jazzy/)
+[Create and Visualize a Robotic Arm with URDF](https://automaticaddison.com/create-and-visualize-a-robotic-arm-with-urdf-ros-2-jazzy/)
 
 This guide will take you through the entire process of setting up and understanding the mycobot_ros2 project.
 
