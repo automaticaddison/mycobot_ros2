@@ -20,14 +20,14 @@ services:
   # They demonstrate how to create multiple containers from the same Docker image,
   # each running a specific ROS 2 node. These containers can communicate with each other
   # because they share the same ROS_DOMAIN_ID.
-  # # Publisher service: Runs the demo talker node
-  # minimal_publisher:
-  #   <<: *manipulation  # This uses all the same settings as the 'manipulation' service
-  #   container_name: minimal_publisher
-  #   command: ["ros2", "run", "demo_nodes_cpp", "talker"]
+  # Publisher service: Runs the demo talker node
+  minimal_publisher:
+    <<: *manipulation  # This uses all the same settings as the 'manipulation' service
+    container_name: minimal_publisher
+    command: ["ros2", "run", "demo_nodes_cpp", "talker"]
 
-  # # Subscriber service: Runs the demo listener node
-  # minimal_subscriber:
-  #   <<: *manipulation  # This uses all the same settings as the 'manipulation' service
-  #   container_name: minimal_subscriber
-  #   command: ["ros2", "run", "demo_nodes_cpp", "listener"]
+  # Subscriber service: Runs the demo listener node
+  minimal_subscriber:
+    <<: *manipulation  # This uses all the same settings as the 'manipulation' service
+    container_name: minimal_subscriber
+    command: ["ros2", "run", "demo_nodes_cpp", "listener"]
