@@ -11,6 +11,7 @@
 
   <depend>controller_manager</depend>
   <depend>gripper_controllers</depend>
+  <depend>gz_msgs_vendor</depend>
   <depend>gz_ros2_control</depend>
   <depend>python3-numpy</depend>
   <depend>rclcpp</depend>

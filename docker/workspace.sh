@@ -11,8 +11,7 @@ source /opt/ros/$ROS_DISTRO/setup.bash
 apt-get update && apt-get install -y \
     gnupg \
     curl \
-    libpcap-dev \
-    libpcl-all-dev
+    libpcap-dev
 
 # Install MongoDB (following official MongoDB installation for Ubuntu)
 curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | \
