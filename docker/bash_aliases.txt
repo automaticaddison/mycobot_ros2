@@ -1,0 +1,11 @@
+# Aliases for the ~/.bashrc file
+alias build='cd ~/ros2_ws/ && colcon build && source ~/.bashrc'
+alias cleanup='echo "Cleaning up..." && \
+sleep 5.0 && \
+pkill -9 -f "ros2|gazebo|gz|nav2|amcl|bt_navigator|nav_to_pose|rviz2|assisted_teleop|cmd_vel_relay|robot_state_publisher|joint_state_publisher|move_to_free|mqtt|autodock|cliff_detection|moveit|move_group|basic_navigator"'
+alias elephant='ros2 launch mycobot_description robot_state_publisher.launch.py'
+alias moveit='bash ~/ros2_ws/src/mycobot_ros2/mycobot_bringup/scripts/mycobot_280_gazebo_and_moveit.sh'
+alias mtc_demos='bash ~/ros2_ws/src/mycobot_ros2/mycobot_bringup/scripts/mycobot_280_mtc_demos.sh'
+alias pick='bash ~/ros2_ws/src/mycobot_ros2/mycobot_mtc_pick_place_demo/scripts/robot.sh'
+alias pointcloud='bash ~/ros2_ws/src/mycobot_ros2/mycobot_mtc_pick_place_demo/scripts/pointcloud.sh'
+alias robot='bash ~/ros2_ws/src/mycobot_ros2/mycobot_bringup/scripts/mycobot_280_gazebo.sh'

@@ -1,0 +1,33 @@
+version: '3.3'
+services:
+  manipulation: &manipulation
+    container_name: manipulation
+    image: manipulation:latest
+    ipc: host
+    network_mode: host
+    privileged: true
+    environment:
+      - DISPLAY
+      - XAUTHORITY=/tmp/.Xauthority
+    volumes:
+      - $HOME/automaticaddison/shared/ros2:/root/shared/ros2
+      - $HOME/.Xauthority:/tmp/.Xauthority
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev:/dev
+    command: ["tail", "-f", "/dev/null"]
+
+  # The following services are commented out for this tutorial.
+  # They demonstrate how to create multiple containers from the same Docker image,
+  # each running a specific ROS 2 node. These containers can communicate with each other
+  # because they share the same ROS_DOMAIN_ID.
+  # # Publisher service: Runs the demo talker node
+  # minimal_publisher:
+  #   <<: *manipulation  # This uses all the same settings as the 'manipulation' service
+  #   container_name: minimal_publisher
+  #   command: ["ros2", "run", "demo_nodes_cpp", "talker"]
+
+  # # Subscriber service: Runs the demo listener node
+  # minimal_subscriber:
+  #   <<: *manipulation  # This uses all the same settings as the 'manipulation' service
+  #   container_name: minimal_subscriber
+  #   command: ["ros2", "run", "demo_nodes_cpp", "listener"]
