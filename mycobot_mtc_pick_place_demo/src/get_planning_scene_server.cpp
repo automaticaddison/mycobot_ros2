@@ -246,8 +246,8 @@ class GetPlanningSceneServer : public rclcpp::Node {
     declare_parameter("shape_fitting_normal_search_radius", 0.05, "Search radius for normal estimation in shape fitting (in meters)");
 
     // Output directory for point clouds. Useful for debugging
-    // ros2 run pcl_ros pcd_to_pointcloud --ros-args -p file_name:=/home/ubuntu/Downloads/my_debug_cloud.pcd -p frame_id:=base_link -p interval:=1.0
-    declare_parameter("output_directory", "/home/ubuntu/Downloads/", "Directory to save output PCD files");
+    // ros2 run pcl_ros pcd_to_pointcloud --ros-args -p file_name:=/tmp/my_debug_cloud.pcd -p frame_id:=base_link -p interval:=1.0
+    declare_parameter("output_directory", "/tmp/", "Directory to save output PCD files");
     declare_parameter("debug_pcd_filename", "debug_cloud.pcd", "Filename for debug PCD output");
 
     // Get parameter values
