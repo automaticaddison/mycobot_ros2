@@ -129,6 +129,7 @@ def generate_launch_description():
     jsp_gui = LaunchConfiguration('jsp_gui')
     rviz_config_file = LaunchConfiguration('rviz_config_file')
     urdf_model = LaunchConfiguration('urdf_model')
+    use_jsp = LaunchConfiguration('use_jsp')
     use_rviz = LaunchConfiguration('use_rviz')
     use_sim_time = LaunchConfiguration('use_sim_time')
 
@@ -148,6 +149,12 @@ def generate_launch_description():
         name='urdf_model',
         default_value=default_urdf_model_path,
         description='Absolute path to robot urdf file')
+
+    declare_use_jsp_cmd = DeclareLaunchArgument(
+        name='use_jsp',
+        default_value='false',
+        choices=['true', 'false'],
+        description='Enable the joint state publisher')
 
     declare_use_rviz_cmd = DeclareLaunchArgument(
         name='use_rviz',
@@ -189,7 +196,7 @@ def generate_launch_description():
         executable='joint_state_publisher',
         name='joint_state_publisher',
         parameters=[{'use_sim_time': use_sim_time}],
-        condition=UnlessCondition(jsp_gui))
+        condition=IfCondition(use_jsp))
 
     # Depending on gui parameter, either launch joint_state_publisher or joint_state_publisher_gui
     start_joint_state_publisher_gui_cmd = Node(
@@ -218,6 +225,7 @@ def generate_launch_description():
     ld.add_action(declare_jsp_gui_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_urdf_model_path_cmd)
+    ld.add_action(declare_use_jsp_cmd) 
     ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_use_sim_time_cmd)
 
