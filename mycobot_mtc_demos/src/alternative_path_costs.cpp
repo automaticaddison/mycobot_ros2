@@ -13,7 +13,7 @@
 
 
 #include <rclcpp/rclcpp.hpp>
-#include <moveit/planning_scene/planning_scene.h>
+#include <moveit/planning_scene/planning_scene.hpp>
 #include <moveit/task_constructor/task.h>
 #include <moveit/task_constructor/container.h>
 #include <moveit/task_constructor/solvers/pipeline_planner.h>

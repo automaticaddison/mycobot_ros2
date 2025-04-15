@@ -18,7 +18,7 @@
 #include <moveit/task_constructor/stages/move_to.h>
 #include <moveit/task_constructor/stages/move_relative.h>
 #include <moveit/task_constructor/stages/connect.h>
-#include <moveit/planning_scene/planning_scene.h>
+#include <moveit/planning_scene/planning_scene.hpp>
 
 // Use the moveit::task_constructor namespace to avoid typing it out each time
 using namespace moveit::task_constructor;
