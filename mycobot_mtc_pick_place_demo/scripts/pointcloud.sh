@@ -39,10 +39,10 @@ sleep 10
 # Select one of the commands below. Comment out the others
 
 # See the full point cloud
-#ros2 launch mycobot_mtc_pick_place_demo point_cloud_viewer.launch.py file_name:=/home/ubuntu/Downloads/4_convertToPCL_debug_cloud.pcd
+#ros2 launch mycobot_mtc_pick_place_demo point_cloud_viewer.launch.py file_name:=/tmp/4_convertToPCL_debug_cloud.pcd
 
 # See the support plane that was extracted from the point cloud
-#ros2 launch mycobot_mtc_pick_place_demo point_cloud_viewer.launch.py file_name:=/home/ubuntu/Downloads/5_support_plane_debug_cloud.pcd
+#ros2 launch mycobot_mtc_pick_place_demo point_cloud_viewer.launch.py file_name:=/tmp/5_support_plane_debug_cloud.pcd
 
 # See the objects cloud that was extracted from the point cloud
-ros2 launch mycobot_mtc_pick_place_demo point_cloud_viewer.launch.py file_name:=/home/ubuntu/Downloads/5_objects_cloud_debug_cloud.pcd
+ros2 launch mycobot_mtc_pick_place_demo point_cloud_viewer.launch.py file_name:=/tmp/5_objects_cloud_debug_cloud.pcd

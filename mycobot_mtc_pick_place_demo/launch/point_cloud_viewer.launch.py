@@ -9,7 +9,7 @@ It launches two main nodes:
 
 Launch Arguments:
     use_sim_time (bool, default: false): Use simulation clock if true
-    file_name (str, default: '/home/ubuntu/Downloads/debug_cloud.pcd'): Path to PCD file
+    file_name (str, default: '/tmp/debug_cloud.pcd'): Path to PCD file
     frame_id (str, default: 'base_link'): Frame ID for the point cloud
     interval (float, default: 1.0): Publishing interval for point cloud
 
@@ -61,7 +61,7 @@ def generate_launch_description():
 
     declare_file_name_cmd = DeclareLaunchArgument(
         name='file_name',
-        default_value='/home/ubuntu/Downloads/debug_cloud.pcd',
+        default_value='/tmp/debug_cloud.pcd',
         description='Path to the PCD file')
 
     declare_frame_id_cmd = DeclareLaunchArgument(

@@ -80,5 +80,5 @@ get_planning_scene_server:
     shape_fitting_normal_search_radius: 0.05
 
     # Debug output settings
-    output_directory: "/home/ubuntu/Downloads/"
+    output_directory: "/tmp/"
     debug_pcd_filename: "debug_cloud.pcd"
