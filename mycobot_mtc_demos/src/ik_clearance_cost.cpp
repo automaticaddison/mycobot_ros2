@@ -16,7 +16,7 @@
 #include <moveit/task_constructor/stages/fixed_state.h>
 #include <moveit/task_constructor/stages/compute_ik.h>
 #include <moveit/task_constructor/cost_terms.h>
-#include "ik_clearance_cost_parameters.hpp"
+#include <mycobot_mtc_demos/ik_clearance_cost_parameters.hpp>
 
 // Use the moveit::task_constructor namespace for convenience
 using namespace moveit::task_constructor;
