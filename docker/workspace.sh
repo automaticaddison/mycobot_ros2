@@ -41,7 +41,7 @@ fi
 if [ ! -d "moveit_task_constructor" ]; then
     git clone https://github.com/moveit/moveit_task_constructor.git -b jazzy
     cd moveit_task_constructor
-    git reset --hard 9ced9fc10a15388224f0741e5a930a33f4ed6255
+    git reset --hard 3b2a436f0a7e8dbb4d347960430bc26183d99535
     cd ..
 fi
 
