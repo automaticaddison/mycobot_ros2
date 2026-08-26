@@ -24,7 +24,7 @@ moveit_simple_controller_manager:
   # Configuration for the gripper_action_controller.
   gripper_action_controller:
     action_ns: gripper_cmd
-    type: GripperCommand
+    type: ParallelGripperCommand
     default: true
     joints:
       - gripper_controller

@@ -7,7 +7,7 @@ mtc_node:
     # Controller parameters
     controller_names:
       - "arm_controller"
-      - "grip_action_controller"
+      - "gripper_action_controller"
 
     # Robot configuration parameters
     arm_group_name: "arm"

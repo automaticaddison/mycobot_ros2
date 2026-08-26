@@ -143,7 +143,7 @@ MTCTaskNode::MTCTaskNode(const rclcpp::NodeOptions& options)
   declare_parameter("max_solutions", 25, "Maximum number of solutions to compute");
 
   // Controller parameters
-  declare_parameter("controller_names", std::vector<std::string>{"arm_controller", "grip_action_controller"}, "Names of the controllers to use");
+  declare_parameter("controller_names", std::vector<std::string>{"arm_controller", "gripper_action_controller"}, "Names of the controllers to use");
 
   // Robot configuration parameters
   declare_parameter("arm_group_name", "arm", "Name of the arm group in the SRDF");
