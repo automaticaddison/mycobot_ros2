@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(mycobot_description)
 
 # Check if the compiler being used is GNU's C++ compiler (g++) or Clang.

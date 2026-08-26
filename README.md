@@ -1,6 +1,6 @@
 # mycobot_ros2 #
-![OS](https://img.shields.io/ubuntu/v/ubuntu-wallpapers/noble)
-![ROS_2](https://img.shields.io/ros/v/jazzy/rclcpp)
+![OS](https://img.shields.io/ubuntu/v/ubuntu-wallpapers/resolute)
+![ROS_2](https://img.shields.io/ros/v/lyrical/rclcpp)
 
 ## Overview
 This repository contains ROS 2 packages for simulating and controlling the myCobot robotic arm using ROS 2 Control and MoveIt 2. It provides support for Gazebo simulation and visualization in RViz. Gazebo simulation also includes simulated 3D point cloud data from the depth camera (RGBD) sensor plugin for vision.
@@ -29,7 +29,7 @@ This repository contains ROS 2 packages for simulating and controlling the myCob
 
 ## Getting Started
 For a complete step-by-step walkthrough on how to build this repository from scratch, start with this tutorial:
-[Create and Visualize a Robotic Arm with URDF](https://automaticaddison.com/create-and-visualize-a-robotic-arm-with-urdf-ros-2-jazzy/)
+[Create and Visualize a Robotic Arm with URDF](https://automaticaddison.com/create-and-visualize-a-robotic-arm-with-urdf-ros-2-lyrical/)
 
 This guide will take you through the entire process of setting up and understanding the mycobot_ros2 project.
 

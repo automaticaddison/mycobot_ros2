@@ -21,6 +21,7 @@
 #include <moveit/task_constructor/task.h>
 #include <moveit/task_constructor/container.h>
 #include <moveit/task_constructor/solvers/cartesian_path.h>
+#include <moveit/robot_state/cartesian_interpolator.hpp>
 #include <moveit/task_constructor/solvers/pipeline_planner.h>
 #include <moveit/task_constructor/stages.h>
 
@@ -89,8 +90,8 @@ int main(int argc, char** argv) {
 
   // Cartesian path planner (lowest computational requirements, best for straight-line paths with no obstacles)
   auto cartesian = std::make_shared<solvers::CartesianPath>();
-  cartesian->setJumpThreshold(2.0);
-  RCLCPP_INFO(logger, "Cartesian path planner set up with jump threshold: 2.0");
+  cartesian->setPrecision(moveit::core::CartesianPrecision{});
+  RCLCPP_INFO(logger, "Cartesian path planner set up with default Cartesian precision");
 
   // Create PipelinePlanner for Pilz (moderate computational requirements, inherently considers obstacles)
   // Found via -> ros2 service call /query_planner_interface moveit_msgs/srv/QueryPlannerInterfaces "{}"

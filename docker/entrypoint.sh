@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Set ROS distribution
-# This variable defines the ROS 2 distribution being used (e.g., "jazzy", "rolling", etc.)
-ROS_DISTRO="jazzy"
+# This variable defines the ROS 2 distribution being used (e.g., "lyrical", "rolling", etc.)
+ROS_DISTRO="lyrical"
 
 # Creates required temp directory for GUI applications - needed by Linux desktop standards
 # Set up XDG runtime directory

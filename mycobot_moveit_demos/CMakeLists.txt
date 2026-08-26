@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(mycobot_moveit_demos)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -17,10 +17,9 @@ target_include_directories(hello_moveit PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
 target_compile_features(hello_moveit PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-ament_target_dependencies(
-  hello_moveit
-  "moveit_ros_planning_interface"
-  "rclcpp"
+target_link_libraries(hello_moveit
+  ${moveit_ros_planning_interface_TARGETS}
+  ${rclcpp_TARGETS}
 )
 
 add_executable(plan_around_objects src/plan_around_objects.cpp)
@@ -28,12 +27,11 @@ target_include_directories(plan_around_objects PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
 target_compile_features(plan_around_objects PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-ament_target_dependencies(
-  plan_around_objects
-  "moveit_msgs"
-  "moveit_ros_planning_interface"
-  "moveit_visual_tools"
-  "rclcpp"
+target_link_libraries(plan_around_objects
+  ${moveit_msgs_TARGETS}
+  ${moveit_ros_planning_interface_TARGETS}
+  ${moveit_visual_tools_TARGETS}
+  ${rclcpp_TARGETS}
 )
 
 install(TARGETS

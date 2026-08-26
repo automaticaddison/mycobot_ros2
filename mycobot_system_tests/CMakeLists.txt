@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(mycobot_system_tests)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -13,7 +13,11 @@ find_package(control_msgs REQUIRED)
 
 # Create executable
 add_executable(arm_gripper_loop_controller src/arm_gripper_loop_controller.cpp)
-ament_target_dependencies(arm_gripper_loop_controller rclcpp rclcpp_action control_msgs)
+target_link_libraries(arm_gripper_loop_controller
+  ${rclcpp_TARGETS}
+  ${rclcpp_action_TARGETS}
+  ${control_msgs_TARGETS}
+)
 
 # Copy necessary files to designated locations in the project
 install (

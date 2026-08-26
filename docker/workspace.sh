@@ -2,7 +2,7 @@
 set -e
 
 # Set ROS 2 distribution as a variable
-ROS_DISTRO="jazzy"
+ROS_DISTRO="lyrical"
 
 # Source ROS 2 setup
 source /opt/ros/$ROS_DISTRO/setup.bash
@@ -17,7 +17,7 @@ apt-get update && apt-get install -y \
 curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | \
     gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg \
     --dearmor
-echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | \
+echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu resolute/mongodb-org/8.0 multiverse" | \
     tee /etc/apt/sources.list.d/mongodb-org-8.0.list
 apt-get update && apt-get install -y mongodb-org
 
@@ -39,7 +39,7 @@ fi
 
 # Install MoveIt Task Constructor if not already present
 if [ ! -d "moveit_task_constructor" ]; then
-    git clone https://github.com/moveit/moveit_task_constructor.git -b jazzy
+    git clone https://github.com/moveit/moveit_task_constructor.git -b ros2
     cd moveit_task_constructor
     git reset --hard 3b2a436f0a7e8dbb4d347960430bc26183d99535
     cd ..

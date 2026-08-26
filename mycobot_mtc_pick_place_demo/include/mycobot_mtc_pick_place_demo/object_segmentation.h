@@ -45,8 +45,8 @@
 #include <geometry_msgs/msg/pose.hpp>            // For geometry_msgs::msg::Pose
 #include <shape_msgs/msg/solid_primitive.hpp>    // For shape_msgs::msg::SolidPrimitive
 
-#include <tf2/LinearMath/Quaternion.h>  // For quaternion operations
-#include <tf2/LinearMath/Matrix3x3.h>   // For conversion between quaternions and Euler angles
+#include <tf2/LinearMath/Quaternion.hpp>  // For quaternion operations
+#include <tf2/LinearMath/Matrix3x3.hpp>   // For conversion between quaternions and Euler angles
 
 #include "mycobot_mtc_pick_place_demo/normals_curvature_and_rsd_estimation.h" // For LOG_INFO implementation
 

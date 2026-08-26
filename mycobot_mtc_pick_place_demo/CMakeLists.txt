@@ -1,5 +1,5 @@
 # Minimum CMake version and project definition
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 
 # Set CMake policies
 if(POLICY CMP0144)
@@ -82,7 +82,9 @@ function(add_custom_library name)
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
   )
-  ament_target_dependencies(${name} ${dependencies})
+  foreach(dep IN LISTS dependencies)
+    target_link_libraries(${name} ${${dep}_TARGETS})
+  endforeach()
   if(ARGN)
     target_link_libraries(${name} ${ARGN})
   endif()
@@ -103,11 +105,15 @@ target_include_directories(get_planning_scene_client_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
-ament_target_dependencies(get_planning_scene_client_node ${dependencies})
+foreach(dep IN LISTS dependencies)
+  target_link_libraries(get_planning_scene_client_node ${${dep}_TARGETS})
+endforeach()
 
 ## get_planning_scene_server
 add_executable(get_planning_scene_server src/get_planning_scene_server.cpp)
-ament_target_dependencies(get_planning_scene_server ${dependencies})
+foreach(dep IN LISTS dependencies)
+  target_link_libraries(get_planning_scene_server ${${dep}_TARGETS})
+endforeach()
 target_link_libraries(get_planning_scene_server
   cluster_extraction
   normals_curvature_and_rsd_estimation
@@ -118,7 +124,9 @@ target_link_libraries(get_planning_scene_server
 
 ## mtc_node
 add_executable(mtc_node src/mtc_node.cpp)
-ament_target_dependencies(mtc_node ${dependencies})
+foreach(dep IN LISTS dependencies)
+  target_link_libraries(mtc_node ${${dep}_TARGETS})
+endforeach()
 target_link_libraries(mtc_node get_planning_scene_client)
 
 # Installation

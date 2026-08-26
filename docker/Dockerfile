@@ -1,5 +1,5 @@
-# Set the ROS distribution as an argument, defaulting to 'jazzy'
-ARG ROS_DISTRO=jazzy
+# Set the ROS distribution as an argument, defaulting to 'lyrical'
+ARG ROS_DISTRO=lyrical
 
 # The base image comes from the official ROS repository hosted on Docker Hub
 # You can find available ROS images here: https://hub.docker.com/_/ros/tags

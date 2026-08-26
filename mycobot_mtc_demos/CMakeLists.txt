@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 project(mycobot_mtc_demos)
 
 # Set the build type if not specified
@@ -45,7 +45,9 @@ function(demo name)
     generate_parameter_library(${parameter_filename} src/${parameter_filename}.yaml)
     target_link_libraries(${PROJECT_NAME}_${name} ${parameter_filename})
   endif()
-  ament_target_dependencies(${PROJECT_NAME}_${name} ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  foreach(dep IN LISTS THIS_PACKAGE_INCLUDE_DEPENDS)
+    target_link_libraries(${PROJECT_NAME}_${name} ${${dep}_TARGETS})
+  endforeach()
   set_target_properties(${PROJECT_NAME}_${name} PROPERTIES OUTPUT_NAME ${name} PREFIX "")
   install(TARGETS ${PROJECT_NAME}_${name}
     ARCHIVE DESTINATION lib
