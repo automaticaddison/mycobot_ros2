@@ -11,7 +11,7 @@ controller_manager:
 
     # Controls the gripper
     gripper_action_controller:
-      type: position_controllers/GripperActionController
+      type: parallel_gripper_action_controller/GripperActionController
 
     # Responsible for publishing the current state of the robot's
     # joints to the /joint_states ROS 2 topic
