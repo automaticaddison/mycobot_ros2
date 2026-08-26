@@ -16,12 +16,17 @@ Launch Sequence:
     3. Gripper Action Controller (starts after Arm Controller)
 
 :author: Addison Sears-Collins
-:date: November 15, 2024
+:date: August 26, 2026
 """
 
+import os
+from pathlib import Path
+
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, RegisterEventHandler, TimerAction
+from launch.actions import DeclareLaunchArgument, RegisterEventHandler, TimerAction
 from launch.event_handlers import OnProcessExit
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
@@ -30,49 +35,54 @@ def generate_launch_description():
     Returns:
         LaunchDescription: Launch description containing sequenced controller starts
     """
-    # Start arm controller
-    start_arm_controller_cmd = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'arm_controller'],
-        output='screen')
+    robot_name = LaunchConfiguration('robot_name')
 
-    # Start gripper action controller
-    start_gripper_action_controller_cmd = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'gripper_action_controller'],
-        output='screen')
+    declare_robot_name_cmd = DeclareLaunchArgument(
+        name='robot_name',
+        default_value='mycobot_280',
+        description='Name of the robot')
 
-    # Launch joint state broadcaster
-    start_joint_state_broadcaster_cmd = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'joint_state_broadcaster'],
-        output='screen')
+    # The controllers read their settings from this file. We hand it to each
+    # spawner directly, because the controllers do not pick it up on their own.
+    controllers_file = os.path.join(
+        str(Path.home()),
+        'ros2_ws/install/mycobot_moveit_config/share/mycobot_moveit_config/config',
+        'mycobot_280',
+        'ros2_controllers.yaml')
 
-    # Add delay to joint state broadcaster (if necessary)
+    def spawner(name):
+        return Node(
+            package='controller_manager',
+            executable='spawner',
+            arguments=[name, '--param-file', controllers_file],
+            output='screen')
+
+    start_joint_state_broadcaster_cmd = spawner('joint_state_broadcaster')
+    start_arm_controller_cmd = spawner('arm_controller')
+    start_gripper_action_controller_cmd = spawner('gripper_action_controller')
+
+    # Give Gazebo time to come up before we ask for the first controller
     delayed_start = TimerAction(
         period=10.0,
         actions=[start_joint_state_broadcaster_cmd]
     )
 
-    # Register event handlers for sequencing
-    # Launch the joint state broadcaster after spawning the robot
-    load_joint_state_broadcaster_cmd = RegisterEventHandler(
+    # Launch the arm controller after the joint state broadcaster
+    load_arm_controller_cmd = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=start_joint_state_broadcaster_cmd,
             on_exit=[start_arm_controller_cmd]))
 
-    # Launch the arm controller after launching the joint state broadcaster
-    load_arm_controller_cmd = RegisterEventHandler(
+    # Launch the gripper action controller after the arm controller
+    load_gripper_action_controller_cmd = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=start_arm_controller_cmd,
             on_exit=[start_gripper_action_controller_cmd]))
 
-    # Create the launch description and populate
     ld = LaunchDescription()
-
-    # Add the actions to the launch description in sequence
+    ld.add_action(declare_robot_name_cmd)
     ld.add_action(delayed_start)
-    ld.add_action(load_joint_state_broadcaster_cmd)
     ld.add_action(load_arm_controller_cmd)
+    ld.add_action(load_gripper_action_controller_cmd)
 
     return ld
