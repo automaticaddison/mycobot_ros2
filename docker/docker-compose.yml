@@ -1,4 +1,3 @@
-version: '3.3'
 services:
   manipulation: &manipulation
     container_name: manipulation
